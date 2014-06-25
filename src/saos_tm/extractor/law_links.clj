@@ -20,7 +20,8 @@
   (some #(= elm %) seq))
 
 (def coords-tokens
-  ["." "," "Art" "art" "ust" "par" "§" "pkt" "zd" "i" "oraz" "lub" "z" "-" "a" "także"])
+  ["." "," "Art" "art" "ust" "par" "§" "pkt" "zd" "i"
+  "oraz" "lub" "z" "-" "a" "także"])
 
 (defn not-coords-nmb? [s]
   (let [
