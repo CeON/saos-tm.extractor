@@ -7,7 +7,7 @@
   (:import java.io.File)
   (:gen-class))
 
-(defn split-tokens [s]
+(defn split-to-tokens [s]
   (lg-split-tokens-bi "pl" s))
 
 (defn find-first [f coll]
@@ -89,6 +89,25 @@
                            "k.w" {:nr "12" :poz "114"}
                            "k.z" {:nr "82" :poz "598"}
                            })
+
+
+(defn replace-several [content & replacements]
+  (let [replacement-list (partition 2 replacements)]
+    (reduce #(apply str/replace %1 %2) content replacement-list)))
+
+(defn tokens-to-string [tokens]
+  (let [ 
+          txt (str/join " " tokens)
+          without-unnecessary-spaces
+            (replace-several txt
+              #" \." "."
+              #" ," ","
+              #" / " "/"
+              #"\( " "("
+              #" \)" ")"
+              #" ;" ";")
+    ]
+    without-unnecessary-spaces))
 
 (defn extract-law-act [tokens]
   (let [
@@ -274,11 +293,7 @@
           txt (str/join " " (take 10 (:act orphaned-link)))
     ]
   (map #(zipmap [:txt :art]
-                [(str/replace
-                  (str/replace
-                    txt
-                    " ." ".")
-                  " ," ",") %])
+                [(replace-several txt #" \." "." #" ," ",") %])
                  (:art orphaned-link))))
   
 (defn extract-law-links [s]
