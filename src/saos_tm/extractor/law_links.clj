@@ -1,6 +1,6 @@
-(ns saos-tm.extractor.extractor
+(ns saos-tm.extractor.law-links
   (:require
-    [ saos-tm.extractor.core :as core ]
+    [ saos-tm.extractor.common :as common ]
     [ clojure.string :as str ]
     [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]
     )
@@ -231,12 +231,12 @@
           lit-nr (:lit art-coords)
     ]
     (apply str
-      "\"" art-nr "\"" core/csv-delimiter
-      "\"" par-nr "\"" core/csv-delimiter
-      "\"" ust-nr "\"" core/csv-delimiter
-      "\"" pkt-nr "\"" core/csv-delimiter
-      "\"" zd-nr "\"" core/csv-delimiter
-      "\"" lit-nr "\"" core/csv-delimiter)))
+      "\"" art-nr "\"" common/csv-delimiter
+      "\"" par-nr "\"" common/csv-delimiter
+      "\"" ust-nr "\"" common/csv-delimiter
+      "\"" pkt-nr "\"" common/csv-delimiter
+      "\"" zd-nr "\"" common/csv-delimiter
+      "\"" lit-nr "\"" common/csv-delimiter)))
 
 (defn get-csv-for-extracted-link [link signature]
   (let [
@@ -244,8 +244,8 @@
           act (:act link)
     ]
   (apply str (get-art-coords-csv art)
-    "\"" (:nr act) "\"" core/csv-delimiter
-    "\"" (:poz act) "\"" core/csv-delimiter
+    "\"" (:nr act) "\"" common/csv-delimiter
+    "\"" (:poz act) "\"" common/csv-delimiter
     "\"" signature "\"" "\n")))
 
 (defn get-csv-for-orphaned-link [link signature]
@@ -255,10 +255,10 @@
     ]
     ; (println link)
     (apply str
-      "\"" txt "\"" core/csv-delimiter
+      "\"" txt "\"" common/csv-delimiter
       (apply str
         (map
-          #(str "\"" % "\"" core/csv-delimiter)
+          #(str "\"" % "\"" common/csv-delimiter)
           art))
       "\"" signature "\"" "\n")))
 
@@ -292,7 +292,7 @@
             correct-coords-ranges)
         coords
           (map 
-            core/extract-coords
+            common/extract-coords
             (map #(build-coords-text % tokens) correct-coords-ranges))
         act-coords-part 
           (handle-w-zwiazku-z

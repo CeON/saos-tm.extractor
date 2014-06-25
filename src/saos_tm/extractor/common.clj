@@ -1,8 +1,7 @@
-(ns saos-tm.extractor.core
+(ns saos-tm.extractor.common
   (:require
     [ clojure.string :as str ]
-    [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]
-    )
+    [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ])
   (:import java.io.File)
   (:gen-class))
 

@@ -1,6 +1,6 @@
-(ns saos-tm.extractor.builder
+(ns saos-tm.extractor.law-links-trainset
   (:require
-    [ saos-tm.extractor.core :as core ]
+    [ saos-tm.extractor.common :as common ]
     [ clojure.string :as str ]
     [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]
     )
@@ -47,8 +47,8 @@
       (map #(str/trim %)
         (map #(str/replace % #"sygn\." "")
           (map #(str/replace % #"poz\." "")
-            (filter #((comp not core/substring?) "OTK" %)
-            (filter #(core/substring? "/" %)
+            (filter #((comp not common/substring?) "OTK" %)
+            (filter #(common/substring? "/" %)
               (str/split s #",|\(poz")))))))))
 
 (defn get-article-coordinates-info [ s ]
@@ -60,7 +60,7 @@
   (second (str/split s #"–")))
 
 (defn get-signatures-for-articles [ s ]
-  [(concat (core/extract-coords (get-article-coordinates-info s)))
+  [(concat (common/extract-coords (get-article-coordinates-info s)))
   (extract-signatures (get-signatures-info s))])
 
 (defn get-article-nmbs-point-nmbs-signatures [ s ]
@@ -100,11 +100,11 @@
 (defn to-csv [structure]
   [(apply str
     (map
-      #(str "\"" % "\"" core/csv-delimiter)
+      #(str "\"" % "\"" common/csv-delimiter)
       (first structure)))
    (apply str
     (map
-      #(str "\"" % "\"" core/csv-delimiter)
+      #(str "\"" % "\"" common/csv-delimiter)
       (nth structure 2)))
    (apply str
     "\"" (second structure) "\"")
@@ -121,9 +121,9 @@
   (apply str
     (map 
       #(str "\"" (first (first %)) "\""
-        core/csv-delimiter
+        common/csv-delimiter
         "\"" (second (first %)) "\""
-        core/csv-delimiter
+        common/csv-delimiter
         "\"" (second %) "\""
         \newline)
       structure)))
