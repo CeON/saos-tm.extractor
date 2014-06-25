@@ -1,2 +1,2 @@
 * saos-tm.extractor
- [[http://travis-ci.org/CeON/saos-tm.extractor][https://api.travis-ci.org/CeON/saos-tm.extractor?branch=master]]
+  [[http://travis-ci.org/CeON/saos-tm.extractor][https://api.travis-ci.org/CeON/saos-tm.extractor.png?branch=master]]
