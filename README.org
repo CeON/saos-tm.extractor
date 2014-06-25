@@ -1,2 +1,2 @@
 * saos-tm.extractor
- [[http://travis-ci.org/lopusz/langlab][https://api.travis-ci.org/CeON/langlab.png?branch=master]]
+ [[http://travis-ci.org/CeON/saos-tm.extractor][https://api.travis-ci.org/CeON/saos-tm.extractor?branch=master]]
