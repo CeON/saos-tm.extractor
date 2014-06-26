@@ -7,7 +7,7 @@
   (:import java.io.File)
   (:gen-class))
 
-(defn split-tokens [s]
+(defn split-to-tokens [s]
   (lg-split-tokens-bi "pl" s))
 
 (defn find-first [f coll]
@@ -21,11 +21,11 @@
 
 (def coords-tokens
   ["." "," "Art" "art" "ust" "par" "§" "pkt" "zd" "i"
-  "oraz" "lub" "z" "-" "a" "także"])
+  "oraz" "lub" "z" "-" "a" "także" "lit"])
 
 (defn not-coords-nmb? [s]
   (let [
-          result (re-matches #"(\d+)(-\d+)?[a-z]*" s)
+          result (re-matches #"((\d+)(-\d+)?[a-z]*)|([a-u])" s)
           ]
     (if (= result nil) true false))) 
 
@@ -58,47 +58,89 @@
   (get-range coll (first fromto) (second fromto)))
 
 (defn w-zwiazku-z? [tokens]
-  (true?
+  (or
     (and
-      (or (= 3 (count tokens)) (= 4 (count tokens)))
-      (= "w" (first tokens))
-      (or (= "związku" (second tokens)) (= "zw" (second tokens))))))
+      (= 3 (count tokens))
+      (= "w" (nth tokens 0))
+      (= "związku" (nth tokens 1))
+      (= "z" (nth tokens 2)))
+    (and
+      (= 4 (count tokens))
+      (= "w" (nth tokens 0))
+      (= "zw" (nth tokens 1))
+      (= "." (nth tokens 2))
+      (= "z" (nth tokens 3)))))
 
 (defn handle-w-zwiazku-z [tokens-and-coords]
   (for [
           i (range 0 (count tokens-and-coords))
           ]
+
     (if (w-zwiazku-z? (nth tokens-and-coords i))
       (nth tokens-and-coords (+ i 1))
       (nth tokens-and-coords i))))
 
-(def dictionary-for-acts '{"Konstytucji" {:nr "78" :poz "483"}
-                           "k.c" {:nr "16" :poz "93"}
-                           "k.h" {:nr "57" :poz "502"}
-                           "k.k" {:nr "88" :poz "553"}
-                           "k.k.s" {:nr "83" :poz "930"}
-                           "k.k.w" {:nr "90" :poz "557"}
-                           "k.m" {:nr "138" :poz "1545"}
-                           "k.p" {:nr "24" :poz "141"}
-                           "k.p.a" {:nr "30" :poz "168"}
-                           "k.p.c" {:nr "43" :poz "296"}
-                           "k.p.k" {:nr "89" :poz "555"}
-                           "k.p.w" {:nr "106" :poz "1148"}
-                           "k.r.o" {:nr "9" :poz "59"}
-                           "k.s.h" {:nr "94" :poz "1037"}
-                           "k.w" {:nr "12" :poz "114"}
-                           "k.z" {:nr "82" :poz "598"}
-                           })
+(def dictionary-for-acts
+  '{#"^Konstytucji" {:nr "78" :poz "483"}
+    #"^k.c" {:nr "16" :poz "93"}
+    #"^k.h" {:nr "57" :poz "502"}
+    #"^k.k" {:nr "88" :poz "553"}
+    #"^k.k.s" {:nr "83" :poz "930"}
+    #"^k.k.w" {:nr "90" :poz "557"}
+    #"^k.m" {:nr "138" :poz "1545"}
+    #"^k.p" {:nr "24" :poz "141"}
+    #"^k.p.a" {:nr "30" :poz "168"}
+    #"^k.p.c" {:nr "43" :poz "296"}
+    #"^k.p.k" {:nr "89" :poz "555"}
+    #"^k.p.w" {:nr "106" :poz "1148"}
+    #"^k.r.o" {:nr "9" :poz "59"}
+    #"^k.s.h" {:nr "94" :poz "1037"}
+    #"^k.w" {:nr "12" :poz "114"}
+    #"^k.z" {:nr "82" :poz "598"}
+    #"^u.s.p" {:nr "98" :poz "1070"}
+    #"^ustawy o TK" {:nr "102" :poz "643"}
+    #"^ustawy o Trybunale Konstytucyjnym" {:nr "102" :poz "643"}
+    #"^ustawy o komornikach" {:nr "133" :poz "882"}
+    #"^prawa o adwokat" {:nr "16" :poz "124"}
+    #"(?i)^pzp" {:nr "19" :poz "177"}
+    #"(?i)^ustawy pzp" {:nr "19" :poz "177"}
+    #"(?i)^ustawy prawo zamówień publicznych" {:nr "19" :poz "177"}
+    #"(?i)^prawa zamówień publicznych" {:nr "19" :poz "177"}
+    })
 
-(defn extract-law-act [tokens]
+(defn replace-several [content & replacements]
+  (let [replacement-list (partition 2 replacements)]
+    (reduce #(apply str/replace %1 %2) content replacement-list)))
+
+(defn tokens-to-string [tokens]
+  (let [ 
+          txt (str/join " " tokens)
+          without-unnecessary-spaces
+            (replace-several txt
+              #" \." "."
+              #" ," ","
+              #" / " "/"
+              #"\( " "("
+              #" \)" ")"
+              #" ;" ";")
+    ]
+    without-unnecessary-spaces))
+
+(defn extract-dictionary-case [tokens]
   (let [
-          dictionary-record (dictionary-for-acts (first tokens))
+          txt (tokens-to-string tokens)
+          matched-regex
+          (first
+            (remove
+              #(nil? (re-find % txt))
+              (keys dictionary-for-acts)))
+          dictionary-record (dictionary-for-acts matched-regex)
           ]
   (if (nil? dictionary-record)
     tokens
     dictionary-record)))
 
-(defn extract-nr-poz [tokens]
+(defn extract-nr-poz-case [tokens]
   (let [
           nr-indices (indices #(= % "Nr") tokens)
           nr-index
@@ -112,7 +154,7 @@
               (first poz-indices))
           ]
   (if (or (nil? nr-index) (nil? poz-index))
-    (extract-law-act tokens)
+    (extract-dictionary-case tokens)
     (zipmap
       [:nr :poz]
       [(if (nil? nr-index) "0" (nth tokens (+ nr-index 1)))
@@ -254,7 +296,6 @@
           art (:art link)
           txt (:txt link)
     ]
-    ; (println link)
     (apply str
       "\"" txt "\"" common/csv-delimiter
       (apply str
@@ -274,11 +315,7 @@
           txt (str/join " " (take 10 (:act orphaned-link)))
     ]
   (map #(zipmap [:txt :art]
-                [(str/replace
-                  (str/replace
-                    txt
-                    " ." ".")
-                  " ," ",") %])
+                [(replace-several txt #" \." "." #" ," ",") %])
                  (:art orphaned-link))))
   
 (defn extract-law-links [s]
@@ -297,7 +334,7 @@
             (map #(build-coords-text % tokens) correct-coords-ranges))
         act-coords-part 
           (handle-w-zwiazku-z
-            (map extract-nr-poz
+            (map extract-nr-poz-case
               (map 
                 #(get-range tokens (first %) (second %)) 
                 inter-coords-ranges)))
