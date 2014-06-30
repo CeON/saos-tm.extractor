@@ -87,7 +87,7 @@
                  "do Umowy Ramowej"))]
   (is (=
     [[3 49][51 58]]
-    (get-correct-coords-ranges tokens)))))
+    (get-correct-art-coords-ranges tokens)))))
 
 (deftest signature-extraction-test []
   (is (=

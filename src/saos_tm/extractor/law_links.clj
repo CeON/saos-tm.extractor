@@ -173,7 +173,7 @@
         (get-range* tokens tokens-range)))
     "- " "-"))
 
-(defn get-interfering-coords-ranges [tokens]
+(defn get-interfering-art-coords-ranges [tokens]
   (map #(find-coords-ranges % tokens) 
     (indices 
       #(or (= % "art") (= % "Art") (= % "§")) 
@@ -181,27 +181,27 @@
 
 (defn get-inter-coords-ranges [tokens]
   (let [
-          interfering-coords-ranges (get-interfering-coords-ranges tokens)
+          interfering-art-coords-ranges (get-interfering-art-coords-ranges tokens)
           ]
   (filter
     #(< (first %) (second %))
     (partition 2
       (concat
         (drop 1
-          (flatten interfering-coords-ranges))
+          (flatten interfering-art-coords-ranges))
         [(count tokens)])))))
 
-(defn get-correct-coords-ranges [tokens]
+(defn get-correct-art-coords-ranges [tokens]
   (let [
-          interfering-coords-ranges (get-interfering-coords-ranges tokens)
+          interfering-art-coords-ranges (get-interfering-art-coords-ranges tokens)
           inter-coords-ranges (get-inter-coords-ranges tokens)
           ]
   (partition 2
     (concat
-    [(first (first interfering-coords-ranges))]
+    [(first (first interfering-art-coords-ranges))]
     (flatten inter-coords-ranges)))))
 
-(defn get-majority-act-coords-for-art-coords [art-coord art-act-coords]
+(defn get-majority-act-coords-for-art-coords [art-coords-record links]
   (let [
         sorted
           (sort-by val >
@@ -209,23 +209,23 @@
               (map
                 #(:act %)
                 (filter
-                  #(= art-coord (:art %))
-                  art-act-coords))))
+                  #(= art-coords-record (:art %))
+                  links))))
           ]
-  [art-coord 
+  [art-coords-record
   (first
     (find-first
       #(map? (first %))
       sorted))]))
 
-(defn change-act-coords-to-majorities [majority-vote-act-coord art-act-coords]
+(defn change-act-coords-to-majorities [majority-vote-act-coord links]
   (let [
           art-coord (first majority-vote-act-coord)
           act-coord (second majority-vote-act-coord)
           records-for-art-coord
             (filter
               #(= art-coord (:art %))
-              art-act-coords)]
+              links)]
   (if (nil? act-coord)
     records-for-art-coord
     (zipmap [:art :act] [art-coord act-coord]))))
@@ -304,11 +304,11 @@
           art))
       "\"" signature "\"" "\n")))
 
-(defn get-csv-for-links [get-csv-func art-act-coords signature]
+(defn get-csv-for-links [get-csv-func links signature]
   (str/join ""
     (map
       #(get-csv-func % signature)
-      art-act-coords)))
+      links)))
 
 (defn get-data-for-orphaned-link [orphaned-link]
   (let [
@@ -321,47 +321,47 @@
 (defn extract-law-links [s]
   (let [
         tokens (lg-split-tokens-bi "pl" s)
-        interfering-coords-ranges (get-interfering-coords-ranges tokens)
+        interfering-art-coords-ranges (get-interfering-art-coords-ranges tokens)
         inter-coords-ranges (get-inter-coords-ranges tokens)
-        correct-coords-ranges (get-correct-coords-ranges tokens)
+        correct-art-coords-ranges (get-correct-art-coords-ranges tokens)
         coords-texts
           (map
             #(build-coords-text % tokens)
-            correct-coords-ranges)
-        coords
+            correct-art-coords-ranges)
+        art-coords
           (map 
             common/extract-coords
-            (map #(build-coords-text % tokens) correct-coords-ranges))
-        act-coords-part 
+            (map #(build-coords-text % tokens) correct-art-coords-ranges))
+        act-coords 
           (handle-w-zwiazku-z
             (map extract-nr-poz-case
               (map 
                 #(get-range tokens (first %) (second %)) 
                 inter-coords-ranges)))
-        art-act-coords-part
+        links
           (map #(zipmap [:art :act] [%1 %2])
-            coords act-coords-part)
-        distinct-art-coords-part
+            art-coords act-coords)
+        distinct-art-coords
           (distinct
             (map #(:art %)
-              art-act-coords-part))
+              links))
         majority-votes-for-act-coords
           (map
-            #(get-majority-act-coords-for-art-coords % art-act-coords-part)
-            distinct-art-coords-part)
-        art-act-coords-after-majority-voting
+            #(get-majority-act-coords-for-art-coords % links)
+            distinct-art-coords)
+        links-after-majority-voting
           (map
-            #(change-act-coords-to-majorities % art-act-coords-part)
+            #(change-act-coords-to-majorities % links)
             majority-votes-for-act-coords)
         extracted-links
           (filter
             #(map? (:act %))
-            art-act-coords-after-majority-voting)
+            links-after-majority-voting)
         orphaned-links
           (flatten
             (remove
               #(map? (:act %))
-              art-act-coords-after-majority-voting))
+              links-after-majority-voting))
         ]
   (->>
     (zipmap
