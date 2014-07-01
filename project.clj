@@ -1,6 +1,6 @@
-(defproject saos-tm.extractor "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+(defproject saos-tm.extractor "0.1.0"
+  :description "SAOS metadata extractor module."
+  :url "https://github.com/CeON/saos-tm.extractor"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :aot :all
