@@ -1,4 +1,4 @@
-(defproject saos-tm.extractor "0.1.0"
+(defproject saos-tm.extractor "0.2.0"
   :description "SAOS metadata extractor module."
   :url "https://github.com/CeON/saos-tm.extractor"
   :license {:name "Eclipse Public License"

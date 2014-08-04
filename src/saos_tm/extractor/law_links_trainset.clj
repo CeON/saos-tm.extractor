@@ -32,7 +32,7 @@
 (defn get-nr-poz-strings [ s ]
   (re-find #"Nr\s*\d+,?.poz\.\s*\d+" s))
 
-(defn get-nr-poz-of-law-acts [ s ]
+(defn get-nr-poz-of-law-act [ s ]
   (get-numbers
     (get-nr-poz-strings s)))
 
@@ -74,10 +74,36 @@
       (map #(str "§" %) (drop 1 (str/split s #"\s§")))    
       split-by-art))))
 
+(defn get-year-from-act-name [s]
+  (let [
+        pattern (re-find #"\d+\s+r" s)
+        ]
+  (when
+    (not-empty pattern)
+    (apply str
+      (re-seq #"[\d]+" pattern)))))
+
+(defn get-year-of-law-act [s]
+  (let [
+          pattern (re-find #"Dz\.\s+U\.\s+z?\s+\d+\s+r" s)
+          ]
+  (if
+    (not-empty pattern)
+    (apply str
+      (re-seq #"[\d]+" pattern))
+    (get-year-from-act-name s))))
+
 (defn get-data-for-act [ s ]
-  [(get-nr-poz-of-law-acts s)
-   (get-description s)
-   (get-article-nmbs-point-nmbs-signatures s)])
+  (println s)
+  (println "----------------------------------")
+  (println (get-year-of-law-act s))
+  (println "==================================")
+  (zipmap
+    [:year :nr-poz :descript :art-act-sign]
+    [(get-year-of-law-act s)
+    (get-nr-poz-of-law-act s)
+    (get-description s)
+    (get-article-nmbs-point-nmbs-signatures s)]))
 
 (defn get-links [articles-signatures]
   (for [ x (first articles-signatures)
@@ -87,7 +113,7 @@
 (defn get-training-data [structure-record]
   [(first structure-record)
    (mapcat get-links
-    (concat (nth structure-record 2)))])
+    (concat (:art-act-sign structure-record)))])
 
 (defn join-acts-coords-with-article-coords [record]
   (let [
@@ -120,11 +146,14 @@
 (defn get-glossary-csv [structure]
   (apply str
     (map 
-      #(str "\"" (first (first %)) "\""
+      #(str
+        "\"" (:year %) "\""
         common/csv-delimiter
-        "\"" (second (first %)) "\""
+        "\"" (first (:nr-poz %)) "\""
         common/csv-delimiter
-        "\"" (second %) "\""
+        "\"" (second (:nr-poz %)) "\""
+        common/csv-delimiter
+        "\"" (:descript %) "\""
         \newline)
       structure)))
 

@@ -153,3 +153,22 @@
     ]
   (= (tokens-to-string (split-to-tokens s)) s)))
  
+(deftest get-year-of-law-act-test
+  (is (=
+    "1992"
+    (get-year-of-law-act
+      (str
+        "KONSTYTUCYJNE utrzymane w mocy na podstawie art. 77 Ustawy Konstytucyjnej"
+        " z dnia 17 października 1992 r. o wzajemnych stosunkach między"
+        " władzą ustawodawczą i wykonawczą Rzeczypospolitej Polskiej "
+        "oraz o samorządzie terytorialnym "
+        "(Dz. U. Nr 84, poz. 426, z 1995 r. Nr 38, poz. 184): "
+        "(uchylony) ogólnie – w. 6.01.09, SK 22/06 (poz. 1), w. 15.01.09"))))
+  (is (=
+    "1994"
+    (get-year-of-law-act
+      (str
+        " Karta Samorządu Lokalnego sporządzona w Strasburgu"
+        " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
+        " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
+        "– p. 21.01.09, P 14/08 (poz. 7)")))))
