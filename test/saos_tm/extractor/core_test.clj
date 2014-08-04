@@ -119,25 +119,25 @@
 
 (deftest extract-law-links-test []
   (is(=
-    '({:act {:poz "1656", :nr "237"},
+    '({:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "1-6", :par "0", :art "3"}}
-      {:act {:poz "1656", :nr "237"},
+      {:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "5", :ust "0", :par "0", :art "4"}}
-      {:act {:poz "1656", :nr "237"},
+      {:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "6", :ust "0", :par "0", :art "4"}}
-      {:act {:poz "1656", :nr "237"},
+      {:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "57"}})
   (:extracted-links (extract-law-links
     (str "art. 3 ust. 1-6, art. 4 pkt 5 i 6, art. 57 ustawy z dnia 19 grudnia"
          " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")))))
   (is(=
-    '({:act {:poz "1656", :nr "237"},
+    '({:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "4-6", :par "0", :art "3"}}
-      {:act {:poz "1656", :nr "237"},
+      {:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "6", :ust "0", :par "0", :art "4"}}
-      {:act {:poz "483", :nr "78"},
+      {:act {:poz "483", :nr "78", :year "1997"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "2"}}
-      {:act {:poz "483", :nr "78"},
+      {:act {:poz "483", :nr "78", :year "1997"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "1", :par "0", :art "32"}}))
   (:extracted-links (extract-law-links
     (str "art. 3 ust. 4-6 i art. 4 pkt 6 ustawy z dnia 19 grudnia 2008 r. "

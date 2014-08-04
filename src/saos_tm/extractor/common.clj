@@ -93,4 +93,21 @@
           ]
   (mapcat extract-coords-for-single-art without-conjunctions)))
 
+(defn get-year-from-act-name [s]
+  (let [
+        pattern (re-find #"\d+\s+r" s)
+        ]
+  (when
+    (not-empty pattern)
+    (apply str
+      (re-seq #"[\d]+" pattern)))))
 
+(defn get-year-of-law-act [s]
+  (let [
+          pattern (re-find #"Dz\.\s+U\.\s+z?\s+\d+\s+r" s)
+          ]
+  (if
+    (not-empty pattern)
+    (apply str
+      (re-seq #"[\d]+" pattern))
+    (get-year-from-act-name s))))

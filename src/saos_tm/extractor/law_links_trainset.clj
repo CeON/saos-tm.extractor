@@ -74,33 +74,10 @@
       (map #(str "§" %) (drop 1 (str/split s #"\s§")))    
       split-by-art))))
 
-(defn get-year-from-act-name [s]
-  (let [
-        pattern (re-find #"\d+\s+r" s)
-        ]
-  (when
-    (not-empty pattern)
-    (apply str
-      (re-seq #"[\d]+" pattern)))))
-
-(defn get-year-of-law-act [s]
-  (let [
-          pattern (re-find #"Dz\.\s+U\.\s+z?\s+\d+\s+r" s)
-          ]
-  (if
-    (not-empty pattern)
-    (apply str
-      (re-seq #"[\d]+" pattern))
-    (get-year-from-act-name s))))
-
 (defn get-data-for-act [ s ]
-  (println s)
-  (println "----------------------------------")
-  (println (get-year-of-law-act s))
-  (println "==================================")
   (zipmap
     [:year :nr-poz :descript :art-act-sign]
-    [(get-year-of-law-act s)
+    [(common/get-year-of-law-act s)
     (get-nr-poz-of-law-act s)
     (get-description s)
     (get-article-nmbs-point-nmbs-signatures s)]))
