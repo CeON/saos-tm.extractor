@@ -72,43 +72,41 @@
       (= "z" (nth tokens 3)))))
 
 (defn handle-w-zwiazku-z [tokens-and-coords]
-  ; (println tokens-and-coords)
-  ; (println "--------------------------")
-  (if (map? (first tokens-and-coords))
-    tokens-and-coords
     (for [
           i (range 0 (count tokens-and-coords))
           ]
-      (if (w-zwiazku-z? (nth tokens-and-coords i))
-        (nth tokens-and-coords (+ i 1))
-        (nth tokens-and-coords i)))))
+      (if (map? (nth tokens-and-coords i))  
+        (nth tokens-and-coords i)
+        (if (w-zwiazku-z? (nth tokens-and-coords i))
+          (nth tokens-and-coords (+ i 1))
+          (nth tokens-and-coords i)))))
 
 (def dictionary-for-acts
-  '{#"^Konstytucji" {:nr "78" :poz "483", :year "1997"}
-    #"^k.c" {:nr "16" :poz "93", :year "1964"}
-    #"^k.h" {:nr "57" :poz "502", :year "1934"}
-    #"^k.k" {:nr "88" :poz "553", :year "1997"}
-    #"^k.k.s" {:nr "83" :poz "930", :year "1999"}
-    #"^k.k.w" {:nr "90" :poz "557", :year "1997"}
-    #"^k.m" {:nr "138" :poz "1545", :year "2001"}
-    #"^k.p" {:nr "24" :poz "141", :year "1974"}
-    #"^k.p.a" {:nr "30" :poz "168", :year "1960"}
-    #"^k.p.c" {:nr "43" :poz "296", :year "1964"}
-    #"^k.p.k" {:nr "89" :poz "555", :year "1997"}
-    #"^k.p.w" {:nr "106" :poz "1148", :year ""}
-    #"^k.r.o" {:nr "9" :poz "59", :year "2001"}
-    #"^k.s.h" {:nr "94" :poz "1037", :year "2000"}
-    #"^k.w" {:nr "12" :poz "114", :year "1971"}
-    #"^k.z" {:nr "82" :poz "598", :year "1933"}
-    #"^u.s.p" {:nr "98" :poz "1070", :year "2001"}
-    #"^ustawy o TK" {:nr "102" :poz "643", :year "1997"}
-    #"^ustawy o Trybunale Konstytucyjnym" {:nr "102" :poz "643", :year "1997"}
-    #"^ustawy o komornikach" {:nr "133" :poz "882", :year "1997"}
-    #"^prawa o adwokat" {:nr "16" :poz "124", :year "1982"}
-    #"(?i)^pzp" {:nr "19" :poz "177", :year "2004"}
-    #"(?i)^ustawy pzp" {:nr "19" :poz "177", :year "2004"}
-    #"(?i)^ustawy prawo zamówień publicznych" {:nr "19" :poz "177", :year "2004"}
-    #"(?i)^prawa zamówień publicznych" {:nr "19" :poz "177", :year "2004"}
+  '{#"^Konstytucji" {:nr "78" :pos "483", :year "1997"}
+    #"^k.c" {:nr "16" :pos "93", :year "1964"}
+    #"^k.h" {:nr "57" :pos "502", :year "1934"}
+    #"^k.k" {:nr "88" :pos "553", :year "1997"}
+    #"^k.k.s" {:nr "83" :pos "930", :year "1999"}
+    #"^k.k.w" {:nr "90" :pos "557", :year "1997"}
+    #"^k.m" {:nr "138" :pos "1545", :year "2001"}
+    #"^k.p" {:nr "24" :pos "141", :year "1974"}
+    #"^k.p.a" {:nr "30" :pos "168", :year "1960"}
+    #"^k.p.c" {:nr "43" :pos "296", :year "1964"}
+    #"^k.p.k" {:nr "89" :pos "555", :year "1997"}
+    #"^k.p.w" {:nr "106" :pos "1148", :year ""}
+    #"^k.r.o" {:nr "9" :pos "59", :year "2001"}
+    #"^k.s.h" {:nr "94" :pos "1037", :year "2000"}
+    #"^k.w" {:nr "12" :pos "114", :year "1971"}
+    #"^k.z" {:nr "82" :pos "598", :year "1933"}
+    #"^u.s.p" {:nr "98" :pos "1070", :year "2001"}
+    #"^ustawy o TK" {:nr "102" :pos "643", :year "1997"}
+    #"^ustawy o Trybunale Konstytucyjnym" {:nr "102" :pos "643", :year "1997"}
+    #"^ustawy o komornikach" {:nr "133" :pos "882", :year "1997"}
+    #"^prawa o adwokat" {:nr "16" :pos "124", :year "1982"}
+    #"(?i)^pzp" {:nr "19" :pos "177", :year "2004"}
+    #"(?i)^ustawy pzp" {:nr "19" :pos "177", :year "2004"}
+    #"(?i)^ustawy prawo zamówień publicznych" {:nr "19" :pos "177", :year "2004"}
+    #"(?i)^prawa zamówień publicznych" {:nr "19" :pos "177", :year "2004"}
     })
 
 (defn replace-several [content & replacements]
@@ -129,13 +127,7 @@
     ]
     without-unnecessary-spaces))
 
-(defn extract-nr-poz-case [tokens]
-  ; (println)
-  ; (println "1=====")
-  ; (println (apply str (tokens-to-string tokens)))
-  ; (println "2=====")
-  ; (println (common/get-year-of-law-act (tokens-to-string tokens)))
-  ; (println "3=====")
+(defn extract-nr-pos-case [tokens]
   (let [
           year (common/get-year-of-law-act (tokens-to-string tokens))
           nr-indices (indices #(= % "Nr") tokens)
@@ -143,25 +135,19 @@
             (if (nil? nr-indices)
               nil
               (first nr-indices))
-          poz-indices (indices #(= % "poz") tokens)
-          poz-index
-            (if (nil? poz-indices)
+          pos-indices (indices #(= % "poz") tokens)
+          pos-index
+            (if (nil? pos-indices)
               nil
-              (first poz-indices))
+              (first pos-indices))
         ]
-  (if (or (nil? nr-index) (nil? poz-index))
+  (if (or (nil? nr-index) (nil? pos-index))
     tokens
-    ; (println "NIL CASE")
     (zipmap
-            [:year :nr :poz]
-            [year
-            (nth tokens (+ nr-index 1))
-            (nth tokens (+ poz-index 2))] ))))
+      [:year :nr :pos]
+      [year (nth tokens (+ nr-index 1)) (nth tokens (+ pos-index 2))] ))))
 
 (defn extract-dictionary-case [tokens]
-  ; (println "+++")
-  ; (println (tokens-to-string tokens))
-  ; (println "~~~")
   (let [
           txt (tokens-to-string tokens)
           matched-regex
@@ -172,7 +158,7 @@
           dictionary-record (dictionary-for-acts matched-regex)
           ]
   (if (nil? dictionary-record)
-    (extract-nr-poz-case tokens)
+    (extract-nr-pos-case tokens)
     dictionary-record)))
 
 (defn coord-to-text [token]
@@ -302,10 +288,10 @@
           act (:act link)
     ]
   (apply str (get-art-coords-csv art)
+    "\"" signature "\"" common/csv-delimiter
     "\"" (:year act) "\"" common/csv-delimiter
     "\"" (:nr act) "\"" common/csv-delimiter
-    "\"" (:poz act) "\"" common/csv-delimiter
-    "\"" signature "\"" "\n")))
+    "\"" (:pos act) "\"" "\n")))
 
 (defn get-csv-for-orphaned-link [link signature]
   (let [
