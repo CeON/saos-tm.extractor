@@ -29,12 +29,12 @@
     nil
     (re-seq #"[\d]+" s)))
 
-(defn get-nr-poz-strings [ s ]
+(defn get-nr-pos-strings [ s ]
   (re-find #"Nr\s*\d+,?.poz\.\s*\d+" s))
 
-(defn get-nr-poz-of-law-act [ s ]
+(defn get-nr-pos-of-law-act [ s ]
   (get-numbers
-    (get-nr-poz-strings s)))
+    (get-nr-pos-strings s)))
 
 (defn get-description [ s ]
   (first
@@ -76,13 +76,13 @@
 
 (defn get-data-for-act [ s ]
   (let [
-        nr-poz (get-nr-poz-of-law-act s) 
+        nr-pos (get-nr-pos-of-law-act s) 
         ]
   (zipmap
     [:year :nr :pos :descript :art-coords]
     [(common/get-year-of-law-act s)
-    (first nr-poz)
-    (second nr-poz)
+    (first nr-pos)
+    (second nr-pos)
     (get-description s)
     (get-article-nmbs-point-nmbs-signatures s)])))
 
@@ -123,12 +123,12 @@
           act-coords (nth structure 2)
           year (nth act-coords 0)
           nr (nth act-coords 1)
-          poz (nth act-coords 2)
+          pos (nth act-coords 2)
     ]
   ["\"" art "\"" delim "\"" par "\"" delim "\"" ust "\"" delim
    "\"" pkt "\"" delim "\"" zd "\"" delim "\"" lit "\"" delim
    "\"" signature "\"" delim
-   "\"" year "\"" delim "\"" nr "\"" delim "\"" poz "\"" \newline]))
+   "\"" year "\"" delim "\"" nr "\"" delim "\"" pos "\"" \newline]))
 
 (defn handle-training-data [structure]
   (apply str
