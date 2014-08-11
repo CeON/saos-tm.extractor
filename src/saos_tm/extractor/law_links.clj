@@ -373,14 +373,16 @@
      (mapcat get-data-for-orphaned-link orphaned-links)]))))
 
 (defn extract-law-links-from-file
-  [input-file-path output-file-path orphaned-links-file-path]
+  [input-file-path output-file-path orphaned-links-file-path signature]
   (let [
           input-txt (slurp input-file-path)
-          signature (extract-signature (get-line-with-signature input-txt))
+          signature
+          (if(nil? signature)
+            (extract-signature (get-line-with-signature input-txt))
+            signature)
           signature-file-name (last (str/split input-file-path #"/"))
           links (extract-law-links input-txt)
         ]
-  ; links))
   (spit output-file-path
     (get-csv-for-links
       get-csv-for-extracted-link

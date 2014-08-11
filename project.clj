@@ -9,7 +9,8 @@
   :dependencies [
     [org.clojure/clojure "1.6.0"]
     [clojure-opennlp "0.3.2"]
-    [langlab "1.1.0"] ]
+    [langlab "1.1.0"] 
+    [org.clojure/tools.cli "0.3.1"]]
 
    :plugins [
      [lein-ancient "0.5.5"]])
