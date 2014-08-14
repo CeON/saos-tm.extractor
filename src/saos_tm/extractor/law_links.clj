@@ -450,7 +450,7 @@
           (filter
             #(not-map? (:act %))
             links-after-majority-voting)))
-        nill (println orphaned-links)
+        ; nill (println orphaned-links)
         ]
   (->>
     (zipmap
