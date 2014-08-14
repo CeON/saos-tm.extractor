@@ -129,7 +129,8 @@
     :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "57"}})
   (:extracted-links (extract-law-links
     (str "art. 3 ust. 1-6, art. 4 pkt 5 i 6, art. 57 ustawy z dnia 19 grudnia"
-         " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")))))
+         " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
+    "dictionary.txt"))))
   (is(=
     '({:act {:pos "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "4-6", :par "0", :art "3"}}
@@ -142,7 +143,24 @@
   (:extracted-links (extract-law-links
     (str "art. 3 ust. 4-6 i art. 4 pkt 6 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656) "
-         "z art. 2 i art. 32 ust. 1 Konstytucji")))))
+         "z art. 2 i art. 32 ust. 1 Konstytucji")
+    "dictionary.txt")))
+  (is(=
+    '({:act {:pos "1656", :nr "237", :year "2008"},
+       :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}
+      {:act {:pos "1656", :nr "237", :year "2008"},
+       :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "5"}}))
+  (:extracted-links (extract-law-links
+    (str "art. 3 w związku z art. 5 ustawy z dnia 19 grudnia 2008 r. "
+         "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
+    "dictionary.txt")))
+  (is(=
+    '({:act {:nr "16" :pos "93", :year "1964"},
+       :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}))
+  (:extracted-links (extract-law-links
+    (str "art. 3 kc według ustawy o trybunale oprócz kodeksu wykroczeń ")
+    "dictionary.txt")))
+  )
 
 (deftest tokens-to-string-test []
   (let [

@@ -7,16 +7,18 @@
 
 (defn -main [ & argv ]
   (if (= (nth argv 0) "-extract")
-    (if (and (> (count argv) 4) (= (nth argv 4) "-signature"))
+    (if (and (> (count argv) 5) (= (nth argv 5) "-signature"))
       (law-links/extract-law-links-from-file
       (nth argv 1)
       (nth argv 2)
       (nth argv 3)
-      (nth argv 5))
+      (nth argv 4)
+      (nth argv 6))
       (law-links/extract-law-links-from-file
       (nth argv 1)
       (nth argv 2)
       (nth argv 3)
+      (nth argv 4)
       nil)
       )
     (law-links-trainset/process
