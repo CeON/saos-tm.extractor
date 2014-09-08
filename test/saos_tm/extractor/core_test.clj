@@ -3,6 +3,7 @@
             [clojure.string :as str ]
             [saos-tm.extractor.common :refer :all]
             [saos-tm.extractor.law-links :refer :all]
+            [saos-tm.extractor.judgment-links :refer :all]
             [saos-tm.extractor.law-links-trainset :refer :all]
             [langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
 
@@ -190,3 +191,10 @@
         " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
         " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
         "– p. 21.01.09, P 14/08 (poz. 7)")))))
+
+(deftest extract-signatures-osp-test
+  (let [
+          s (str "ratyfikowana umowa międzynarodowa (por. postanowienie TK z"
+            " dnia 22 lutego 2007 r., Tw 26/06, OTK ZU nr 2/B/2008, poz. 42).")
+    ]
+  (is (= (extract-signatures-osp s) '("Tw 26/06")))))
