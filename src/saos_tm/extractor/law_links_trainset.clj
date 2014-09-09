@@ -29,12 +29,12 @@
     nil
     (re-seq #"[\d]+" s)))
 
-(defn get-nr-poz-strings [ s ]
+(defn get-nr-pos-strings [ s ]
   (re-find #"Nr\s*\d+,?.poz\.\s*\d+" s))
 
-(defn get-nr-poz-of-law-acts [ s ]
+(defn get-nr-pos-of-law-act [ s ]
   (get-numbers
-    (get-nr-poz-strings s)))
+    (get-nr-pos-strings s)))
 
 (defn get-description [ s ]
   (first
@@ -75,9 +75,16 @@
       split-by-art))))
 
 (defn get-data-for-act [ s ]
-  [(get-nr-poz-of-law-acts s)
-   (get-description s)
-   (get-article-nmbs-point-nmbs-signatures s)])
+  (let [
+        nr-pos (get-nr-pos-of-law-act s) 
+        ]
+  (zipmap
+    [:year :nr :pos :descript :art-coords]
+    [(common/get-year-of-law-act s)
+    (first nr-pos)
+    (second nr-pos)
+    (get-description s)
+    (get-article-nmbs-point-nmbs-signatures s)])))
 
 (defn get-links [articles-signatures]
   (for [ x (first articles-signatures)
@@ -85,30 +92,43 @@
     [x y]))
 
 (defn get-training-data [structure-record]
-  [(first structure-record)
+  (zipmap
+    [:year :nr :pos :art-coords-signatures]
+  [
+   (structure-record :year)
+   (structure-record :nr )
+   (structure-record :pos)
    (mapcat get-links
-    (concat (nth structure-record 2)))])
+    (concat (:art-coords structure-record)))]))
 
 (defn join-acts-coords-with-article-coords [record]
   (let [
-        act-coords (first record)
+        act-coords [(:year record) (:nr record) (:pos record)]
         ]
     (map
       #(conj % act-coords)
-      (second record))))
+      (:art-coords-signatures record))))
 
 (defn to-csv [structure]
-  [(apply str
-    (map
-      #(str "\"" % "\"" common/csv-delimiter)
-      (first structure)))
-   (apply str
-    (map
-      #(str "\"" % "\"" common/csv-delimiter)
-      (nth structure 2)))
-   (apply str
-    "\"" (second structure) "\"")
-   \newline])
+  (let [
+          delim common/csv-delimiter
+          art-coords (nth structure 0)
+          art (nth art-coords 0)
+          par (nth art-coords 1)
+          ust (nth art-coords 2)
+          pkt (nth art-coords 3)
+          zd (nth art-coords 4)
+          lit (nth art-coords 5)
+          signature (nth structure 1)
+          act-coords (nth structure 2)
+          year (nth act-coords 0)
+          nr (nth act-coords 1)
+          pos (nth act-coords 2)
+    ]
+  ["\"" art "\"" delim "\"" par "\"" delim "\"" ust "\"" delim
+   "\"" pkt "\"" delim "\"" zd "\"" delim "\"" lit "\"" delim
+   "\"" signature "\"" delim
+   "\"" year "\"" delim "\"" nr "\"" delim "\"" pos "\"" \newline]))
 
 (defn handle-training-data [structure]
   (apply str
@@ -120,11 +140,14 @@
 (defn get-glossary-csv [structure]
   (apply str
     (map 
-      #(str "\"" (first (first %)) "\""
+      #(str
+        "\"" (:year %) "\""
         common/csv-delimiter
-        "\"" (second (first %)) "\""
+        "\"" (:nr %) "\""
         common/csv-delimiter
-        "\"" (second %) "\""
+        "\"" (:pos %) "\""
+        common/csv-delimiter
+        "\"" (:descript %) "\""
         \newline)
       structure)))
 

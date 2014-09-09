@@ -3,6 +3,7 @@
             [clojure.string :as str ]
             [saos-tm.extractor.common :refer :all]
             [saos-tm.extractor.law-links :refer :all]
+            [saos-tm.extractor.judgment-links :refer :all]
             [saos-tm.extractor.law-links-trainset :refer :all]
             [langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
 
@@ -119,30 +120,48 @@
 
 (deftest extract-law-links-test []
   (is(=
-    '({:act {:poz "1656", :nr "237"},
-       :art {:lit "0", :zd "0", :pkt "0", :ust "1-6", :par "0", :art "3"}}
-      {:act {:poz "1656", :nr "237"},
-       :art {:lit "0", :zd "0", :pkt "5", :ust "0", :par "0", :art "4"}}
-      {:act {:poz "1656", :nr "237"},
-       :art {:lit "0", :zd "0", :pkt "6", :ust "0", :par "0", :art "4"}}
-      {:act {:poz "1656", :nr "237"},
-       :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "57"}})
+  '({:act {:pos "1656", :nr "237", :year "2008"},
+    :art {:lit "0", :zd "0", :pkt "0", :ust "1-6", :par "0", :art "3"}}
+    {:act {:pos "1656", :nr "237", :year "2008"},
+    :art {:lit "0", :zd "0", :pkt "5", :ust "0", :par "0", :art "4"}}
+    {:act {:pos "1656", :nr "237", :year "2008"},
+    :art {:lit "0", :zd "0", :pkt "6", :ust "0", :par "0", :art "4"}}
+    {:act {:pos "1656", :nr "237", :year "2008"},
+    :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "57"}})
   (:extracted-links (extract-law-links
     (str "art. 3 ust. 1-6, art. 4 pkt 5 i 6, art. 57 ustawy z dnia 19 grudnia"
-         " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")))))
+         " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
+    "dictionary.txt"))))
   (is(=
-    '({:act {:poz "1656", :nr "237"},
+    '({:act {:pos "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "4-6", :par "0", :art "3"}}
-      {:act {:poz "1656", :nr "237"},
+      {:act {:pos "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "6", :ust "0", :par "0", :art "4"}}
-      {:act {:poz "483", :nr "78"},
+      {:act {:pos "483", :nr "78", :year "1997"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "2"}}
-      {:act {:poz "483", :nr "78"},
+      {:act {:pos "483", :nr "78", :year "1997"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "1", :par "0", :art "32"}}))
   (:extracted-links (extract-law-links
     (str "art. 3 ust. 4-6 i art. 4 pkt 6 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656) "
-         "z art. 2 i art. 32 ust. 1 Konstytucji")))))
+         "z art. 2 i art. 32 ust. 1 Konstytucji")
+    "dictionary.txt")))
+  (is(=
+    '({:act {:pos "1656", :nr "237", :year "2008"},
+       :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}
+      {:act {:pos "1656", :nr "237", :year "2008"},
+       :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "5"}}))
+  (:extracted-links (extract-law-links
+    (str "art. 3 w związku z art. 5 ustawy z dnia 19 grudnia 2008 r. "
+         "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
+    "dictionary.txt")))
+  (is(=
+    '({:act {:nr "16" :pos "93", :year "1964"},
+       :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}))
+  (:extracted-links (extract-law-links
+    (str "art. 3 kc według ustawy o trybunale oprócz kodeksu wykroczeń ")
+    "dictionary.txt")))
+  )
 
 (deftest tokens-to-string-test []
   (let [
@@ -153,3 +172,70 @@
     ]
   (= (tokens-to-string (split-to-tokens s)) s)))
  
+(deftest get-year-of-law-act-test
+  (is (=
+    "1992"
+    (get-year-of-law-act
+      (str
+        "KONSTYTUCYJNE utrzymane w mocy na podstawie art. 77 Ustawy Konstytucyjnej"
+        " z dnia 17 października 1992 r. o wzajemnych stosunkach między"
+        " władzą ustawodawczą i wykonawczą Rzeczypospolitej Polskiej "
+        "oraz o samorządzie terytorialnym "
+        "(Dz. U. Nr 84, poz. 426, z 1995 r. Nr 38, poz. 184): "
+        "(uchylony) ogólnie – w. 6.01.09, SK 22/06 (poz. 1), w. 15.01.09"))))
+  (is (=
+    "1994"
+    (get-year-of-law-act
+      (str
+        " Karta Samorządu Lokalnego sporządzona w Strasburgu"
+        " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
+        " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
+        "– p. 21.01.09, P 14/08 (poz. 7)")))))
+
+(deftest extract-signatures-institutions-test
+  (is (= (extract-signatures-osp
+        "IV CKN 178/01 II CSK 418/13 I 2 C 24/97")
+      ["IV CKN 178/01" "II CSK 418/13" "I 2 C 24/97"]))
+  (is (= (extract-signatures-osp
+        (str "dnia 02.02.2006 r., sygn. akt: III Ca 727/05), to tym "
+        "w wyroku z 15.06.2004 III K 38/03 - oddanie"
+        "dnia 9 lutego 2007 r. III CZP 161/06 opubl. w OSNC 1/208 poz. 4"))
+      ["III Ca 727/05" "III K 38/03" "III CZP 161/06"]))
+  (is (= (extract-signatures-osp
+        "I.2.C.24/97 II.CSK.418/13")
+      ["I.2.C.24/97" "II.CSK.418/13"]))
+  (is (= (extract-signatures-osp
+        (str "marca 2005r. sygn. akt II K.350/04 obejmującego"
+        "2004r. sygn. akt II K.184/04 obejmującego wyrok"
+        "łącznym o sygn. akt II K 350/04 z dnia 22 marca 2005 r. "))
+      ["II K.350/04" "II K.184/04" "II K 350/04"]))
+  (is (= (extract-signatures-kio-no-space
+        "KIO/UZP/1/07 KIO/UZP/102/08")
+      ["KIO/UZP/1/07" "KIO/UZP/102/08"]))
+  (is (= (extract-signatures-kio-no-space
+        (str "  sygn. akt: KIO/UZP/42/07 oraz Wyrok KIO z dnia 22.02.2008 r.,"
+        " sygn. akt: KIO/UZP/99/08) istnienie"))
+      ["KIO/UZP/42/07" "KIO/UZP/99/08"]))
+  (is (= (extract-signatures-kio-space
+        "KIO/UZP 141/08 KIO/UZP 102/08")
+      ["KIO/UZP 141/08" "KIO/UZP 102/08"]))
+  (is (= (extract-signatures-kio-space
+        (str "31.01.2008 r., sygn. akt: KIO/UZP 119/07 – przedłożony"
+          "31.01.2008 r., sygn. akt: KIO/UZP\n119/08.\n"
+          "Sygn. akt KIO/UZP 961/08\nWYROK\nz dnia 24 września 2008 r."))
+      ["KIO/UZP 119/07" "KIO/UZP 119/08" "KIO/UZP 961/08"]))
+  (is (= (extract-signatures-kio-uzp
+        "UZP/ZO/0-1094/99, UZP/ZO/0-725/05")
+      ["UZP/ZO/0-1094/99" "UZP/ZO/0-725/05"]))
+  (is (= (extract-signatures-tk
+        (str "1998 r., sygn. K 3/98, OTK ZU nr 4/1998, poz. 52; 23 lutego 1999"
+          " r., sygn. K 25/98, OTK ZU nr 2/1999, poz. 23; 19 czerwca 2002 r."
+          ", sygn. K 11/02, OTK ZU Sygn. akt K 10/09*"
+          "CZP 161/06 opubl. w OSNC 1/208 poz. 4 "))
+      ["K 3/98" "K 25/98" "K 11/02" "K 10/09"]))
+  (is (= (extract-signatures-sn
+        "BSA I-4110-4/13, BSA I-4110-5/07")
+      ["BSA I-4110-4/13" "BSA I-4110-5/07"]))
+  (is (= (extract-signatures-nsa
+        "I SA/Bd 680/14, IV SA/Gl 543/14, I SA/Rz 794/11")
+      ["I SA/Bd 680/14" "IV SA/Gl 543/14" "I SA/Rz 794/11"])))

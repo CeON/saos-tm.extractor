@@ -18,3 +18,6 @@ nr-poz.txt
 training-data/
 src/training_set_builder/.fuse_hidden*
 extracted/
+
+# trash
+.fuse_hidden*
