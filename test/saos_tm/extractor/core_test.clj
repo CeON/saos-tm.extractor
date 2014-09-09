@@ -192,14 +192,7 @@
         " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
         "– p. 21.01.09, P 14/08 (poz. 7)")))))
 
-(deftest extract-signatures-osp-test
-  (let [
-          s (str "ratyfikowana umowa międzynarodowa (por. postanowienie TK z"
-            " dnia 22 lutego 2007 r., Tw 26/06, OTK ZU nr 2/B/2008, poz. 42).")
-    ]
-  (is (= (extract-signatures-osp s) '("Tw 26/06")))))
-
-(deftest extract-signatures-osp-test
+(deftest extract-signatures-institutions-test
   (is (= (extract-signatures-osp
         "IV CKN 178/01 II CSK 418/13 I 2 C 24/97")
       ["IV CKN 178/01" "II CSK 418/13" "I 2 C 24/97"]))
