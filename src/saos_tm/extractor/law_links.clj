@@ -8,14 +8,8 @@
   (:import java.io.File)
   (:gen-class))
 
-(defn split-to-tokens [s]
-  (lg-split-tokens-bi "pl" s))
-
 (defn find-first [f coll]
   (first (filter f coll)))
-
-(defn indices [pred coll]
-   (keep-indexed #(when (pred %2) %1) coll))
 
 (defn in? [seq elm]
   (some #(= elm %) seq))
@@ -38,7 +32,7 @@
 
 (defn get-coords-tokens [first-token-index tokens]
   (first
-    (indices
+    (common/indices
       #(and (not-coord-token? %) (not-coords-nmb? %))
       (drop first-token-index tokens))))
 
@@ -134,27 +128,27 @@
 (def not-nil? (complement nil?))
 (def not-map? (complement map?))
 
-(defn re-pos [re s]
-  (loop [m (re-matcher re s)]
-   (if (.find m)
-    (.start m))))
-
 (defn min-index [coll]
   (.indexOf coll
     (apply min coll)))
+
+(defn regex-first-position [re s]
+  (loop [m (re-matcher re s)]
+   (if (.find m)
+    (.start m))))
 
 (defn extract-dictionary-case [tokens dictionary]
   (profiling/p :dict
   (let [
           txt (tokens-to-string tokens)
           matched-indices
-            (indices
+            (common/indices
               #(not-nil? (re-find % txt))
               (map #(first %) dictionary))
           positions
           (if-not (= 1 (count matched-indices))
             (map
-              #(re-pos (first (nth dictionary %)) txt)
+              #(regex-first-position (first (nth dictionary %)) txt)
               matched-indices))
           min-i
           (if-not (= 1 (count matched-indices))
@@ -178,12 +172,12 @@
   (profiling/p :nr-pos
   (let [
           year (common/get-year-of-law-act (tokens-to-string tokens))
-          nr-indices (indices #(= % "Nr") tokens)
+          nr-indices (common/indices #(= % "Nr") tokens)
           nr-index
             (if (nil? nr-indices)
               nil
               (first nr-indices))
-          pos-indices (indices #(= % "poz") tokens)
+          pos-indices (common/indices #(= % "poz") tokens)
           pos-index
             (if (nil? pos-indices)
               nil
@@ -210,7 +204,7 @@
 
 (defn get-interfering-art-coords-ranges [tokens]
   (map #(find-coords-ranges % tokens) 
-    (indices 
+    (common/indices 
       #(or (= % "art") (= % "Art") (= % "§")) 
       tokens)))
 
@@ -279,7 +273,7 @@
           lines-with-sygn-text (filter #(.startsWith % "Sygn.") lines)
           index-of-first-line-ending-with-date
             (first
-              (indices
+              (common/indices
                 #(.endsWith % " r.")
                 lines))
     ]
@@ -450,7 +444,6 @@
           (filter
             #(not-map? (:act %))
             links-after-majority-voting)))
-        ; nill (println orphaned-links)
         ]
   (->>
     (zipmap

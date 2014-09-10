@@ -239,3 +239,26 @@
   (is (= (extract-signatures-nsa
         "I SA/Bd 680/14, IV SA/Gl 543/14, I SA/Rz 794/11")
       ["I SA/Bd 680/14" "IV SA/Gl 543/14" "I SA/Rz 794/11"])))
+
+(deftest extract-signatures-universal-test
+  (is (= (extract-signatures-universal
+        "15 października 2008 r. (sygn. Tw 19/08, OTK ZU nr 2/B/2009, poz. 67)")
+      ["Tw 19/08"]))
+  (is (= (extract-signatures-universal
+        (str "się pod sygnaturą XI GCo 74/11, nie doprowadziło 15 października "
+        "2008 r. (sygn. Tw 19/08, OTK ZU nr 2/B/2009, poz. 67)"))
+      ["XI GCo 74/11", "Tw 19/08"]))
+    )
+
+(deftest extract-all-signatures-test
+  (is (= (extract-all-signatures
+        "października 2010 r. (sygn. akt I C-upr 14/10) oraz postanowieniem")
+      ["I C-upr 14/10"]))
+  (is (= (extract-all-signatures
+        "października 2010 r. (sygn. akt 234 14/10) oraz postanowieniem")
+      ["234 14/10"]))
+  (is (= (extract-all-signatures
+        (str "8 kwietnia 2009 r. (sygn.: Tw 9/08, Tw 11/08, Tw 12/08, Tw 16/08,"
+        " Tw 19/08) Trybunał"))
+      ["Tw 9/08","Tw 11/08","Tw 12/08","Tw 16/08","Tw 19/08"]))
+  )
