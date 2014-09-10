@@ -118,3 +118,18 @@
 
 (defn indices [pred coll]
    (keep-indexed #(when (pred %2) %1) coll))
+
+
+(defn seq-to-csv [coll]
+  (let [
+          with-delim-at-the-end
+          (str/join ""
+            (map
+              #(apply str "\"" % "\"" csv-delimiter)
+              coll))
+          with-newline-at-the-end
+          (str
+            (apply str (drop-last with-delim-at-the-end))
+            (str \newline))
+        ]
+        with-newline-at-the-end))

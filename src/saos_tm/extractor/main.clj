@@ -1,7 +1,8 @@
 (ns saos-tm.extractor.main
   (:require
     [ saos-tm.extractor.law-links-trainset :as law-links-trainset ]
-    [ saos-tm.extractor.law-links :as law-links ])
+    [ saos-tm.extractor.law-links :as law-links ]
+    [ saos-tm.extractor.judgment-links :as judgment-links ])
   (:import java.io.File)
   (:gen-class))
 
@@ -19,9 +20,12 @@
       (nth argv 2)
       (nth argv 3)
       (nth argv 4)
-      nil)
-      )
-    (law-links-trainset/process
-      (nth argv 0)
-      (nth argv 1)
-      (nth argv 2))))
+      nil))
+    (if (= (nth argv 0) "-extract-judgment")
+      (judgment-links/extract-signatures-from-file
+        (nth argv 1)
+        (nth argv 2))
+      (law-links-trainset/process
+        (nth argv 0)
+        (nth argv 1)
+        (nth argv 2)))))

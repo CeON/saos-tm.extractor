@@ -28,13 +28,14 @@
 (defn not-tk? [s]
   (or
     (common/substring? "nr" s)
+    (common/substring? "Nr" s)
     (common/substring? "OSNC" s)
     (= (last s) "/")))
 
 (defn extract-signatures-tk [s]
   (map #(subs % 1 (count %))
     (remove #(not-tk? %)
-      (re-seq #"\s[a-zA-Z]+\s+\d+/\d+" s))))
+      (re-seq #"[^IVXLCDM]\s[a-zA-Z]+\s+\d+/\d+" s))))
 
 (defn extract-signatures-sn [s]
   (extract-and-trim #"[a-zA-Z]+\s+[IVXLCDM]+-\d+-\d+/\d+" s))
@@ -49,19 +50,31 @@
       (recur m (concat res [(.end m)]))
       res)))
 
+(defn cleanse-signature [s]
+  (let [
+          last-char (last s)
+          ]
+          (if
+            (some #{last-char} '(\, \; \. \)))
+              (apply str (cleanse-signature (drop-last s)))
+              s)))
+
 (defn extract-signature-from-position [s start end]
   (let [
-          tokens (str/split (subs s start end) #" ")
+          tokens (str/split (subs s start end) #"\s")
+          
           first-token-with-slash-index
           (first
             (common/indices
               #(common/substring? "/" %)
               tokens))
           last-token-with-slash-index
-          (if
-            (common/substring? "/"
-              (nth tokens (inc first-token-with-slash-index)))
-            (inc first-token-with-slash-index)
+          (if (< first-token-with-slash-index 5)
+            (if
+              (common/substring? "/"
+                (nth tokens (inc first-token-with-slash-index)))
+              (inc first-token-with-slash-index)
+              first-token-with-slash-index)
             first-token-with-slash-index)
           token (nth tokens last-token-with-slash-index)
           signature-end-position
@@ -70,17 +83,12 @@
               (subs s start end)
               token)
             (count token))
-          signature (subs s start (+ signature-end-position start))
-          clean-signature
-          (if (or
-              (= (last signature) \,)
-              (= (last signature) \;)
-              (= (last signature) \.)
-              (= (last signature) \)))
-            (apply str (drop-last signature))
-            signature)
+          signature
+          (if (< first-token-with-slash-index 5)
+            (subs s start (+ signature-end-position start))
+            "")
           ]
-          (str/trim clean-signature)))
+          signature))
 
 (defn extract-signatures-universal [s]
   (let [
@@ -100,23 +108,36 @@
             s (nth pos i) (nth pos (inc i))))))
 
 (defn extract-all-signatures [s]
-  (distinct
-    (concat
-      (extract-signatures-universal s)
-      (extract-signatures-nsa s)
-      (extract-signatures-sn s)
-      (extract-signatures-tk s)
-      (extract-signatures-osp s)
-      (extract-signatures-kio-uzp s)
-      (extract-signatures-kio-space s)
-      (extract-signatures-kio-no-space s))))
+  (let [
+          all
+          (concat
+            (extract-signatures-universal s)
+            (extract-signatures-nsa s)
+            (extract-signatures-sn s)
+            (extract-signatures-tk s)
+            (extract-signatures-osp s)
+            (extract-signatures-kio-uzp s)
+            (extract-signatures-kio-space s)
+            (extract-signatures-kio-no-space s))
+          clean (map #(cleanse-signature (str/trim %)) all)
+          ]
+          (distinct (remove #(= "" %) clean))))
 
 (defn extract-signatures-from-file
   [input-file-path output-file-path]
   (let [
           input-txt (slurp input-file-path)
           signatures (extract-all-signatures input-txt)
+          file-name
+          (last
+            (str/split
+              input-file-path
+              (re-pattern (str File/separatorChar))))
+          csv 
+          (apply str
+            (common/seq-to-csv [file-name])
+            (common/seq-to-csv [(count signatures)])
+            (common/seq-to-csv signatures))
         ]
-  (spit output-file-path
-    signatures)))
+        (spit output-file-path csv)))
  
