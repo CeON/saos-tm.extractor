@@ -133,3 +133,5 @@
             (str \newline))
         ]
         with-newline-at-the-end))
+
+(def not-nil? (complement nil?))

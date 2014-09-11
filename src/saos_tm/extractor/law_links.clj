@@ -125,7 +125,7 @@
     ]
     without-unnecessary-spaces))
 
-(def not-nil? (complement nil?))
+
 (def not-map? (complement map?))
 
 (defn min-index [coll]
@@ -143,7 +143,7 @@
           txt (tokens-to-string tokens)
           matched-indices
             (common/indices
-              #(not-nil? (re-find % txt))
+              #(common/not-nil? (re-find % txt))
               (map #(first %) dictionary))
           positions
           (if-not (= 1 (count matched-indices))
@@ -159,7 +159,7 @@
             (nth matched-indices min-i)
             (first matched-indices))
           dictionary-record
-          (if (not-nil? first-index)
+          (if (common/not-nil? first-index)
             (second
               (nth dictionary first-index))
             nil)
