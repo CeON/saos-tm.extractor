@@ -47,74 +47,68 @@
 (defn extract-signatures-nsa [s]
   (extract #"[IVXLCDM]+\s+[a-zA-Z]+/[a-zA-Z]+\s+\d+/\d+" s))
 
-(defn regex-positions [re s]
-  (loop [
-          m (re-matcher re s)
-          res #{}
-          ]
-          (if (.find m)
-            (recur m (union res #{(.end m)}))
-            (set res))))
-
 (defn cleanse-signature [s]
   (str/trim
     (str/replace s #"[\.,;)]+$" "")))
 
-(defn slash-token-good? [i]
-  (and
-    (common/not-nil? i)
-    (< i 5)))
+(defn are-subsequent [first-elem second-elem]
+  (= (- second-elem first-elem) 1))
 
-(defn extract-signature-from-position [s start end]
-  (let [
-          tokens (str/split (subs s start end) #"\s")
-          tokens-with-slash-indices
-            (common/indices
-              #(common/substring? "/" %)
-              tokens)
-          first-token-with-slash-index
-            (if (nil? tokens-with-slash-indices)
-              nil
-              (first tokens-with-slash-indices))
-    ]
-  (if (slash-token-good? first-token-with-slash-index)
-      (let [
-              last-token-with-slash-index
-                (if
-                  (and
-                    (< first-token-with-slash-index (dec (count tokens)))
-                    (common/substring? "/"
-                      (nth tokens (inc first-token-with-slash-index))))
-                  (inc first-token-with-slash-index)
-                  first-token-with-slash-index)
-              token (nth tokens last-token-with-slash-index)
-              signature-end-position
-                (+
-                  (str/.indexOf
-                    (subs s start end)
-                    token)
-                  (count token))
-              signature (subs s start (+ signature-end-position start))
-          ]
-          signature)
-  "")))
+(defn extract-signature-universal [tokens]
+    (let [
+            tokens-with-slash-indices
+              (common/indices
+                #(common/substring? "/" %)
+                tokens)
+            signature-last-token-index
+              (if
+                (and
+                  (> (count tokens-with-slash-indices) 1)
+                  (are-subsequent
+                    (first tokens-with-slash-indices)
+                    (second tokens-with-slash-indices)))
+                (second tokens-with-slash-indices)
+                (first tokens-with-slash-indices))
+            signature-tokens
+              (take
+                (inc signature-last-token-index)
+                tokens)
+      ]
+      (str/join " " signature-tokens)))
+
+(defn has-slash? [s]
+  (common/substring? "/" s))
+
+(def signature-regex
+  #"sygn\.\s*(akt)?:?|sygnaturą\s*(akt)?:?|sygnaturze\s*(akt)?:?|sygnaturach\s*(akt)?:?")
 
 (defn extract-signatures-universal [s]
+  "function splits text by signature indicators"
+  "it takes 5 first tokens in each candidate string"
+  "looks for token with slash char"
+  "if candidate doesn't have such token it is not a signature"
+  "it takes all tokens up to first with slash or second if they are subsequent"
   (let [
-          pos
-            (concat
-              (regex-positions #"sygn\.\s*(akt)?:?" s)
-              (regex-positions #"sygnaturą\s*(akt)?:?" s)
-              (regex-positions #"sygnaturze\s*(akt)?:?" s)
-              (regex-positions #"sygnaturach\s*(akt)?:?" s))
-          pos
-            (sort
-              (concat pos [(count s)]))
-        ]
-        (set
-          (for [i (range (dec (count pos)))]
-            (extract-signature-from-position
-              s (nth pos i) (nth pos (inc i)))))))
+          signature-candidates (str/split s signature-regex)
+    ]
+  (if (> (count signature-candidates) 1)
+    (let [
+            signature-candidates-in-tokens
+              (map
+                #(take 5
+                  (str/split % #"\s"))
+                signature-candidates)
+            having-slash-token-candidates
+              (filter
+                #(some has-slash? %)
+                signature-candidates-in-tokens)
+          ]
+          (set
+            (map
+              #(extract-signature-universal %)
+              having-slash-token-candidates)))
+    nil)))
+    
 
 (defn extract-all-signatures [s]
   (let [
