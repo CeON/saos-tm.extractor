@@ -14,19 +14,41 @@
       #(str/replace % "\n" " ")
       (re-seq reg s))))
 
+
+(defn matches? [s re]
+  (common/not-nil? (re-matches re s)))
+
+(def osp-regex
+  #"[IVXLCDM]+[\s\.]+[0-9]*[\s\.]*[a-zA-Z]*-?[a-zA-Z]*[\s\.]+\d+/\d+")
+
+(defn is-osp-signature? [s]
+  (matches? s osp-regex))
+
 (defn extract-signatures-osp [s]
-  (extract
-    #"[IVXLCDM]+[\s\.]+[0-9]*[\s\.]*[a-zA-Z]*-?[a-zA-Z]*[\s\.]+\d+/\d+"
-    s))
+  (extract osp-regex s))
+
+(def kio-no-space-regex #"KIO/UZP/\d+/\d+")
 
 (defn extract-signatures-kio-no-space [s]
-  (extract #"KIO/UZP/\d+/\d+" s))
+  (extract kio-no-space-regex s))
+
+(def kio-space-regex #"KIO/UZP\s+\d+/\d+")
 
 (defn extract-signatures-kio-space [s]
-  (extract #"KIO/UZP\s+\d+/\d+" s))
+  (extract kio-space-regex s))
+
+(def kio-uzp-regex #"UZP/ZO/\d+-\d+/\d+")
 
 (defn extract-signatures-kio-uzp [s]
-  (extract #"UZP/ZO/\d+-\d+/\d+" s))
+  (extract kio-uzp-regex s))
+
+
+
+(defn is-kio-signature? [s]
+  (or
+    (matches? s kio-no-space-regex)
+    (matches? s kio-space-regex)
+    (matches? s kio-uzp-regex)))
 
 (defn not-tk? [s]
   (or
@@ -35,21 +57,42 @@
     (common/substring? "OSNC" s)
     (= (last s) "/")))
 
+(def tk-regex #"[a-zA-Z]+\s+\d+/\d+")
+(def tk-regex-excluding-osp #"[^IVXLCDM]\s[a-zA-Z]+\s+\d+/\d+")
+
+(defn is-tk-signature? [s]
+  (matches? s tk-regex))
+
 (defn extract-signatures-tk [s]
   (set
     (map #(subs % 1 (count %))
       (remove #(not-tk? %)
-        (extract #"[^IVXLCDM]\s[a-zA-Z]+\s+\d+/\d+" s)))))
+        (extract tk-regex-excluding-osp s)))))
+
+(def sn-regex #"[a-zA-Z]+\s+[IVXLCDM]+-\d+-\d+/\d+")
+
+(defn is-sn-signature? [s]
+  (matches? s sn-regex))
+
+(defn is-sn-or-osp-signature? [s]
+  (or
+    (matches? s sn-regex)
+    (matches? s osp-regex)))
 
 (defn extract-signatures-sn [s]
-  (extract #"[a-zA-Z]+\s+[IVXLCDM]+-\d+-\d+/\d+" s))
+  (extract sn-regex s))
+
+(def nsa-regex #"[IVXLCDM]+\s+[a-zA-Z]+/[a-zA-Z]+\s+\d+/\d+")
+
+(defn is-nsa-signature? [s]
+  (matches? s nsa-regex))
 
 (defn extract-signatures-nsa [s]
-  (extract #"[IVXLCDM]+\s+[a-zA-Z]+/[a-zA-Z]+\s+\d+/\d+" s))
+  (extract nsa-regex s))
 
 (defn cleanse-signature [s]
   (str/trim
-    (str/replace s #"[\.,;)]+$" "")))
+    (str/replace s #"[\.,;):]+$" "")))
 
 (defn are-subsequent [first-elem second-elem]
   (= (- second-elem first-elem) 1))
@@ -136,7 +179,45 @@
               (str/split
                 input-file-path
                 (re-pattern (str File/separatorChar))))
-          to-write (concat [file-name] [(count signatures)] signatures)
+          osp-or-sn-signatures-count
+            (count
+              (filter
+                #(is-sn-or-osp-signature? %)
+            signatures))
+          kio-signatures-count
+            (count
+              (filter
+                #(is-kio-signature? %)
+            signatures))
+          tk-signatures-count
+            (count
+              (filter
+                #(is-tk-signature? %)
+            signatures))
+          nsa-signatures-count
+            (count
+              (filter
+                #(is-nsa-signature? %)
+            signatures))
+          unknown-signatures-count
+            (count
+              (remove
+                #(or
+                  (is-sn-or-osp-signature? %)
+                  (is-kio-signature? %)
+                  (is-tk-signature? %)
+                  (is-nsa-signature? %))
+              signatures))
+          to-write
+            (concat
+              [file-name]
+              [(count signatures)]
+              [osp-or-sn-signatures-count]
+              [kio-signatures-count]
+              [tk-signatures-count]
+              [nsa-signatures-count]
+              [unknown-signatures-count]
+              signatures)
           csv (common/seq-to-csv to-write) 
         ]
         (spit output-file-path csv)))

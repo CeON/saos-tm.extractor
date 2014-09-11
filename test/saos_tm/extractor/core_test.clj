@@ -266,3 +266,22 @@
         (str "lkjldfkj Tw 19/08 sdkfjhsdfnr Tw 19/08"))
       #{"Tw 19/08"}))
   )
+
+(deftest is-signature-test
+  (is (is-osp-signature? "IV CKN 178/01"))
+  (is (is-osp-signature? "I.2.C.24/97"))
+  (is (= (is-osp-signature? "sdjhg sjdhf") false))
+  (is (is-kio-signature? "KIO/UZP/102/08"))
+  (is (is-kio-signature? "KIO/UZP/102/08"))
+  (is (is-kio-signature? "KIO/UZP/102/08"))
+  (is (is-kio-signature? "KIO/UZP 102/08"))
+  (is (is-kio-signature? "UZP/ZO/0-1094/99"))
+  (is (= (is-kio-signature? "sdjhg sjdhf") false))
+  (is (is-tk-signature? "Tw 09/87"))
+  (is (= (is-tk-signature? "I Tw 09/87") false))
+  (is (= (is-tk-signature? "sdkjh / askjdh") false))
+  (is (is-sn-signature? "BSA I-4110-4/13"))
+  (is (is-nsa-signature? "I SA/Bd 680/14"))
+  (is (is-sn-or-osp-signature? "IV CKN 178/01"))
+  (is (is-sn-or-osp-signature? "BSA I-4110-4/13")))
+    
