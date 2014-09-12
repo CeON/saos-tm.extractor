@@ -1,6 +1,7 @@
 (ns saos-tm.extractor.common
   (:require
     [ clojure.string :as str ]
+    [ clojure.set :refer :all ]
     [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ])
   (:import java.io.File)
   (:gen-class))
@@ -135,3 +136,21 @@
         with-newline-at-the-end))
 
 (def not-nil? (complement nil?))
+
+(defn get-measure [true-positives-count elements-count]
+  (if
+      (= elements-count 0)
+      nil
+      (float (/ true-positives-count elements-count))))
+
+(defn get-precision-recall [extracted-set benchmark-set]
+  (let [
+          true-positives-count
+            (count
+              (intersection extracted-set benchmark-set))
+          extracted-count (count extracted-set)
+          benchmark-count (count benchmark-set)
+          precision (get-measure true-positives-count extracted-count)
+          recall (get-measure true-positives-count benchmark-count)
+    ]
+    (zipmap [:precision :recall] [precision recall])))

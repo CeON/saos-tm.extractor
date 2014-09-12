@@ -14,7 +14,6 @@
       #(str/replace % "\n" " ")
       (re-seq reg s))))
 
-
 (defn matches? [s re]
   (common/not-nil? (re-matches re s)))
 
@@ -41,8 +40,6 @@
 
 (defn extract-signatures-kio-uzp [s]
   (extract kio-uzp-regex s))
-
-
 
 (defn is-kio-signature? [s]
   (or

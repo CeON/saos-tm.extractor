@@ -1,9 +1,11 @@
 (ns saos-tm.extractor.judgment-links-test
-  (:require [clojure.test :refer :all]
-            [clojure.string :as str ]
-            [saos-tm.extractor.common :refer :all]
-            [saos-tm.extractor.judgment-links :refer :all]
-            [langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
+  (:require
+    [ clojure.test :refer :all ]
+    [ clojure.string :as str ]
+    [ clojure.set :refer :all ]
+    [ saos-tm.extractor.common :refer :all ]
+    [ saos-tm.extractor.judgment-links :refer :all ]
+    [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
 
 (deftest extract-signatures-institutions-test
   (is (= (extract-signatures-osp
@@ -97,4 +99,53 @@
   (is (is-nsa-signature? "I SA/Bd 680/14"))
   (is (is-sn-or-osp-signature? "IV CKN 178/01"))
   (is (is-sn-or-osp-signature? "BSA I-4110-4/13")))
-    
+
+(def law-tests-data-path "test-data/")
+
+(defn filter-ending-with [ss s]
+  (sort
+    (filter
+      #(.endsWith (str %) s)
+      ss)))
+
+(defn split-and-trim [s]
+  (map
+    #(str/trim %)
+    (str/split-lines s)))
+
+(defn get-average [coll]
+  (/ (reduce + coll) (count coll)))
+
+(defn get-elements [key-name coll]
+  (map
+    #(key-name %)
+    coll))
+
+(deftest judgment-links-efficiency-test
+  (let [
+           filePaths
+             (.listFiles
+               (clojure.java.io/file law-tests-data-path))
+           txtFilesPaths (filter-ending-with filePaths ".txt") 
+           txtFiles (map #(slurp %) txtFilesPaths)
+           extracted-signatures (map #(extract-all-signatures %) txtFiles)
+           jdgFilesPaths (filter-ending-with filePaths ".jdg")
+           jdgFiles (map #(slurp %) jdgFilesPaths)
+           benchmark-signatures
+            (map
+              #(set (remove empty? (split-and-trim %)))
+              jdgFiles)
+           precisions-recalls
+            (map
+              #(get-precision-recall %1 %2)
+              extracted-signatures
+              benchmark-signatures)
+           precisions (get-elements :precision precisions-recalls)
+           recalls (get-elements :recall precisions-recalls)
+           average-precision (get-average precisions)
+           average-recall (get-average recalls)
+           _ (println (str \newline "av. precision: " average-precision
+                " av. recall: " average-recall))
+     ]
+     (is (> average-precision 0.84))
+     (is (> average-recall 0.96))))
