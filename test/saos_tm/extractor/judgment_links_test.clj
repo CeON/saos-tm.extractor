@@ -126,15 +126,18 @@
            filePaths
              (.listFiles
                (clojure.java.io/file law-tests-data-path))
-           txtFilesPaths (filter-ending-with filePaths ".txt") 
-           txtFiles (map #(slurp %) txtFilesPaths)
-           extracted-signatures (map #(extract-all-signatures %) txtFiles)
            jdgFilesPaths (filter-ending-with filePaths ".jdg")
            jdgFiles (map #(slurp %) jdgFilesPaths)
            benchmark-signatures
             (map
               #(set (remove empty? (split-and-trim %)))
               jdgFiles)
+           txtFilesPaths
+            (map
+              #(str/replace % #"\.jdg" ".txt")
+              jdgFilesPaths)
+           txtFiles (map #(slurp %) txtFilesPaths)
+           extracted-signatures (map #(extract-all-signatures %) txtFiles)
            precisions-recalls
             (map
               #(get-precision-recall %1 %2)
