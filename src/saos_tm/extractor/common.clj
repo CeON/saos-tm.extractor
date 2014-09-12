@@ -7,6 +7,9 @@
 
 (def csv-delimiter ",")
 
+(defn split-to-tokens [s]
+  (lg-split-tokens-bi "pl" s))
+
 (defn substring? [sub st]
   (not= (str/.indexOf st sub) -1))
 
@@ -48,7 +51,7 @@
 
 (defn remove-trailing-cojunction [s]
   (let [
-          tokens (lg-split-tokens-bi "pl" s)
+          tokens (split-to-tokens s)
           last-token (last tokens)
           ]
   (if (or (= last-token "i") (= last-token "z") (= last-token "oraz"))
@@ -111,3 +114,24 @@
     (apply str
       (re-seq #"[\d]+" pattern))
     (get-year-from-act-name s))))
+
+
+(defn indices [pred coll]
+   (keep-indexed #(when (pred %2) %1) coll))
+
+
+(defn seq-to-csv [coll]
+  (let [
+          with-delim-at-the-end
+          (str/join ""
+            (map
+              #(apply str "\"" % "\"" csv-delimiter)
+              coll))
+          with-newline-at-the-end
+          (str
+            (apply str (drop-last with-delim-at-the-end))
+            (str \newline))
+        ]
+        with-newline-at-the-end))
+
+(def not-nil? (complement nil?))
