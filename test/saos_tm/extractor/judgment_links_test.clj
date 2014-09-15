@@ -3,6 +3,7 @@
     [ clojure.test :refer :all ]
     [ clojure.string :as str ]
     [ clojure.set :refer :all ]
+    [ clojure-csv.core :refer :all ]
     [ saos-tm.extractor.common :refer :all ]
     [ saos-tm.extractor.judgment-links :refer :all ]
     [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
@@ -108,10 +109,10 @@
       #(.endsWith (str %) s)
       ss)))
 
-(defn split-and-trim [s]
+(defn split-coll [coll]
   (map
     #(str/trim %)
-    (str/split-lines s)))
+    coll))
 
 (defn get-average [coll]
   (/ (reduce + coll) (count coll)))
@@ -121,23 +122,32 @@
     #(key-name %)
     coll))
 
+
+(defn firsts [coll]
+  (map #(first %) coll))
+
 (deftest judgment-links-efficiency-test
   (let [
-           filePaths
+           file-paths
              (.listFiles
                (clojure.java.io/file law-tests-data-path))
-           jdgFilesPaths (filter-ending-with filePaths ".jdg")
-           jdgFiles (map #(slurp %) jdgFilesPaths)
+           jdg-files-paths (filter-ending-with file-paths ".jdg")
+           jdg-files (map #(slurp %) jdg-files-paths)
+           jdg-signatures
+            (map
+              #(firsts
+                (parse-csv %))
+              jdg-files)
            benchmark-signatures
             (map
-              #(set (remove empty? (split-and-trim %)))
-              jdgFiles)
-           txtFilesPaths
+              #(set (remove empty? (split-coll %)))
+              jdg-signatures)
+           txt-files-paths
             (map
               #(str/replace % #"\.jdg" ".txt")
-              jdgFilesPaths)
-           txtFiles (map #(slurp %) txtFilesPaths)
-           extracted-signatures (map #(extract-all-signatures %) txtFiles)
+              jdg-files-paths)
+           txt-files (map #(slurp %) txt-files-paths)
+           extracted-signatures (map #(extract-all-signatures %) txt-files)
            precisions-recalls
             (map
               #(get-precision-recall %1 %2)
@@ -150,5 +160,5 @@
            _ (println (str \newline "av. precision: " average-precision
                 " av. recall: " average-recall))
      ]
-     (is (> average-precision 0.84))
-     (is (> average-recall 0.96))))
+     (is (> average-precision 0.818))
+     (is (> average-recall 0.943))))

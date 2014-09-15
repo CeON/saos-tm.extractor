@@ -454,7 +454,8 @@
 (defn extract-law-links-from-file
   [input-file-path output-file-path orphaned-links-file-path
    dictionary-file-path signature ]
-  (let [
+   (time
+     (let [
           input-txt (slurp input-file-path)
           signature
           (if(nil? signature)
@@ -465,13 +466,13 @@
           ; (profiling/profile :info :Arithmetic
             (extract-law-links input-txt dictionary-file-path)
         ]
-  (spit output-file-path
-    (get-csv-for-links
-      get-csv-for-extracted-link
-      (:extracted-links links)
-      signature))
-  (spit orphaned-links-file-path
-    (get-csv-for-links
-      get-csv-for-orphaned-link
-      (:orphaned-links links)
-      signature))))
+      (spit output-file-path
+        (get-csv-for-links
+          get-csv-for-extracted-link
+          (:extracted-links links)
+          signature))
+      (spit orphaned-links-file-path
+        (get-csv-for-links
+          get-csv-for-orphaned-link
+          (:orphaned-links links)
+          signature)))))

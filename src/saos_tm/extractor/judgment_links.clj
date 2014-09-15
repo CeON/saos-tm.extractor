@@ -168,7 +168,8 @@
 
 (defn extract-signatures-from-file
   [input-file-path output-file-path]
-  (let [
+  (time
+    (let [
           input-txt (slurp input-file-path)
           signatures (extract-all-signatures input-txt)
           file-name
@@ -217,5 +218,5 @@
               signatures)
           csv (common/seq-to-csv to-write) 
         ]
-        (spit output-file-path csv)))
+        (spit output-file-path csv))))
  
