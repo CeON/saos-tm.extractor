@@ -1,8 +1,10 @@
 (ns saos-tm.extractor.law-links-test
   (:require [clojure.test :refer :all]
             [clojure.string :as str ]
+            [ clojure-csv.core :refer :all ]
             [saos-tm.extractor.common :refer :all]
             [saos-tm.extractor.law-links :refer :all]
+            [saos-tm.extractor.common-test :refer :all ]
             [langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
 
 (deftest article-ranges-test []
@@ -133,3 +135,31 @@
         " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
         "– p. 21.01.09, P 14/08 (poz. 7)")))))
     
+(defn read-law-links-to-maps [file-data]
+  (let [
+          data (parse-csv file-data)
+    ]
+    (into #{} (map
+      #(zipmap
+        [:art :act]
+        [(zipmap
+          [:art :par :ust :pkt :zd :lit]
+          (take 6 %))
+         (zipmap
+          [:year :nr :pos]
+          (take-last 3 %))])
+      data))))
+
+(defn get-benchmark-records [files]
+  (map
+    read-law-links-to-maps
+    files))
+
+(defn law-links-extract [txt-files]
+  (map
+    #(into #{} (:extracted-links (extract-law-links % "dictionary.txt")))
+    txt-files))
+
+(deftest judgment-links-efficiency-test
+  (links-efficiency-test ".law" #"\.law"
+    get-benchmark-records law-links-extract 0.58 0.495))

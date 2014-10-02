@@ -1,6 +1,8 @@
 (ns saos-tm.extractor.common-test
   (:require
     [clojure.test :refer :all]
+    [ clojure.string :as str ]
+    [ clojure-csv.core :refer :all ]
     [saos-tm.extractor.common :refer :all]))
 
 (deftest article-coords-test
@@ -78,3 +80,91 @@
     (=
       {:precision 0.5 :recall 0.25}
       (get-precision-recall #{1 2} #{2 3 4 5}))))
+
+(defn filter-ending-with [ss s]
+  (sort
+    (filter
+      #(.endsWith (str %) s)
+      ss)))
+
+(defn split-coll [coll]
+  (map
+    #(str/trim %)
+    coll))
+
+(defn get-average [coll]
+  (/ (reduce + coll) (count coll)))
+
+(defn get-elements [key-name coll]
+  (map
+    #(key-name %)
+    coll))
+
+
+(defn firsts [coll]
+  (map #(first %) coll))
+
+
+(defn get-signature [file-data]
+  (firsts
+    (parse-csv file-data)))
+
+(defn read-files [dir ext ext-regex]
+  (let [
+           file-paths
+             (.listFiles
+               (clojure.java.io/file dir))
+           ext-files-paths (filter-ending-with file-paths ext)
+           ext-files (map #(slurp %) ext-files-paths)
+           txt-files-paths
+            (map
+              #(str/replace % ext-regex ".txt")
+              ext-files-paths)
+           txt-files (map #(slurp %) txt-files-paths)
+           ]
+           (zipmap
+             [:ext :txt]
+             [ext-files txt-files])))
+
+(defn get-precisions-recalls [coll1 coll2]
+  (map
+    #(get-precision-recall %1 %2)
+    coll1
+    coll2))
+
+(defn get-benchmark-signatures [jdg-files]
+  (let [
+           jdg-signatures
+            (map
+              #(get-signature %)
+              jdg-files)
+           benchmark-signatures
+            (map
+              #(set (remove empty? (split-coll %)))
+              jdg-signatures)
+    ]
+    benchmark-signatures))
+
+(def law-tests-data-path "test-data/")
+
+(defn links-efficiency-test
+  [ext ext-regex benchmark-records-fn extracted-records-fn
+  precision-threshold recall-threshold]
+  (let [
+           files (read-files law-tests-data-path ext ext-regex)
+           jdg-files (:ext files)
+           txt-files (:txt files)
+           benchmark-signatures (benchmark-records-fn jdg-files)
+           extracted-signatures (extracted-records-fn txt-files)
+           precisions-recalls
+            (get-precisions-recalls extracted-signatures benchmark-signatures)
+           precisions (get-elements :precision precisions-recalls)
+           recalls (get-elements :recall precisions-recalls)
+           average-precision (get-average precisions)
+           average-recall (get-average recalls)
+           _ (println (str \newline "av. precision: " average-precision
+                " av. recall: " average-recall))
+     ]
+     (is (> average-precision precision-threshold))
+     (is (> average-recall recall-threshold))))
+

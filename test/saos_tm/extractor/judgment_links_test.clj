@@ -3,8 +3,8 @@
     [ clojure.test :refer :all ]
     [ clojure.string :as str ]
     [ clojure.set :refer :all ]
-    [ clojure-csv.core :refer :all ]
     [ saos-tm.extractor.common :refer :all ]
+    [ saos-tm.extractor.common-test :refer :all ]
     [ saos-tm.extractor.judgment-links :refer :all ]
     [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
 
@@ -101,64 +101,12 @@
   (is (is-sn-or-osp-signature? "IV CKN 178/01"))
   (is (is-sn-or-osp-signature? "BSA I-4110-4/13")))
 
-(def law-tests-data-path "test-data/")
 
-(defn filter-ending-with [ss s]
-  (sort
-    (filter
-      #(.endsWith (str %) s)
-      ss)))
-
-(defn split-coll [coll]
+(defn judgment-links-extract [txt-files]
   (map
-    #(str/trim %)
-    coll))
-
-(defn get-average [coll]
-  (/ (reduce + coll) (count coll)))
-
-(defn get-elements [key-name coll]
-  (map
-    #(key-name %)
-    coll))
-
-
-(defn firsts [coll]
-  (map #(first %) coll))
+    #(extract-all-signatures %)
+    txt-files))
 
 (deftest judgment-links-efficiency-test
-  (let [
-           file-paths
-             (.listFiles
-               (clojure.java.io/file law-tests-data-path))
-           jdg-files-paths (filter-ending-with file-paths ".jdg")
-           jdg-files (map #(slurp %) jdg-files-paths)
-           jdg-signatures
-            (map
-              #(firsts
-                (parse-csv %))
-              jdg-files)
-           benchmark-signatures
-            (map
-              #(set (remove empty? (split-coll %)))
-              jdg-signatures)
-           txt-files-paths
-            (map
-              #(str/replace % #"\.jdg" ".txt")
-              jdg-files-paths)
-           txt-files (map #(slurp %) txt-files-paths)
-           extracted-signatures (map #(extract-all-signatures %) txt-files)
-           precisions-recalls
-            (map
-              #(get-precision-recall %1 %2)
-              extracted-signatures
-              benchmark-signatures)
-           precisions (get-elements :precision precisions-recalls)
-           recalls (get-elements :recall precisions-recalls)
-           average-precision (get-average precisions)
-           average-recall (get-average recalls)
-           _ (println (str \newline "av. precision: " average-precision
-                " av. recall: " average-recall))
-     ]
-     (is (> average-precision 0.818))
-     (is (> average-recall 0.943))))
+  (links-efficiency-test ".jdg" #"\.jdg"
+    get-benchmark-signatures judgment-links-extract 0.818 0.943))
