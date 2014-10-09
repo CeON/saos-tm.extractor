@@ -109,12 +109,8 @@
   (firsts
     (parse-csv file-data)))
 
-(defn read-files [dir ext ext-regex]
+(defn read-files [ext ext-regex ext-files-paths]
   (let [
-           file-paths
-             (.listFiles
-               (clojure.java.io/file dir))
-           ext-files-paths (filter-ending-with file-paths ext)
            ext-files (map #(slurp %) ext-files-paths)
            txt-files-paths
             (map
@@ -132,39 +128,63 @@
     coll1
     coll2))
 
-(defn get-benchmark-signatures [jdg-files]
-  (let [
-           jdg-signatures
-            (map
-              #(get-signature %)
-              jdg-files)
-           benchmark-signatures
-            (map
-              #(set (remove empty? (split-coll %)))
-              jdg-signatures)
-    ]
-    benchmark-signatures))
-
 (def law-tests-data-path "test-data/")
+(def log-data-path "log/")
+
+(defn map-fn [func coll additional-item] 
+  (map
+    #(func % additional-item)
+      coll))
+
+(defn get-log-files-paths [ext-files-paths]
+  (map
+    #(str/replace
+      (str %) law-tests-data-path log-data-path)
+    ext-files-paths))
+
+(defn spit-all-csv [result-to-csv-fn path data]
+  (spit path
+    (apply str
+      (map-fn result-to-csv-fn data "signature"))))
 
 (defn links-efficiency-test
   [ext ext-regex benchmark-records-fn extracted-records-fn
-  precision-threshold recall-threshold]
-  (let [
-           files (read-files law-tests-data-path ext ext-regex)
-           jdg-files (:ext files)
-           txt-files (:txt files)
-           benchmark-signatures (benchmark-records-fn jdg-files)
-           extracted-signatures (extracted-records-fn txt-files)
-           precisions-recalls
-            (get-precisions-recalls extracted-signatures benchmark-signatures)
-           precisions (get-elements :precision precisions-recalls)
-           recalls (get-elements :recall precisions-recalls)
-           average-precision (get-average precisions)
-           average-recall (get-average recalls)
-           _ (println (str \newline "av. precision: " average-precision
-                " av. recall: " average-recall))
-     ]
-     (is (> average-precision precision-threshold))
-     (is (> average-recall recall-threshold))))
+  precision-threshold recall-threshold result-to-csv-fn]
+  (time
+    (let [
+             file-paths
+               (.listFiles
+                 (clojure.java.io/file law-tests-data-path))
+             ext-files-paths (filter-ending-with file-paths ext)
+             files (read-files ext ext-regex ext-files-paths)
+             ext-files (:ext files)
+             txt-files (:txt files)
+             log-files-paths (get-log-files-paths ext-files-paths)
+             _ (.mkdir (java.io.File. log-data-path))
+             benchmark-items (benchmark-records-fn ext-files)
+             extracted-items (extracted-records-fn txt-files)
+             precisions-recalls
+              (get-precisions-recalls extracted-items benchmark-items)
+             precisions (get-elements :precision precisions-recalls)
+             recalls (get-elements :recall precisions-recalls)
+             average-precision (get-average precisions)
+             average-recall (get-average recalls)
+             ext-files-paths-str (map #(str %) ext-files-paths)
+             names-precs-recalls
+               (sort #(compare (last %1) (last %2)) 
+                 (map
+                   vector
+                   ext-files-paths-str precisions recalls))
+             _ (doseq [i names-precs-recalls] (println i))
+             _ (println (str \newline "av. precision: " average-precision
+                  " av. recall: " average-recall))
+             _
+              (doall
+                (map
+                  #(spit-all-csv result-to-csv-fn %1 %2)
+                  log-files-paths
+                  extracted-items))
+       ]
+       (is (> average-precision precision-threshold))
+       (is (> average-recall recall-threshold)))))
 

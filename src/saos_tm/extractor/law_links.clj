@@ -1,6 +1,6 @@
 (ns saos-tm.extractor.law-links
   (:require
-    [ saos-tm.extractor.common :as common ]
+    [saos-tm.extractor.common :refer :all]
     [ clojure.string :as str ]
     [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]
     [ taoensso.timbre.profiling :as profiling ]
@@ -32,7 +32,7 @@
 
 (defn get-coords-tokens [first-token-index tokens]
   (first
-    (common/indices
+    (indices
       #(and (not-coord-token? %) (not-coords-nmb? %))
       (drop first-token-index tokens))))
 
@@ -67,7 +67,6 @@
       (= "z" (nth tokens 3)))))
 
 (defn handle-w-zwiazku-z [tokens-and-coords]
-  (profiling/p :zzwz
   (for [
           i (range 0 (count tokens-and-coords))
         ]
@@ -75,41 +74,37 @@
       (nth tokens-and-coords i)
       (if (w-zwiazku-z? (nth tokens-and-coords i))
         (nth tokens-and-coords (+ i 1))
-        (nth tokens-and-coords i))))))
+        (nth tokens-and-coords i)))))
 
 (def dictionary-for-acts
   [
-    [#"(?i)^Konstytucji" {:nr "78" :pos "483", :year "1997"}]
-    [#"(?i)^k\.?c" {:nr "16" :pos "93", :year "1964"}]
-    [#"(?i)^k\.?h" {:nr "57" :pos "502", :year "1934"}]
-    [#"(?i)^k\.?k\.?s" {:nr "83" :pos "930", :year "1999"}]
-    [#"(?i)^k\.?k\.?w" {:nr "90" :pos "557", :year "1997"}]
-    [#"(?i)^k\.?k" {:nr "88" :pos "553", :year "1997"}]
-    [#"(?i)^k\.?m" {:nr "138" :pos "1545", :year "2001"}]
-    [#"(?i)^k\.?p\.?a" {:nr "30" :pos "168", :year "1960"}]
-    [#"(?i)^k\.?p\.?c" {:nr "43" :pos "296", :year "1964"}]
-    [#"(?i)^k\.?p\.?k" {:nr "89" :pos "555", :year "1997"}]
-    [#"(?i)^k\.?p\.?w" {:nr "106" :pos "1148", :year ""}]
-    [#"(?i)^k\.?p" {:nr "24" :pos "141", :year "1974"}]
-    [#"(?i)^k\.?r\.?o" {:nr "9" :pos "59", :year "2001"}]
-    [#"(?i)^k\.?s\.?h" {:nr "94" :pos "1037", :year "2000"}]
-    [#"(?i)^k\.?w" {:nr "12" :pos "114", :year "1971"}]
-    [#"(?i)^k\.?z" {:nr "82" :pos "598", :year "1933"}]
-    [#"(?i)^u\.?s\.?p" {:nr "98" :pos "1070", :year "2001"}]
-    [#"(?i)^ustawy o TK" {:nr "102" :pos "643", :year "1997"}]
-    [#"(?i)^ustawy o Trybunale Konstytucyjnym" {:nr "102" :pos "643", :year "1997"}]
-    [#"(?i)^ustawy o komornikach" {:nr "133" :pos "882", :year "1997"}]
-    [#"(?i)^ustawy o ochronie konkurencji" {:nr "50" :pos "331", :year "2007"}]
-    [#"(?i)^prawa o adwokat" {:nr "16" :pos "124", :year "1982"}]
-    [#"(?i)^pzp" {:nr "19" :pos "177", :year "2004"}]
-    [#"(?i)^ustawy pzp" {:nr "19" :pos "177", :year "2004"}]
-    [#"(?i)^ustawy prawo zamówień publicznych" {:nr "19" :pos "177", :year "2004"}]
-    [#"(?i)^prawa zamówień publicznych" {:nr "19" :pos "177", :year "2004"}]
+    [#"(?i)^Konstytucji" {:nr "78" :poz "483", :year "1997"}]
+    [#"(?i)^k\.?c" {:nr "16" :poz "93", :year "1964"}]
+    [#"(?i)^k\.?h" {:nr "57" :poz "502", :year "1934"}]
+    [#"(?i)^k\.?k\.?s" {:nr "83" :poz "930", :year "1999"}]
+    [#"(?i)^k\.?k\.?w" {:nr "90" :poz "557", :year "1997"}]
+    [#"(?i)^k\.?k" {:nr "88" :poz "553", :year "1997"}]
+    [#"(?i)^k\.?m" {:nr "138" :poz "1545", :year "2001"}]
+    [#"(?i)^k\.?p\.?a" {:nr "30" :poz "168", :year "1960"}]
+    [#"(?i)^k\.?p\.?c" {:nr "43" :poz "296", :year "1964"}]
+    [#"(?i)^k\.?p\.?k" {:nr "89" :poz "555", :year "1997"}]
+    [#"(?i)^k\.?p\.?w" {:nr "106" :poz "1148", :year ""}]
+    [#"(?i)^k\.?p" {:nr "24" :poz "141", :year "1974"}]
+    [#"(?i)^k\.?r\.?o" {:nr "9" :poz "59", :year "2001"}]
+    [#"(?i)^k\.?s\.?h" {:nr "94" :poz "1037", :year "2000"}]
+    [#"(?i)^k\.?w" {:nr "12" :poz "114", :year "1971"}]
+    [#"(?i)^k\.?z" {:nr "82" :poz "598", :year "1933"}]
+    [#"(?i)^u\.?s\.?p" {:nr "98" :poz "1070", :year "2001"}]
+    [#"(?i)^ustawy o TK" {:nr "102" :poz "643", :year "1997"}]
+    [#"(?i)^ustawy o Trybunale Konstytucyjnym" {:nr "102" :poz "643", :year "1997"}]
+    [#"(?i)^ustawy o komornikach" {:nr "133" :poz "882", :year "1997"}]
+    [#"(?i)^ustawy o ochronie konkurencji" {:nr "50" :poz "331", :year "2007"}]
+    [#"(?i)^prawa o adwokat" {:nr "16" :poz "124", :year "1982"}]
+    [#"(?i)^pzp" {:nr "19" :poz "177", :year "2004"}]
+    [#"(?i)^ustawy pzp" {:nr "19" :poz "177", :year "2004"}]
+    [#"(?i)^ustawy prawo zamówień publicznych" {:nr "19" :poz "177", :year "2004"}]
+    [#"(?i)^prawa zamówień publicznych" {:nr "19" :poz "177", :year "2004"}]
     ])
-
-(defn replace-several [content & replacements]
-  (let [replacement-list (partition 2 replacements)]
-    (reduce #(apply str/replace %1 %2) content replacement-list)))
 
 (defn tokens-to-string [tokens]
   (let [ 
@@ -138,56 +133,108 @@
     (.start m))))
 
 (defn extract-dictionary-case [tokens dictionary]
-  (profiling/p :dict
   (let [
           txt (tokens-to-string tokens)
           matched-indices
-            (common/indices
-              #(common/not-nil? (re-find % txt))
+            (indices
+              #(not-nil? (re-find % txt))
               (map #(first %) dictionary))
           positions
-          (if-not (= 1 (count matched-indices))
-            (map
-              #(regex-first-position (first (nth dictionary %)) txt)
-              matched-indices))
+            (if-not (= 1 (count matched-indices))
+              (map
+                #(regex-first-position (first (nth dictionary %)) txt)
+                matched-indices))
           min-i
-          (if-not (= 1 (count matched-indices))
-            (if-not (empty? positions)
-              (min-index positions)))
+            (if-not (= 1 (count matched-indices))
+              (if-not (empty? positions)
+                (min-index positions)))
           first-index
-          (if-not (nil? min-i)
-            (nth matched-indices min-i)
-            (first matched-indices))
+            (if-not (nil? min-i)
+              (nth matched-indices min-i)
+              (first matched-indices))
           dictionary-record
-          (if (common/not-nil? first-index)
-            (second
-              (nth dictionary first-index))
-            nil)
+            (if (not-nil? first-index)
+              (second
+                (nth dictionary first-index))
+              nil)
           ]
   (if (nil? dictionary-record)
     tokens
-    dictionary-record))))
+    dictionary-record)))
 
-(defn extract-nr-pos-case [tokens dictionary]
-  (profiling/p :nr-pos
+(defn matches? [re token]
+  (not-nil?
+    (re-matches re token)))
+
+(defn act-without-poz? [nr-part last-nmb-nr-part-index]
+  (and
+    (>
+      (count nr-part)
+      (+ last-nmb-nr-part-index 2))
+    (= "r"
+      (nth nr-part (inc last-nmb-nr-part-index)))
+    (= "."
+      (nth nr-part
+        (+ last-nmb-nr-part-index 2)))))
+
+(defn extract-nr-poz-poz-present [parts]
   (let [
-          year (common/get-year-of-law-act (tokens-to-string tokens))
-          nr-indices (common/indices #(= % "Nr") tokens)
-          nr-index
-            (if (nil? nr-indices)
-              nil
-              (first nr-indices))
-          pos-indices (common/indices #(= % "poz") tokens)
-          pos-index
-            (if (nil? pos-indices)
-              nil
-              (first pos-indices))
-        ]
-  (if (or (nil? nr-index) (nil? pos-index))
-    (extract-dictionary-case tokens dictionary)
-    (zipmap
-      [:year :nr :pos]
-      [year (nth tokens (+ nr-index 1)) (nth tokens (+ pos-index 2))] )))))
+          nr-part (nth parts 0)
+          poz-part (nth parts 2)
+          poz
+            (first
+              (filter #(matches? #"\d+" %) poz-part))
+          last-nmb-nr-part-index
+            (last
+              (indices
+                #(matches? #"\d+" %)
+                nr-part))
+          nr
+            (if
+              (act-without-poz? nr-part last-nmb-nr-part-index)
+              "0"
+              (nth nr-part last-nmb-nr-part-index))
+            ]
+            (zipmap [:nr :poz] [nr poz])))
+
+(defn extract-nr-poz [tokens]
+  (let [
+          parts (partition-by #(= "poz" %) tokens)
+          ]
+          (if (= 1 (count parts))
+            (zipmap [:nr :poz] ["0" "0"])
+            (extract-nr-poz-poz-present parts))))
+
+(defn extract-year-nr-poz [tokens]
+  (let [
+            year (get-year-of-law-act (tokens-to-string tokens))
+            nr-poz (extract-nr-poz tokens)
+          ]
+          (zipmap
+            [:year :nr :poz]
+            [year (:nr nr-poz) (:poz nr-poz)]))) 
+
+(defn extract-nr-poz-dots [token]
+  (let [
+          numbers (str/split token #"\.")
+          ]
+          (zipmap
+              [:year :nr :poz]
+              (drop 1 numbers))))
+
+(defn extract-nr-poz-case [tokens dictionary]
+  (if (some #{"Dz.U"} tokens)
+    (let [
+            indexOfDzU (.indexOf tokens "Dz.U")
+            tokenAfterDzU (nth tokens (inc indexOfDzU))
+          ]
+          (if (matches? #"(\.\d+)+" tokenAfterDzU)
+            (extract-nr-poz-dots tokenAfterDzU)
+            (extract-year-nr-poz tokens)))
+    (if (some #{"Dz"} tokens)
+      (extract-year-nr-poz tokens)
+      (extract-dictionary-case tokens dictionary))))
+    
 
 (defn coord-to-text [token]
   (if (or (= "." token) (= "-" token))
@@ -204,7 +251,7 @@
 
 (defn get-interfering-art-coords-ranges [tokens]
   (map #(find-coords-ranges % tokens) 
-    (common/indices 
+    (indices 
       #(or (= % "art") (= % "Art") (= % "§")) 
       tokens)))
 
@@ -241,11 +288,11 @@
                   #(= art-coords-record (:art %))
                   links))))
           ]
-  [art-coords-record
-  (first
-    (find-first
-      #(map? (first %))
-      sorted))]))
+          [art-coords-record
+          (first
+            (find-first
+              #(map? (first %))
+              sorted))]))
 
 (defn change-act-coords-to-majorities [majority-vote-act-coord links]
   (let [
@@ -254,10 +301,11 @@
           records-for-art-coord
             (filter
               #(= art-coord (:art %))
-              links)]
-  (if (nil? act-coord)
-    records-for-art-coord
-    (zipmap [:art :act] [art-coord act-coord]))))
+              links)
+            ]
+            (if (nil? act-coord)
+              records-for-art-coord
+              (zipmap [:art :act] [art-coord act-coord]))))
 
 (defn extract-signature [s]
   (-> (str/replace s "Sygn." "")
@@ -273,13 +321,13 @@
           lines-with-sygn-text (filter #(.startsWith % "Sygn.") lines)
           index-of-first-line-ending-with-date
             (first
-              (common/indices
+              (indices
                 #(.endsWith % " r.")
                 lines))
     ]
-  (if (empty? lines-with-sygn-text)
-    (nth lines (+ index-of-first-line-ending-with-date 1))
-    (first lines-with-sygn-text))))
+    (if (empty? lines-with-sygn-text)
+      (nth lines (+ index-of-first-line-ending-with-date 1))
+      (first lines-with-sygn-text))))
 
 (def art-coords-names [:art :par :ust :pkt :zd :lit])
 
@@ -303,12 +351,12 @@
           lit-nr (:lit art-coords)
     ]
     (apply str
-      "\"" art-nr "\"" common/csv-delimiter
-      "\"" par-nr "\"" common/csv-delimiter
-      "\"" ust-nr "\"" common/csv-delimiter
-      "\"" pkt-nr "\"" common/csv-delimiter
-      "\"" zd-nr "\"" common/csv-delimiter
-      "\"" lit-nr "\"" common/csv-delimiter)))
+      "\"" art-nr "\"" csv-delimiter
+      "\"" par-nr "\"" csv-delimiter
+      "\"" ust-nr "\"" csv-delimiter
+      "\"" pkt-nr "\"" csv-delimiter
+      "\"" zd-nr "\"" csv-delimiter
+      "\"" lit-nr "\"" csv-delimiter)))
 
 (defn get-csv-for-extracted-link [link signature]
   (let [
@@ -316,10 +364,10 @@
           act (:act link)
     ]
   (apply str (get-art-coords-csv art)
-    "\"" signature "\"" common/csv-delimiter
-    "\"" (:year act) "\"" common/csv-delimiter
-    "\"" (:nr act) "\"" common/csv-delimiter
-    "\"" (:pos act) "\"" "\n")))
+    "\"" signature "\"" csv-delimiter
+    "\"" (:year act) "\"" csv-delimiter
+    "\"" (:nr act) "\"" csv-delimiter
+    "\"" (:poz act) "\"" "\n")))
 
 (defn get-csv-for-orphaned-link [link signature]
   (let [
@@ -327,10 +375,10 @@
           txt (:txt link)
     ]
     (apply str
-      "\"" txt "\"" common/csv-delimiter
+      "\"" txt "\"" csv-delimiter
       (apply str
         (map
-          #(str "\"" % "\"" common/csv-delimiter)
+          #(str "\"" % "\"" csv-delimiter)
           art))
       "\"" signature "\"" "\n")))
 
@@ -344,9 +392,11 @@
   (let [
           txt (tokens-to-string (:act orphaned-link))
     ]
-  (map #(zipmap [:txt :art]
-                [ txt %])
-                 (:art orphaned-link))))
+    (map
+      #(zipmap
+        [:txt :art]
+        [txt %])
+      (:art orphaned-link))))
   
 (defn load-dictionary [path]
   (let [
@@ -358,24 +408,50 @@
             lines)
           pattern
           (re-pattern
-            (str "\"" common/csv-delimiter "\""))
+            (str "\"" csv-delimiter "\""))
           records
           (map
             #(str/split % pattern)
             trimmed-lines)
           dictionary
-          (map
-            #(vector
-              (re-pattern
-                (replace-several (str "(?i)" (nth % 0))
-                  #"\(" "\\("
-                  #"\)" "\\)"))
-              (zipmap
-                [:year :nr :pos]
-                [(nth % 1) (nth % 2) (nth % 3)]))
-            records)
-    ]
-    dictionary))
+            (map
+              #(vector
+                (re-pattern
+                  (replace-several (str "(?i)" (nth % 0))
+                    #"\(" "\\("
+                    #"\)" "\\)"))
+                (zipmap
+                  [:year :nr :poz]
+                  [(nth % 1) (nth % 2) (nth % 3)]))
+              records)
+            ]
+            dictionary))
+
+(defn cleanse [s]
+  (when (not-nil? s)
+    (replace-several s
+      #"\." ""
+      #"\s" "")))
+
+(defn cleanse-link [link]
+  (let [
+          art (:art link)
+          act (:act link)
+          ]
+          (zipmap
+            [:act :art]
+            [(zipmap [:year :nr :poz]
+                    [(cleanse (:year act))
+                    (cleanse (:nr act))
+                    (cleanse (:poz act))])
+             (zipmap art-coords-names
+                    [(cleanse (:art art))
+                    (cleanse (:par art))
+                    (cleanse (:ust art))
+                    (cleanse (:pkt art))
+                    (cleanse (:zd art))
+                    (cleanse (:lit art))])])))
+    
 
 (defn extract-law-links [s dictionary-file-path]
   (let [
@@ -387,69 +463,61 @@
               #"§" " § "
               #"pkt" " pkt "
               #"zd\." " zd. ")
-        tokens (lg-split-tokens-bi "pl" txt)
+        tokens (split-to-tokens txt)
         interfering-art-coords-ranges
-        (profiling/p :a
-          (get-interfering-art-coords-ranges tokens))
+          (get-interfering-art-coords-ranges tokens)
         inter-coords-ranges
-        (profiling/p :b
-          (get-inter-coords-ranges tokens))
+          (get-inter-coords-ranges tokens)
         correct-art-coords-ranges
-        (profiling/p :c
-          (get-correct-art-coords-ranges tokens))
+          (get-correct-art-coords-ranges tokens)
         coords-texts
-        (profiling/p :d
           (map
             #(build-coords-text % tokens)
-            correct-art-coords-ranges))
+            correct-art-coords-ranges)
         art-coords
-        (profiling/p :e
           (map 
-            common/extract-coords
-            (map #(build-coords-text % tokens) correct-art-coords-ranges)))
+            extract-coords
+            (map #(build-coords-text % tokens) correct-art-coords-ranges))
         act-coords
-        (profiling/p :f
           (handle-w-zwiazku-z
-            (map #(extract-nr-pos-case % merged-dictionary)
+            (map #(extract-nr-poz-case % merged-dictionary)
               (map 
                 #(get-range tokens (first %) (second %)) 
-                inter-coords-ranges))))
+                inter-coords-ranges)))
         links
-        (profiling/p :g
           (map #(zipmap [:art :act] [%1 %2])
-            art-coords act-coords))
+            art-coords act-coords)
         distinct-art-coords
-        (profiling/p :h
           (distinct
             (map #(:art %)
-              links)))
+              links))
         majority-votes-for-act-coords
-        (profiling/p :i
           (map
             #(get-majority-act-coords-for-art-coords % links)
-            distinct-art-coords))
+            distinct-art-coords)
         links-after-majority-voting
-        (profiling/p :j
           (map
             #(change-act-coords-to-majorities % links)
-            majority-votes-for-act-coords))
+            majority-votes-for-act-coords)
         extracted-links
-        (profiling/p :k
           (filter
             #(map? (:act %))
-            links-after-majority-voting))
+            links-after-majority-voting)
+        extracted-links
+          (mapcat get-data-for-act-art extracted-links)
+        extracted-links
+          (map #(cleanse-link %) extracted-links)
         orphaned-links
-        (profiling/p :l
-        (flatten
-          (filter
-            #(not-map? (:act %))
-            links-after-majority-voting)))
-        ]
-  (->>
-    (zipmap
-    [:extracted-links :orphaned-links]
-    [(mapcat get-data-for-act-art extracted-links)
-     (mapcat get-data-for-orphaned-link orphaned-links)]))))
+          (flatten
+            (filter
+              #(not-map? (:act %))
+              links-after-majority-voting))
+          ]
+          (->>
+            (zipmap
+            [:extracted-links :orphaned-links]
+            [extracted-links
+             (mapcat get-data-for-orphaned-link orphaned-links)]))))
 
 (defn extract-law-links-from-file
   [input-file-path output-file-path orphaned-links-file-path
@@ -458,21 +526,22 @@
      (let [
           input-txt (slurp input-file-path)
           signature
-          (if(nil? signature)
-            (extract-signature (get-line-with-signature input-txt))
-            signature)
-          signature-file-name (last (str/split input-file-path #"/"))
+            (if (nil? signature)
+              (extract-signature (get-line-with-signature input-txt))
+              signature)
+          signature-file-name
+            (last
+              (str/split input-file-path #"/"))
           links
-          ; (profiling/profile :info :Arithmetic
             (extract-law-links input-txt dictionary-file-path)
         ]
-      (spit output-file-path
-        (get-csv-for-links
-          get-csv-for-extracted-link
-          (:extracted-links links)
-          signature))
-      (spit orphaned-links-file-path
-        (get-csv-for-links
-          get-csv-for-orphaned-link
-          (:orphaned-links links)
-          signature)))))
+        (spit output-file-path
+          (get-csv-for-links
+            get-csv-for-extracted-link
+            (:extracted-links links)
+            signature))
+        (spit orphaned-links-file-path
+          (get-csv-for-links
+            get-csv-for-orphaned-link
+            (:orphaned-links links)
+            signature)))))

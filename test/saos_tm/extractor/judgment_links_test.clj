@@ -101,12 +101,3 @@
   (is (is-sn-or-osp-signature? "IV CKN 178/01"))
   (is (is-sn-or-osp-signature? "BSA I-4110-4/13")))
 
-
-(defn judgment-links-extract [txt-files]
-  (map
-    #(extract-all-signatures %)
-    txt-files))
-
-(deftest judgment-links-efficiency-test
-  (links-efficiency-test ".jdg" #"\.jdg"
-    get-benchmark-signatures judgment-links-extract 0.818 0.943))

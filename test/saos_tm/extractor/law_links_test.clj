@@ -15,10 +15,11 @@
                  "ust. 1, 2 i 3, art. 84, art. 91 ust. 1, art. 92 ust. 1, "
                  "art. 178 ust. 1 Konstytucji i art. 13 pkt 1 i 3 aneksu A "
                  "„Ogólne warunki odnoszące się do memorandum finansowego” "
-                 "do Umowy Ramowej"))]
-  (is (=
-    [[3 49][51 58]]
-    (get-correct-art-coords-ranges tokens)))))
+                 "do Umowy Ramowej"))
+          ]
+          (is (=
+              [[3 49][51 58]]
+              (get-correct-art-coords-ranges tokens)))))
 
 (deftest signature-extraction-test []
   (is (=
@@ -63,26 +64,26 @@
 
 (deftest extract-law-links-test []
   (is(=
-  '({:act {:pos "1656", :nr "237", :year "2008"},
+  '({:act {:poz "1656", :nr "237", :year "2008"},
     :art {:lit "0", :zd "0", :pkt "0", :ust "1-6", :par "0", :art "3"}}
-    {:act {:pos "1656", :nr "237", :year "2008"},
+    {:act {:poz "1656", :nr "237", :year "2008"},
     :art {:lit "0", :zd "0", :pkt "5", :ust "0", :par "0", :art "4"}}
-    {:act {:pos "1656", :nr "237", :year "2008"},
+    {:act {:poz "1656", :nr "237", :year "2008"},
     :art {:lit "0", :zd "0", :pkt "6", :ust "0", :par "0", :art "4"}}
-    {:act {:pos "1656", :nr "237", :year "2008"},
+    {:act {:poz "1656", :nr "237", :year "2008"},
     :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "57"}})
   (:extracted-links (extract-law-links
     (str "art. 3 ust. 1-6, art. 4 pkt 5 i 6, art. 57 ustawy z dnia 19 grudnia"
          " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
     "dictionary.txt"))))
   (is(=
-    '({:act {:pos "1656", :nr "237", :year "2008"},
+    '({:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "4-6", :par "0", :art "3"}}
-      {:act {:pos "1656", :nr "237", :year "2008"},
+      {:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "6", :ust "0", :par "0", :art "4"}}
-      {:act {:pos "483", :nr "78", :year "1997"},
+      {:act {:poz "483", :nr "78", :year "1997"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "2"}}
-      {:act {:pos "483", :nr "78", :year "1997"},
+      {:act {:poz "483", :nr "78", :year "1997"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "1", :par "0", :art "32"}}))
   (:extracted-links (extract-law-links
     (str "art. 3 ust. 4-6 i art. 4 pkt 6 ustawy z dnia 19 grudnia 2008 r. "
@@ -90,16 +91,16 @@
          "z art. 2 i art. 32 ust. 1 Konstytucji")
     "dictionary.txt")))
   (is(=
-    '({:act {:pos "1656", :nr "237", :year "2008"},
+    '({:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}
-      {:act {:pos "1656", :nr "237", :year "2008"},
+      {:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "5"}}))
   (:extracted-links (extract-law-links
     (str "art. 3 w związku z art. 5 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
     "dictionary.txt")))
   (is(=
-    '({:act {:nr "16" :pos "93", :year "1964"},
+    '({:act {:nr "16" :poz "93", :year "1964"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}))
   (:extracted-links (extract-law-links
     (str "art. 3 kc według ustawy o trybunale oprócz kodeksu wykroczeń ")
@@ -115,7 +116,7 @@
     ]
   (= (tokens-to-string (split-to-tokens s)) s)))
  
-(deftest get-year-of-law-act-test
+(deftest get-year-of-law-act-test []
   (is (=
     "1992"
     (get-year-of-law-act
@@ -134,32 +135,41 @@
         " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
         " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
         "– p. 21.01.09, P 14/08 (poz. 7)")))))
-    
-(defn read-law-links-to-maps [file-data]
+
+(def dictionary-file-path "dictionary.txt")
+
+(def dictionary
   (let [
-          data (parse-csv file-data)
+          dictionary (load-dictionary dictionary-file-path)
+          merged-dictionary (concat dictionary dictionary-for-acts)
     ]
-    (into #{} (map
-      #(zipmap
-        [:art :act]
-        [(zipmap
-          [:art :par :ust :pkt :zd :lit]
-          (take 6 %))
-         (zipmap
-          [:year :nr :pos]
-          (take-last 3 %))])
-      data))))
+    merged-dictionary))
 
-(defn get-benchmark-records [files]
-  (map
-    read-law-links-to-maps
-    files))
+(defn extract-nr-poz-case-one [s answer]
+  (is (=
+    (extract-nr-poz-case
+      (split-to-tokens s)
+      dictionary)
+    answer)))
 
-(defn law-links-extract [txt-files]
-  (map
-    #(into #{} (:extracted-links (extract-law-links % "dictionary.txt")))
-    txt-files))
-
-(deftest judgment-links-efficiency-test
-  (links-efficiency-test ".law" #"\.law"
-    get-benchmark-records law-links-extract 0.58 0.495))
+(deftest extract-nr-poz-case-test []
+  (extract-nr-poz-case-one
+    (str "ustawy z dnia 1 sierpnia 1997 r. o Trybunale Konstytucyjnym"
+      " (Dz.U. Nr 102, poz. 643)")
+    {:year "1997" :nr "102" :poz "643"})
+  (extract-nr-poz-case-one
+    (str "ustawy z dnia 29 stycznia 2004 r. – Prawo zamówień publicznych"
+      "(tekst jednolity Dz. U. z 2013 r. poz. 907) na niniejszy wyrok")
+    {:year "2013" :nr "0" :poz "907"})
+  (extract-nr-poz-case-one
+    (str "ustawy z dnia 29 stycznia 2004 r. - Prawo zamówień publicznych"
+      " (Dz. U. z 2010 r. 113, poz. 759 ze zm.)")
+    {:year "2010" :nr "113" :poz "759"})
+  (extract-nr-poz-case-one
+    (str "Ustawy z dnia 16 września 2011 r. o zmianie ustawy"
+      " o transporcie kolejowym [Dz.U.2011.230.1372], wszelkie wydane")
+    {:year "2011" :nr "230" :poz "1372"})
+  (extract-nr-poz-case-one
+    (str "ustawy z dnia 29 stycznia 2004 r. - Prawo zamówień publicznych"
+      " (tekst jednolity Dz. U. z 2013 r., poz. 907) na niniejszy wyrok")
+    {:year "2013" :nr "0" :poz "907"}))

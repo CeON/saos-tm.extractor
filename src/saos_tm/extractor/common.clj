@@ -50,16 +50,16 @@
       more (cartesian-product (rest colls))]
       (cons x more))))
 
-(defn remove-trailing-cojunction [s]
+(defn remove-trailing-conjunction [s]
   (let [
           tokens (split-to-tokens s)
           last-token (last tokens)
           ]
-  (if (or (= last-token "i") (= last-token "z") (= last-token "oraz"))
-    (str/trim
-      (apply str
-        (drop-last (count last-token) s)))
-    (str/trim s))))
+          (if (or (= last-token "i") (= last-token "z") (= last-token "oraz"))
+            (str/trim
+              (apply str
+                (drop-last (count last-token) s)))
+            (str/trim s))))
 
 (defn extract-coords-for-single-art [s]
   (cartesian-product
@@ -77,6 +77,10 @@
             (drop 1
               (str/split s #"art\.|§|ust\.|pkt|zd\.|lit\."))))))))
 
+(defn replace-several [content & replacements]
+  (let [replacement-list (partition 2 replacements)]
+    (reduce #(apply str/replace %1 %2) content replacement-list)))
+
 (defn extract-coords [s]
   (let [
           trimmed (str/trim s)
@@ -92,56 +96,54 @@
               separate-art-coords)
           without-conjunctions
             (map
-              #(remove-trailing-cojunction %)
+              #(remove-trailing-conjunction %)
               separate-art-coords-trimmed)
           ]
-  (mapcat extract-coords-for-single-art without-conjunctions)))
+          (mapcat extract-coords-for-single-art without-conjunctions)))
 
 (defn get-year-from-act-name [s]
   (let [
         pattern (re-find #"\d+\s+r" s)
         ]
-  (when
-    (not-empty pattern)
-    (apply str
-      (re-seq #"[\d]+" pattern)))))
+        (when
+          (not-empty pattern)
+          (apply str
+            (re-seq #"[\d]+" pattern)))))
 
 (defn get-year-of-law-act [s]
   (let [
           pattern (re-find #"Dz\.\s+U\.\s+z?\s+\d+\s+r" s)
           ]
-  (if
-    (not-empty pattern)
-    (apply str
-      (re-seq #"[\d]+" pattern))
-    (get-year-from-act-name s))))
-
+          (if
+            (not-empty pattern)
+            (apply str
+              (re-seq #"[\d]+" pattern))
+            (get-year-from-act-name s))))
 
 (defn indices [pred coll]
    (keep-indexed #(when (pred %2) %1) coll))
 
-
 (defn seq-to-csv [coll]
   (let [
           with-delim-at-the-end
-          (str/join ""
-            (map
-              #(apply str "\"" % "\"" csv-delimiter)
-              coll))
+            (str/join ""
+              (map
+                #(apply str "\"" % "\"" csv-delimiter)
+                coll))
           with-newline-at-the-end
-          (str
-            (apply str (drop-last with-delim-at-the-end))
-            (str \newline))
-        ]
-        with-newline-at-the-end))
+            (str
+              (apply str (drop-last with-delim-at-the-end))
+              (str \newline))
+            ]
+            with-newline-at-the-end))
 
 (def not-nil? (complement nil?))
 
 (defn get-measure [true-positives-count elements-count]
   (if
-      (= elements-count 0)
-      nil
-      (float (/ true-positives-count elements-count))))
+    (= elements-count 0)
+    nil
+    (float (/ true-positives-count elements-count))))
 
 (defn get-precision-recall [extracted-set benchmark-set]
   (let [
