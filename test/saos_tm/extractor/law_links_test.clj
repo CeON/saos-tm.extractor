@@ -134,7 +134,13 @@
         " Karta Samorządu Lokalnego sporządzona w Strasburgu"
         " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
         " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
-        "– p. 21.01.09, P 14/08 (poz. 7)")))))
+        "– p. 21.01.09, P 14/08 (poz. 7)"))))
+  (is (=
+    "1994"
+    (get-year-of-law-act
+      (str
+        " ustawy z dnia 28 grudnia 1989 r. – Prawo celne"
+        " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)")))))
 
 (def dictionary-file-path "dictionary.txt")
 
@@ -172,4 +178,9 @@
   (extract-nr-poz-case-one
     (str "ustawy z dnia 29 stycznia 2004 r. - Prawo zamówień publicznych"
       " (tekst jednolity Dz. U. z 2013 r., poz. 907) na niniejszy wyrok")
-    {:year "2013" :nr "0" :poz "907"}))
+    {:year "2013" :nr "0" :poz "907"})
+  (extract-nr-poz-case-one
+    (str "ustawy z dnia 15 grudnia 2000 r. o samorządach zawodowych"
+      " architektów, inżynierów budownictwa oraz urbanistów Dz.U.01.5.42"
+      " ze zm. od 8 lutego 2001r. okręgowe izby inżynierów budownictwa")
+    {:year "2001" :nr "5" :poz "42"}))

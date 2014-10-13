@@ -103,6 +103,7 @@
     [#"(?i)^pzp" {:nr "19" :poz "177", :year "2004"}]
     [#"(?i)^ustawy pzp" {:nr "19" :poz "177", :year "2004"}]
     [#"(?i)^ustawy prawo zamówień publicznych" {:nr "19" :poz "177", :year "2004"}]
+    [#"(?i)^Prawo zamówień publicznych" {:nr "19" :poz "177", :year "2004"}]
     [#"(?i)^prawa zamówień publicznych" {:nr "19" :poz "177", :year "2004"}]
     ])
 
@@ -214,13 +215,26 @@
             [:year :nr :poz]
             [year (:nr nr-poz) (:poz nr-poz)]))) 
 
+
+(defn convert-year-to-full [year]
+  (if (= (count year) 4)
+    year
+    (if
+      (>
+        (parse-int
+          (str (first year)))
+        1)
+      (str "19" year)
+      (str "20" year))))
+
 (defn extract-nr-poz-dots [token]
   (let [
-          numbers (str/split token #"\.")
+          numbers (drop 1 (str/split token #"\."))
+          year (convert-year-to-full (first numbers))
           ]
           (zipmap
               [:year :nr :poz]
-              (drop 1 numbers))))
+              [year (nth numbers 1) (nth numbers 2)])))
 
 (defn extract-nr-poz-case [tokens dictionary]
   (if (some #{"Dz.U"} tokens)
@@ -485,24 +499,13 @@
                 #(get-range tokens (first %) (second %)) 
                 inter-coords-ranges)))
         links
-          (map #(zipmap [:art :act] [%1 %2])
-            art-coords act-coords)
-        distinct-art-coords
           (distinct
-            (map #(:art %)
-              links))
-        majority-votes-for-act-coords
-          (map
-            #(get-majority-act-coords-for-art-coords % links)
-            distinct-art-coords)
-        links-after-majority-voting
-          (map
-            #(change-act-coords-to-majorities % links)
-            majority-votes-for-act-coords)
+            (map #(zipmap [:art :act] [%1 %2])
+            art-coords act-coords))
         extracted-links
           (filter
             #(map? (:act %))
-            links-after-majority-voting)
+             links)
         extracted-links
           (mapcat get-data-for-act-art extracted-links)
         extracted-links
@@ -511,7 +514,7 @@
           (flatten
             (filter
               #(not-map? (:act %))
-              links-after-majority-voting))
+              links))
           ]
           (->>
             (zipmap

@@ -16,7 +16,7 @@
 
 (defn extract-nmbs-and-ranges [ s ]
   (map #(str/trim %)
-    (str/split s #",|i|(oraz)")))
+    (str/split s #",| i |(oraz)")))
 
 (defn get-coords-names [is-art is-par is-ust is-pkt is-zd is-lit]
   (filter #(not= "" %)
@@ -69,13 +69,13 @@
           (get-coords-names
             (substring? "art." s)
             (substring? "§" s)
-            (substring? "ust." s)
+            (substring? "ust" s)
             (substring? "pkt" s)
-            (substring? "zd." s)
-            (substring? "lit." s))
+            (substring? "zd" s)
+            (substring? "lit" s))
           (map extract-nmbs-and-ranges
             (drop 1
-              (str/split s #"art\.|§|ust\.|pkt|zd\.|lit\."))))))))
+              (str/split s #"art\.|§|ust|ust\.|pkt|zd|zd\.|lit|lit\."))))))))
 
 (defn replace-several [content & replacements]
   (let [replacement-list (partition 2 replacements)]
@@ -103,7 +103,7 @@
 
 (defn get-year-from-act-name [s]
   (let [
-        pattern (re-find #"\d+\s+r" s)
+        pattern (last (re-seq #"\d+\s+r" s))
         ]
         (when
           (not-empty pattern)
@@ -113,12 +113,18 @@
 (defn get-year-of-law-act [s]
   (let [
           pattern (re-find #"Dz\.\s+U\.\s+z?\s+\d+\s+r" s)
-          ]
-          (if
-            (not-empty pattern)
-            (apply str
-              (re-seq #"[\d]+" pattern))
-            (get-year-from-act-name s))))
+          year
+            (if
+              (not-empty pattern)
+              (apply str
+                (re-seq #"[\d]+" pattern))
+              (get-year-from-act-name
+                (first
+                  (str/split s #"Dz\."))))
+            ]
+            year))
+              
+                
 
 (defn indices [pred coll]
    (keep-indexed #(when (pred %2) %1) coll))
@@ -156,3 +162,6 @@
           recall (get-measure true-positives-count benchmark-count)
     ]
     (zipmap [:precision :recall] [precision recall])))
+
+(defn parse-int [s]
+   (Integer. (re-find  #"\d+" s )))
