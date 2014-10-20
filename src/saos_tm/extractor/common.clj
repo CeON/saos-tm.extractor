@@ -1,8 +1,10 @@
 (ns saos-tm.extractor.common
   (:require
     [ clojure.string :as str ]
+    [ clojure.xml :as xml ]
+    [ clojure.zip :as zip ]
     [ clojure.set :refer :all ]
-    [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ])
+    [ langlab.core.parsers :refer :all ])
   (:import java.io.File)
   (:gen-class))
 
@@ -75,7 +77,7 @@
             (substring? "lit" s))
           (map extract-nmbs-and-ranges
             (drop 1
-              (str/split s #"art\.|§|ust|ust\.|pkt|zd|zd\.|lit|lit\."))))))))
+              (str/split s #"art\.|§|ust\.|ust|pkt|zd\.|zd|lit\.|lit"))))))))
 
 (defn replace-several [content & replacements]
   (let [replacement-list (partition 2 replacements)]
@@ -123,8 +125,6 @@
                   (str/split s #"Dz\."))))
             ]
             year))
-              
-                
 
 (defn indices [pred coll]
    (keep-indexed #(when (pred %2) %1) coll))
@@ -165,3 +165,66 @@
 
 (defn parse-int [s]
    (Integer. (re-find  #"\d+" s )))
+
+(defn zip-str [s]
+  (zip/xml-zip 
+    (xml/parse
+      (java.io.ByteArrayInputStream. (.getBytes s)))))
+
+(defn extract-osp-judgments [s]
+  (map
+    #(first %)
+    (re-seq #"\<judgement((?!\<judgement)[\s\S])*\</judgement\>" s)))
+
+; removing newlines if are inserted in content
+; clj.xml/emit inserts newlines in content of xml nodes
+(defn convert-emit [s]
+  (replace-several s
+    #"(?<=\>)\n(?=[^\<])" ""
+    #"(?<=[^\>])\n(?=\<)" ""))
+
+(defn emit-xml [xml-tree]
+  (convert-emit
+    (with-out-str
+      (xml/emit xml-tree))))
+
+(defn emit-xmls [to-remove-1 to-remove-2]
+[(emit-xml
+  (->
+    to-remove-1
+    zip/remove
+    zip/root))
+(emit-xml
+  (->
+    to-remove-2
+    zip/remove
+    zip/next
+    zip/remove
+    zip/root))])
+
+(defn split-osp-judgment-to-parts [s]
+  (let [
+          root (zip-str s)
+          to-remove-1
+            (->
+              root
+              zip/next
+              zip/next
+              zip/right
+              zip/next
+              zip/right
+              zip/right)
+          to-remove-2
+            (->
+              root
+              zip/next
+              zip/next
+              zip/right
+              zip/next)
+          ]
+          (if
+            (or
+              (nil? to-remove-1)
+              (nil? to-remove-2))
+            (emit-xml (zip/node root))
+            (emit-xmls to-remove-1 to-remove-2))))

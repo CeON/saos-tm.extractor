@@ -3,13 +3,9 @@
     [saos-tm.extractor.common :refer :all]
     [ clojure.string :as str ]
     [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]
-    [ taoensso.timbre.profiling :as profiling ]
     )
   (:import java.io.File)
   (:gen-class))
-
-(defn find-first [f coll]
-  (first (filter f coll)))
 
 (defn in? [seq elm]
   (some #(= elm %) seq))
@@ -290,36 +286,6 @@
     (concat
     [(first (first interfering-art-coords-ranges))]
     (flatten inter-coords-ranges)))))
-
-(defn get-majority-act-coords-for-art-coords [art-coords-record links]
-  (let [
-        sorted
-          (sort-by val >
-            (frequencies
-              (map
-                #(:act %)
-                (filter
-                  #(= art-coords-record (:art %))
-                  links))))
-          ]
-          [art-coords-record
-          (first
-            (find-first
-              #(map? (first %))
-              sorted))]))
-
-(defn change-act-coords-to-majorities [majority-vote-act-coord links]
-  (let [
-          art-coord (first majority-vote-act-coord)
-          act-coord (second majority-vote-act-coord)
-          records-for-art-coord
-            (filter
-              #(= art-coord (:art %))
-              links)
-            ]
-            (if (nil? act-coord)
-              records-for-art-coord
-              (zipmap [:art :act] [art-coord act-coord]))))
 
 (defn extract-signature [s]
   (-> (str/replace s "Sygn." "")

@@ -11,7 +11,8 @@
     [clojure-opennlp "0.3.2"]
     [langlab "1.1.0"] 
     [com.taoensso/timbre "3.2.1"]
-    [clojure-csv/clojure-csv "2.0.1"]]
+    [clojure-csv/clojure-csv "2.0.1"]
+    [commons-lang "2.5"]]
 
    :plugins [
      [lein-ancient "0.5.5"]])
