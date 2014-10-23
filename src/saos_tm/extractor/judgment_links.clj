@@ -1,6 +1,6 @@
 (ns saos-tm.extractor.judgment-links
   (:require
-    [ saos-tm.extractor.common :as common ]
+    [ saos-tm.extractor.common :refer :all ]
     [ clojure.string :as str ]
     [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]
     [ clojure.set :refer :all]
@@ -13,9 +13,6 @@
     (map
       #(str/replace % "\n" " ")
       (re-seq reg s))))
-
-(defn matches? [s re]
-  (common/not-nil? (re-matches re s)))
 
 (def osp-regex
   #"[IVXLCDM]+[\s\.]+[0-9]*[\s\.]*[a-zA-Z]*-?[a-zA-Z]*[\s\.]+\d+/\d+")
@@ -49,9 +46,9 @@
 
 (defn not-tk? [s]
   (or
-    (common/substring? "nr" s)
-    (common/substring? "Nr" s)
-    (common/substring? "OSNC" s)
+    (substring? "nr" s)
+    (substring? "Nr" s)
+    (substring? "OSNC" s)
     (= (last s) "/")))
 
 (def tk-regex #"[a-zA-Z]+\s+\d+/\d+")
@@ -97,8 +94,8 @@
 (defn extract-signature-universal [tokens]
     (let [
             tokens-with-slash-indices
-              (common/indices
-                #(common/substring? "/" %)
+              (indices
+                #(substring? "/" %)
                 tokens)
             signature-last-token-index
               (if
@@ -117,7 +114,7 @@
       (str/join " " signature-tokens)))
 
 (defn has-slash? [s]
-  (common/substring? "/" s))
+  (substring? "/" s))
 
 (def signature-regex
   #"sygn\.\s*(akt)?:?|sygnaturą\s*(akt)?:?|sygnaturze\s*(akt)?:?|sygnaturach\s*(akt)?:?")
@@ -216,7 +213,7 @@
               [nsa-signatures-count]
               [unknown-signatures-count]
               signatures)
-          csv (common/seq-to-csv to-write) 
+          csv (seq-to-csv to-write) 
         ]
         (spit output-file-path csv))))
  

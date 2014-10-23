@@ -159,10 +159,6 @@
     tokens
     dictionary-record)))
 
-(defn matches? [re token]
-  (not-nil?
-    (re-matches re token)))
-
 (defn act-without-poz? [nr-part last-nmb-nr-part-index]
   (and
     (>
@@ -180,11 +176,11 @@
           poz-part (nth parts 2)
           poz
             (first
-              (filter #(matches? #"\d+" %) poz-part))
+              (filter #(matches? % #"\d+") poz-part))
           last-nmb-nr-part-index
             (last
               (indices
-                #(matches? #"\d+" %)
+                #(matches? % #"\d+")
                 nr-part))
           nr
             (if
@@ -238,7 +234,7 @@
             indexOfDzU (.indexOf tokens "Dz.U")
             tokenAfterDzU (nth tokens (inc indexOfDzU))
           ]
-          (if (matches? #"(\.\d+)+" tokenAfterDzU)
+          (if (matches? tokenAfterDzU #"(\.\d+)+")
             (extract-nr-poz-dots tokenAfterDzU)
             (extract-year-nr-poz tokens)))
     (if (some #{"Dz"} tokens)
