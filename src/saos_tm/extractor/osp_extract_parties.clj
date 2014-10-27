@@ -70,16 +70,43 @@
     (str/split s #"\</xText\>")))
 
 (defn extract-defendant [s]
-  (first
-    (re-find
-      #"(?<=sprawy( z wniosku)?)((?!\</xText\>)[\s\S])*\</xText\>|
-        (?<=sprawy( z wniosku)?\</xText\>)((?!\</xText\>)[\s\S])*\</xText\>|
-        (?<=przeciwko)((?!\</xText\>)[\s\S])*\</xText\>"
-      s)))
+  (let [
+        pattern
+          (re-pattern
+            (str "(?<=sprawy( z wniosku)?)((?!\\</xText\\>)[\\s\\S])*"
+                 "\\</xText\\>|"
+                 "(?<=sprawy( z wniosku)?\\</xText\\>)"
+                 "((?!\\</xText\\>)[\\s\\S])*\\</xText\\>|"
+                 "(?<=przeciwko)((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)"))
+        regex-match
+          (re-find
+            pattern
+            s)
+          ]
+          (when
+            (not-nil? regex-match)
+            (if
+              (string? regex-match)
+              regex-match
+              (first regex-match)))))
+
+(defn cleanse-party [s]
+  (when
+    (not-nil? s)
+    (str/trim
+      (replace-several s
+        #"\n" ""
+        #"\<((?![\<\>])[\s\S])*\>" ""
+        #"\s+" " "
+        #"z powództwa" ""
+        #"z wniosku" ""
+        #"^\s*:" ""
+        #"^\s*\((\.)*\)" ""
+        ))))
 
 (defn extract-parties-osp [s]
   (let [
-          xtexts ".*\n.*\n.*\n.*\n.*\n"
+          xtexts ".*\n.*\n.*\n.*\n.*\n.*\n.*\n"
           regex-str
             (str "(?<=(?i)przy udziale) prok" xtexts "|"
                  "(?i)prokurator prokuratury" xtexts "|"
@@ -102,11 +129,11 @@
          [
          :plaintiff
          :defendant
-         :txt]
+         ]
        [
-       (extract-plaintiff result) 
-       (extract-defendant result)
-       result]))))
+       (cleanse-party (extract-plaintiff result)) 
+       (cleanse-party (extract-defendant result))
+       ]))))
 
 (defn spit-parties [s]
   (spit "out.xml"

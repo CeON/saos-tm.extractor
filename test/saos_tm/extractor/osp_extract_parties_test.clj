@@ -136,4 +136,17 @@
             (split-osp-judgment-to-parts judgment)
           ]
           (is (= actual expected))))
-  
+
+(deftest extract-defendant-test []
+  (is (=
+      (extract-defendant
+        "przeciwko firmie MMM </xText> <xText> jsdkfhskdjf </xText>")
+      " firmie MMM "))
+  )
+
+(deftest cleanse-party-test []
+  (is (=
+      (cleanse-party
+        " <xBx><xAnon>B. W.\n\n</xAnon> i  <xAnon>S. W. (1)</xAnon></xBx>")
+      "B. W. i S. W. (1)"))
+  )
