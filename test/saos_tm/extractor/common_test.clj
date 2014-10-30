@@ -81,12 +81,6 @@
       {:precision 0.5 :recall 0.25}
       (get-precision-recall #{1 2} #{2 3 4 5}))))
 
-(defn filter-ending-with [ss s]
-  (sort
-    (filter
-      #(.endsWith (str %) s)
-      ss)))
-
 (defn split-coll [coll]
   (map
     #(str/trim %)
@@ -100,10 +94,8 @@
     #(key-name %)
     coll))
 
-
 (defn firsts [coll]
   (map #(first %) coll))
-
 
 (defn get-signature [file-data]
   (firsts

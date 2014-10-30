@@ -170,22 +170,77 @@
       %)
     coll))
 
+(defn join-newline [coll]
+  (clojure.string/join
+      system-newline
+      coll))
+
+(defn remove-xtexts [s]
+  (str/replace s #"\<xText/\>" ""))
+
+(defn extract-parties-from-txt [s]
+  (dexmlise-parties-osp
+    ;(remove nil?
+      (map
+        #(extract-parties-osp
+          (first
+            (split-osp-judgment-to-parts %)))
+        (extract-osp-judgments s))))
+
+(defn count-osp-judgments [s]
+  (count
+    (extract-osp-judgments s)))
+
 (defn spit-parties []
   (let [
-          s
-            (str/replace
-              (slurp "/home/floydian/icm/osp/base/commo_court_0002_con.xml") #"\<xText/\>" "")
+          file-paths
+            (.listFiles
+              (clojure.java.io/file "/home/floydian/icm/osp/base/"))
+          file-paths
+            (take 10
+              (filter-ending-with file-paths "_con.xml"))
+          files
+            (map
+              #(slurp %)
+              file-paths)
+          ss
+            (map
+              #(remove-xtexts %)
+              files)
+          judgments-counts
+            (map
+              #(count-osp-judgments %)
+              ss)
+          judgments-count
+            (reduce + judgments-counts)
+          osp-parties
+            (mapcat
+              #(extract-parties-from-txt %)
+              ss)
+          ids-not-extracted
+            (filter
+              #(string? %)
+              osp-parties)
+          _ (prn (count ids-not-extracted))
+          _ (prn ids-not-extracted) 
+          osp-parties
+            (remove
+              #(string? %)
+              osp-parties)
+          defendants
+            (map
+              #(:defendant %)
+              osp-parties)
+          plaintiffs
+            (map
+              #(:plaintiff %)
+              osp-parties)
+          _ (prn judgments-count)
     ]
-  (spit "out.xml"
-    (clojure.string/join
-      (str system-newline "====" system-newline)
-      (dexmlise-parties-osp
-        (remove nil?
-          (map
-            #(extract-parties-osp
-              (first
-                (split-osp-judgment-to-parts %)))
-        (extract-osp-judgments s))))))))
+    (spit "defendants.txt"
+      (join-newline defendants))
+    (spit "plaintiffs.txt"
+      (join-newline plaintiffs))))
 
 (defn get-osp-judgment-by-id [id s]
   (apply str
