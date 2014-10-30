@@ -139,14 +139,27 @@
 
 (deftest extract-defendant-test []
   (is (=
-      (extract-defendant
-        "przeciwko firmie MMM </xText> <xText> jsdkfhskdjf </xText>")
-      " firmie MMM "))
-  )
+        (extract-defendant
+          "przeciwko firmie MMM </xText> <xText> jsdkfhskdjf </xText>")
+          " firmie MMM "))
+  (is (=
+        (extract-defendant
+          (str " Prokuratora Tomasza Janeczka</xText>\n<xText>po rozpoznaniu"
+            " w dniu 13 listopada 2008</xText>\n<xText>sprawy z"
+            " wniosku</xText>\n<xText>\n<xBx>\n<xAnon>W."
+            " A.</xAnon>\n</xBx>(<xBx>\n<xAnon>A.</xAnon>\n</xBx>), s."
+            " <xAnon>W.</xAnon>i <xAnon>J.</xAnon>, <xAnon>ur. (...)</xAnon>w"
+            " <xAnon>S.</xAnon>\n</xText>\n<xText>o odszkodowanie i"
+            " zadośćuczynienie za doznaną krzywdę"))
+          (str "\n<xText>\n<xBx>\n<xAnon>W."
+            " A.</xAnon>\n</xBx>(<xBx>\n<xAnon>A.</xAnon>\n</xBx>), s."
+            " <xAnon>W.</xAnon>i <xAnon>J.</xAnon>, <xAnon>ur. (...)</xAnon>w"
+            " <xAnon>S.</xAnon>\n")))
+)
 
 (deftest cleanse-party-test []
   (is (=
       (cleanse-party
         " <xBx><xAnon>B. W.\n\n</xAnon> i  <xAnon>S. W. (1)</xAnon></xBx>")
-      "B. W. i S. W. (1)"))
+      "<xBx><xAnon>B. W.</xAnon> i <xAnon>S. W. (1)</xAnon></xBx>"))
   )

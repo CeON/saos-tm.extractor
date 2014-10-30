@@ -188,4 +188,11 @@
        (is (> average-precision precision-threshold))
        (is (> average-recall recall-threshold)))))
 
-
+(deftest dexmlise-test
+  (is
+    (=
+      (dexmlise
+        (str "<xBx> Szpitalowi <xAnon>(...)</xAnon> w <xAnon>Ł.</xAnon>"
+          ", <xAnon>L. P. (1)</xAnon> i <xAnon>A. G. (1)</xAnon></xBx>"))
+      " Szpitalowi (...) w Ł., L. P. (1) i A. G. (1)"))
+  )

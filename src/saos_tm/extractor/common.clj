@@ -9,6 +9,8 @@
   (:gen-class))
 
 (def csv-delimiter ",")
+(def ^String system-newline
+  (System/getProperty "line.separator"))
 
 (defn split-to-tokens [s]
   (lg-split-tokens-bi "pl" s))
@@ -139,7 +141,7 @@
           with-newline-at-the-end
             (str
               (apply str (drop-last with-delim-at-the-end))
-              (str \newline))
+              system-newline)
             ]
             with-newline-at-the-end))
 
@@ -173,3 +175,10 @@
 
 (defn matches? [s re]
   (not-nil? (re-matches re s)))
+
+(defn dexmlise [s]
+  (when (not-nil? s)
+    (str/replace s #"\<((?![\<\>])[\s\S])*\>" "")))
+
+(defn find-first [f coll]
+  (first (filter f coll)))

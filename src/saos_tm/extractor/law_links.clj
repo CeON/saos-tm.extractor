@@ -293,7 +293,10 @@
 
 (defn get-line-with-signature [s]
   (let [
-          lines (str/split s #"\n")
+          lines
+            (str/split
+              s
+              (re-pattern system-newline))
           lines-with-sygn-text (filter #(.startsWith % "Sygn.") lines)
           index-of-first-line-ending-with-date
             (first
@@ -343,7 +346,7 @@
     "\"" signature "\"" csv-delimiter
     "\"" (:year act) "\"" csv-delimiter
     "\"" (:nr act) "\"" csv-delimiter
-    "\"" (:poz act) "\"" "\n")))
+    "\"" (:poz act) "\"" system-newline)))
 
 (defn get-csv-for-orphaned-link [link signature]
   (let [
@@ -356,7 +359,7 @@
         (map
           #(str "\"" % "\"" csv-delimiter)
           art))
-      "\"" signature "\"" "\n")))
+      "\"" signature "\"" system-newline)))
 
 (defn get-csv-for-links [get-csv-func links signature]
   (str/join ""
@@ -377,7 +380,7 @@
 (defn load-dictionary [path]
   (let [
           txt (slurp path)
-          lines (str/split txt #"\n")
+          lines (str/split txt (re-pattern system-newline))
           trimmed-lines
           (map
             #(subs % 1 (dec (count %)))

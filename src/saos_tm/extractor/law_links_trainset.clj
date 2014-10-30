@@ -1,14 +1,13 @@
 (ns saos-tm.extractor.law-links-trainset
   (:require
-    [ saos-tm.extractor.common :as common ]
+    [ saos-tm.extractor.common :refer :all ]
     [ clojure.string :as str ]
-    [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]
-    )
+    [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ])
   (:import java.io.File)
   (:gen-class))
 
 (defn remove-new-lines [ s ]
-  (str/replace s "\n" " "))
+  (str/replace s system-newline " "))
 
 (defn get-law-decisions-index [ s ]
   (-> (str/split s #"I\s*(1\.)?\s*KONSTYTUCJA RZECZYPOSPOLITEJ POLSKIEJ")
@@ -47,8 +46,8 @@
       (map #(str/trim %)
         (map #(str/replace % #"sygn\." "")
           (map #(str/replace % #"poz\." "")
-            (filter #((comp not common/substring?) "OTK" %)
-            (filter #(common/substring? "/" %)
+            (filter #((comp not substring?) "OTK" %)
+            (filter #(substring? "/" %)
               (str/split s #",|\(poz")))))))))
 
 (defn get-article-coordinates-info [ s ]
@@ -60,7 +59,7 @@
   (second (str/split s #"–")))
 
 (defn get-signatures-for-articles [ s ]
-  [(concat (common/extract-coords (get-article-coordinates-info s)))
+  [(concat (extract-coords (get-article-coordinates-info s)))
   (extract-signatures (get-signatures-info s))])
 
 (defn get-article-nmbs-point-nmbs-signatures [ s ]
@@ -80,7 +79,7 @@
         ]
   (zipmap
     [:year :nr :pos :descript :art-coords]
-    [(common/get-year-of-law-act s)
+    [(get-year-of-law-act s)
     (first nr-pos)
     (second nr-pos)
     (get-description s)
@@ -111,7 +110,7 @@
 
 (defn to-csv [structure]
   (let [
-          delim common/csv-delimiter
+          delim csv-delimiter
           art-coords (nth structure 0)
           art (nth art-coords 0)
           par (nth art-coords 1)
@@ -128,7 +127,7 @@
   ["\"" art "\"" delim "\"" par "\"" delim "\"" ust "\"" delim
    "\"" pkt "\"" delim "\"" zd "\"" delim "\"" lit "\"" delim
    "\"" signature "\"" delim
-   "\"" year "\"" delim "\"" nr "\"" delim "\"" pos "\"" \newline]))
+   "\"" year "\"" delim "\"" nr "\"" delim "\"" pos "\"" system-newline]))
 
 (defn handle-training-data [structure]
   (apply str
@@ -142,13 +141,13 @@
     (map 
       #(str
         "\"" (:year %) "\""
-        common/csv-delimiter
+        csv-delimiter
         "\"" (:nr %) "\""
-        common/csv-delimiter
+        csv-delimiter
         "\"" (:pos %) "\""
-        common/csv-delimiter
+        csv-delimiter
         "\"" (:descript %) "\""
-        \newline)
+        system-newline)
       structure)))
 
 (defn get-data-to-write [structure]

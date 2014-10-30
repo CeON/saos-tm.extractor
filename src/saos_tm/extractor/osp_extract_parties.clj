@@ -16,8 +16,8 @@
 ; clj.xml/emit inserts newlines in content of xml nodes
 (defn convert-emit [s]
   (replace-several s
-    #"(?<=\>)\n(?=[^\<])" ""
-    #"(?<=[^\>])\n(?=\<)" ""))
+    (re-pattern (str "(?<=\\>)" system-newline "(?=[^\\<])")) ""
+    (re-pattern (str "(?<=[^\\>])" system-newline "(?=\\<)")) ""))
 
 (defn emit-xml [xml-tree]
   (convert-emit
@@ -69,78 +69,127 @@
   (first
     (str/split s #"\</xText\>")))
 
+(defn get-regex-match [regex to-next-xtext s]
+  (re-find
+    (re-pattern
+      (str regex to-next-xtext))
+    s))
+
+(defn get-first-regex-match [coll to-next-xtext s]
+  (let [
+          matches
+            (map
+              #(get-regex-match % to-next-xtext s)
+              coll)
+    ]
+    (find-first
+      #(not-nil? %)
+      matches)))
+
 (defn extract-defendant [s]
   (let [
-        pattern
-          (re-pattern
-            (str "(?<=sprawy( z wniosku)?)((?!\\</xText\\>)[\\s\\S])*"
-                 "\\</xText\\>|"
-                 "(?<=sprawy( z wniosku)?\\</xText\\>)"
-                 "((?!\\</xText\\>)[\\s\\S])*\\</xText\\>|"
-                 "(?<=przeciwko)((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)"))
-        regex-match
-          (re-find
-            pattern
-            s)
-          ]
-          (when
-            (not-nil? regex-match)
-            (if
-              (string? regex-match)
-              regex-match
-              (first regex-match)))))
+        to-next-xtext "((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)"
+        match
+          (get-first-regex-match
+            ["(?<=sprawy( z wniosku)?\\</xText\\>)"
+             "(?<=sprawy( z wniosku)?)"
+             "(?<=sprawy z wniosku)"
+             "(?<=przeciwko\\</xText\\>)"
+             "(?<=przeciwko)"
+             "(?<=z wniosku)"]
+             to-next-xtext s)
+        ]
+        (when
+          (not-nil? match)
+          (if
+            (string? match)
+            match
+            (first match)))))
 
 (defn cleanse-party [s]
   (when
     (not-nil? s)
     (str/trim
       (replace-several s
-        #"\n" ""
-        #"\<((?![\<\>])[\s\S])*\>" ""
+        (re-pattern system-newline) ""
         #"\s+" " "
+        #"z odwołania" ""
         #"z powództwa" ""
         #"z wniosku" ""
+        #"wnioskodawc(zyni|y|ów:)" ""
         #"^\s*:" ""
-        #"^\s*\((\.)*\)" ""
+        ;#"^\s*\((\.)*\)" ""
         ))))
 
 (defn extract-parties-osp [s]
   (let [
-          xtexts ".*\n.*\n.*\n.*\n.*\n.*\n.*\n"
+          whatever "[\\s\\S]*"
           regex-str
-            (str "(?<=(?i)przy udziale) prok" xtexts "|"
-                 "(?i)prokurator prokuratury" xtexts "|"
-                 "(?i)prokuratora prok" xtexts "|"
-                 "(?<=(?i)sprawy z wniosku)" xtexts "|"
-                 "(?<=(?i)sprawy z powództwa)" xtexts "|"
-                 "(?<=(?i)sprawy z odwołania)" xtexts "|"
-                 "(?<=(?i)z powództwa)" xtexts "|"
-                 "(?<=(?i)w sprawie ze skargi)" xtexts "|"
-                 "(?<=(?i)<xText>sprawy)" xtexts)
+            (str "(?i)(?<=przy udziale) prok" whatever "|"
+                 "(?i)prokurator prokuratury" whatever "|"
+                 "(?i)prokuratora prok" whatever "|"
+                 "(?<=(?i)sprawy z wniosku)" whatever "|"
+                 "(?<=(?i)sprawy z powództwa)" whatever "|"
+                 "(?<=(?i)sprawy z odwołania)" whatever "|"
+                 "(?<=(?i)z powództwa)" whatever "|"
+                 "(?<=(?i)w sprawie ze skargi)" whatever "|"
+                 "(?<=(?i)po rozpoznaniu w sprawie)" whatever "|"
+                 "(?<=(?i)<xText>sprawy)" whatever)
           result
             (re-find
               (re-pattern regex-str)
               s)
     ]
     (if
-      (nil? result)
-      (re-find #"id=\"\d+[_a-zA-Z0-9\-]+" s)
-      (zipmap
-         [
-         :plaintiff
-         :defendant
-         ]
-       [
-       (cleanse-party (extract-plaintiff result)) 
-       (cleanse-party (extract-defendant result))
-       ]))))
+      (nil?
+        (re-find
+          (re-pattern
+            (str
+              "(?i)\\<xName\\>postanowienie\\</xName\\>|"
+              "(?i)\\<xName\\>uzasadnienie\\</xName\\>"))
+         s))
+      (if
+        (nil? result)
+        (re-find #"id=.\d+[_a-zA-Z0-9\-]+" s)
+        (zipmap
+          [:plaintiff :defendant]
+          [(cleanse-party (extract-plaintiff result)) 
+           (cleanse-party (extract-defendant result))])))))
 
-(defn spit-parties [s]
+(defn dexmlise-cleanse [s]
+  (when (not-nil? s)
+    (str/trim (dexmlise s))))
+
+(defn dexmlise-parties-osp [coll]
+  (map
+    #(if (map? %)
+      (zipmap
+      [:plaintiff :defendant]
+      [(dexmlise-cleanse (:plaintiff %))
+       (dexmlise-cleanse (:defendant %))])
+      %)
+    coll))
+
+(defn spit-parties []
+  (let [
+          s
+            (str/replace
+              (slurp "/home/floydian/icm/osp/base/commo_court_0002_con.xml") #"\<xText/\>" "")
+    ]
   (spit "out.xml"
     (clojure.string/join
-      (str \newline "====" \newline)
-      (map
-        #(extract-parties-osp
-          (first
-            (split-osp-judgment-to-parts %)))
-        (extract-osp-judgments s)))))
+      (str system-newline "====" system-newline)
+      (dexmlise-parties-osp
+        (remove nil?
+          (map
+            #(extract-parties-osp
+              (first
+                (split-osp-judgment-to-parts %)))
+        (extract-osp-judgments s))))))))
+
+(defn get-osp-judgment-by-id [id s]
+  (apply str
+    (filter
+      #(not-nil?
+        (re-find (re-pattern id) %))
+      (extract-osp-judgments s))))

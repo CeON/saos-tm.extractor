@@ -11,7 +11,7 @@
 (defn extract [reg s]
   (set
     (map
-      #(str/replace % "\n" " ")
+      #(str/replace % system-newline " ")
       (re-seq reg s))))
 
 (def osp-regex
@@ -117,7 +117,11 @@
   (substring? "/" s))
 
 (def signature-regex
-  #"sygn\.\s*(akt)?:?|sygnaturą\s*(akt)?:?|sygnaturze\s*(akt)?:?|sygnaturach\s*(akt)?:?")
+  (re-pattern
+    (str "sygn\\.\\s*(akt)?:?|"
+         "sygnaturą\\s*(akt)?:?|"
+         "sygnaturze\\s*(akt)?:?|"
+         "sygnaturach\\s*(akt)?:?")))
 
 (defn extract-signatures-universal [s]
   "function splits text by signature indicators"
