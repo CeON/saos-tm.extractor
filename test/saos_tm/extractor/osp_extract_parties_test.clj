@@ -141,21 +141,20 @@
   (is (=
         (extract-defendant
           "przeciwko firmie MMM </xText> <xText> jsdkfhskdjf </xText>")
-          " firmie MMM "))
+          "<xText>firmie MMM</xText>"))
   (is (=
         (extract-defendant
-          (str " Prokuratora Tomasza Janeczka</xText>\n<xText>po rozpoznaniu"
-            " w dniu 13 listopada 2008</xText>\n<xText>sprawy z"
-            " wniosku</xText>\n<xText>\n<xBx>\n<xAnon>W."
-            " A.</xAnon>\n</xBx>(<xBx>\n<xAnon>A.</xAnon>\n</xBx>), s."
+          (str " Prokuratora Tomasza Janeczka</xText><xText>po rozpoznaniu"
+            " w dniu 13 listopada 2008</xText><xText>sprawy z"
+            " wniosku</xText><xText><xBx><xAnon>W."
+            " A.</xAnon></xBx>(<xBx><xAnon>A.</xAnon></xBx>), s."
             " <xAnon>W.</xAnon>i <xAnon>J.</xAnon>, <xAnon>ur. (...)</xAnon>w"
-            " <xAnon>S.</xAnon>\n</xText>\n<xText>o odszkodowanie i"
+            " <xAnon>S.</xAnon></xText><xText>o odszkodowanie i"
             " zadośćuczynienie za doznaną krzywdę"))
-          (str "\n<xText>\n<xBx>\n<xAnon>W."
-            " A.</xAnon>\n</xBx>(<xBx>\n<xAnon>A.</xAnon>\n</xBx>), s."
+          (str "<xText><xBx><xAnon>W."
+            " A.</xAnon></xBx>(<xBx><xAnon>A.</xAnon></xBx>), s."
             " <xAnon>W.</xAnon>i <xAnon>J.</xAnon>, <xAnon>ur. (...)</xAnon>w"
-            " <xAnon>S.</xAnon>\n")))
-)
+            " <xAnon>S.</xAnon></xText>"))))
 
 (deftest cleanse-party-test []
   (is (=
@@ -163,3 +162,26 @@
         " <xBx><xAnon>B. W.\n\n</xAnon> i  <xAnon>S. W. (1)</xAnon></xBx>")
       "<xBx><xAnon>B. W.</xAnon> i <xAnon>S. W. (1)</xAnon></xBx>"))
   )
+
+(deftest close-xtext-tags-test []
+  (let [
+          expected "<xText>sth</xText>"
+    ]
+  (is (= (close-xtext-tags "sth") expected))
+  (is (= (close-xtext-tags "<xText>sth") expected))
+  (is (= (close-xtext-tags "sth</xText>") expected))
+  (is (= (close-xtext-tags "<xText>sth</xText>") expected))))
+  
+(deftest remove-xLexLink-tags-test []
+  (is (=
+      (remove-xLexLink-tags
+        (str "<xText>na podstawie <xLexLink xArt='art. 46;art. 46 § 1'"
+          " xIsapId='WDU19970880553' xTitle='Ustawa z dnia 6 czerwca 1997 r. -"
+          " Kodeks karny' xAddress='Dz. U. z 1997 r. Nr 88, poz. 553'>art. 46 §"
+          " 1 k.k.</xLexLink> orzeka"))
+      "<xText>na podstawie  orzeka")))
+
+; (def not-thrown? (complement nil?))
+; 
+; (deftest spit-parties-test []
+  ; (is (not-thrown? Exception (spit-parties))))

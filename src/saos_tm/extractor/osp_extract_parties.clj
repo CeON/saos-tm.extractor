@@ -12,6 +12,9 @@
     #(first %)
     (re-seq #"\<judgement((?!\<judgement)[\s\S])*\</judgement\>" s)))
 
+(defn extract-osp-judgment-id [s]
+  (re-find #"id=.\d+[_a-zA-Z0-9\-]+" s))
+
 ; removing newlines if are inserted in content
 ; clj.xml/emit inserts newlines in content of xml nodes
 (defn convert-emit [s]
@@ -57,17 +60,57 @@
               zip/next
               zip/right
               zip/next)
-          ]
-          (if
-            (or
-              (nil? to-remove-1)
-              (nil? to-remove-2))
-            [(emit-xml (zip/node root))]
-            (emit-xmls to-remove-1 to-remove-2))))
+    ]
+    (if
+      (or
+        (nil? to-remove-1)
+        (nil? to-remove-2))
+      [(emit-xml (zip/node root))]
+      (emit-xmls to-remove-1 to-remove-2))))
+
+(defn cleanse-party [s]
+  (when
+    (not-nil? s)
+      (str/trim
+        (replace-several s
+           #"\-\</xText\>" "</xText>"
+           (re-pattern system-newline) ""
+           #"\s+" " "
+           #"z odwołania" ""
+           #"z powództwa" ""
+           #"powództwa" ""
+           #"z wniosku" ""
+           #"wnioskodawc(zyń:?|zyni|y|ów:?)" ""
+           #"w wniosku" ""
+           #"stronie pozwanej" ""
+           #"pozwan(ej|emu|ych|ego)" ""
+           #"oskarżon(ej|emu|ych|ego)" ""
+           #"skazan(ej|emu|ych|ego)" ""
+           #"^ie" ""
+           #"^y" ""
+           #"^u\s" ""
+           #"^\s*:" ""
+           #"^\d+" ""
+           #"­\." ""
+           #"-$" ""
+           #"\>\d+" ">"
+          ;#"\.\<" ""
+          ;#"^\s*\((\.)*\)" ""
+          ))))
+
+(defn identify-plaintiff [s]
+  (first
+    (str/split
+      s
+      (re-pattern
+        (str
+          "przeciwko")))))
 
 (defn extract-plaintiff [s]
-  (first
-    (str/split s #"\</xText\>")))
+  (cleanse-party
+    (identify-plaintiff
+      (first
+        (str/split s #"\</xText\>")))))
 
 (defn get-regex-match [regex to-next-xtext s]
   (re-find
@@ -86,75 +129,129 @@
       #(not-nil? %)
       matches)))
 
+(defn get-first-regex-match-case-ins [coll to-next-xtext s]
+  (get-first-regex-match
+    (map #(str "(?i)" %) coll)
+    to-next-xtext
+    s))
+  
+(defn identify-defendant [s]
+  (first
+    (str/split
+      s
+      (re-pattern
+        (str
+           "w przedmiocie|"
+           "\\so\\s|"
+           "-o\\s|"
+           "oskarżonego z|"
+           "osk\\. z|"
+           ;"skazane(j|go)|"
+           "o zasądzenie|"
+           "o odszkodowanie|"
+           "odszkodowanie")))))
+
+(defn close-opening-tag [s]
+  (if
+    (nil?
+      (re-find #"^\<xText\>" s))
+    (str "<xText>" s)
+    s))
+
+(defn close-closing-tag [s]
+  (if
+    (nil?
+      (re-find #"\</xText\>$" s))
+    (str s "</xText>")
+    s))
+
+(defn close-xtext-tags [s]
+  (let [
+          opening-tag-closed (close-opening-tag s)
+          both-tags-closed (close-closing-tag opening-tag-closed)
+    ]
+    both-tags-closed))
+
+
+(defn remove-xLexLink-tags [s]
+  (str/replace s
+    #"\<xLexLink((?!\<xLexLink)[\s\S])*\</xLexLink\>" ""))
+
+
+(defn handle-defendant [s]
+  (close-xtext-tags
+    (cleanse-party
+      (identify-defendant s))))
+  
 (defn extract-defendant [s]
   (let [
         to-next-xtext "((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)"
         match
           (get-first-regex-match
-            ["(?<=sprawy( z wniosku)?\\</xText\\>)"
-             "(?<=sprawy( z wniosku)?)"
+            ["(?<=sprawy z wniosku?\\</xText\\>)"
+             "(?<=sprawy z wniosku?)"
              "(?<=sprawy z wniosku)"
              "(?<=przeciwko\\</xText\\>)"
              "(?<=przeciwko)"
-             "(?<=z wniosku)"]
-             to-next-xtext s)
+             "(?<=z wniosku)"
+             "(?<=sprawy?\\</xText\\>)"
+             "(?<=s p r a w y)"
+             "(?<=sprawy)"]
+             to-next-xtext
+             s)
         ]
         (when
           (not-nil? match)
           (if
             (string? match)
-            match
-            (first match)))))
-
-(defn cleanse-party [s]
-  (when
-    (not-nil? s)
-    (str/trim
-      (replace-several s
-        (re-pattern system-newline) ""
-        #"\s+" " "
-        #"z odwołania" ""
-        #"z powództwa" ""
-        #"z wniosku" ""
-        #"wnioskodawc(zyni|y|ów:)" ""
-        #"^\s*:" ""
-        ;#"^\s*\((\.)*\)" ""
-        ))))
+            (handle-defendant match)
+            (handle-defendant (first match))))))
 
 (defn extract-parties-osp [s]
   (let [
           whatever "[\\s\\S]*"
-          regex-str
-            (str "(?i)(?<=przy udziale) prok" whatever "|"
-                 "(?i)prokurator prokuratury" whatever "|"
-                 "(?i)prokuratora prok" whatever "|"
-                 "(?<=(?i)sprawy z wniosku)" whatever "|"
-                 "(?<=(?i)sprawy z powództwa)" whatever "|"
-                 "(?<=(?i)sprawy z odwołania)" whatever "|"
-                 "(?<=(?i)z powództwa)" whatever "|"
-                 "(?<=(?i)w sprawie ze skargi)" whatever "|"
-                 "(?<=(?i)po rozpoznaniu w sprawie)" whatever "|"
-                 "(?<=(?i)<xText>sprawy)" whatever)
-          result
-            (re-find
-              (re-pattern regex-str)
-              s)
+          without-lex-links (remove-xLexLink-tags s)
+          match
+            (get-first-regex-match-case-ins
+              ["(?<=przy udziale)" 
+               "(?<=w obecności)" 
+               "prokurator prokuratury" 
+               "prokuratora prok" 
+               "(?<=sprawy z wniosku)" 
+               "(?<=spraw z wniosków)" 
+               "(?<=sprawy z powództwa)" 
+               "(?<=spraw z powództw)" 
+               "(?<=sprawy z odwołania)" 
+               "(?<=spraw z odwołań)" 
+               "(?<=z powództwa)" 
+               "(?<=z powództw)" 
+               "(?<=z odwołania)" 
+               "(?<=z odwołań)" 
+               "(?<=z wniosku)" 
+               "(?<=z wniosków)" 
+               "(?<=w sprawie ze skargi)" 
+               "(?<=po rozpoznaniu w sprawie)" 
+               "(?<=w sprawie)" 
+               "(?<=w obecności oskarżyciela publ)" 
+               "(?<=<xText>sprawy)"]
+               whatever
+               without-lex-links)
+          id (extract-osp-judgment-id without-lex-links)
     ]
     (if
       (nil?
         (re-find
           (re-pattern
             (str
-              "(?i)\\<xName\\>postanowienie\\</xName\\>|"
-              "(?i)\\<xName\\>uzasadnienie\\</xName\\>"))
-         s))
+              "(?i)\\<xName\\>\\s*postanowienie.?\\s*\\</xName\\>|"
+              "(?i)\\<xName\\>\\s*uzasadnienie.?\\s*\\</xName\\>"))
+         without-lex-links))
       (if
-        (nil? result)
-        (re-find #"id=.\d+[_a-zA-Z0-9\-]+" s)
+        (nil? match)
+        id
         (zipmap
-          [:plaintiff :defendant]
-          [(cleanse-party (extract-plaintiff result)) 
-           (cleanse-party (extract-defendant result))])))))
+          [:plaintiff :defendant :txt :id]
+          [(extract-plaintiff match) (extract-defendant match) match id])))))
 
 (defn dexmlise-cleanse [s]
   (when (not-nil? s)
@@ -164,28 +261,47 @@
   (map
     #(if (map? %)
       (zipmap
-      [:plaintiff :defendant]
+      [:plaintiff :defendant :txt :id]
       [(dexmlise-cleanse (:plaintiff %))
-       (dexmlise-cleanse (:defendant %))])
+       (dexmlise-cleanse (:defendant %))
+       (:txt %)
+       (:id %)])
       %)
     coll))
 
-(defn join-newline [coll]
-  (clojure.string/join
+(defn join-newline [coll1 coll2 coll3]
+  (let [
+          pairs
+            (map
+              #(str %1
+                system-newline "\t" %2
+                ;system-newline %3
+                )
+              coll1
+              coll2
+              ;coll3
+              )
+    ]
+    (clojure.string/join
       system-newline
-      coll))
+      pairs)))
 
 (defn remove-xtexts [s]
   (str/replace s #"\<xText/\>" ""))
 
-(defn extract-parties-from-txt [s]
+
+(defn extract-parties-from-judgments [coll]
   (dexmlise-parties-osp
-    ;(remove nil?
+    (remove nil?
       (map
         #(extract-parties-osp
           (first
             (split-osp-judgment-to-parts %)))
-        (extract-osp-judgments s))))
+        coll))))
+
+(defn extract-parties-from-txt [s]
+  (extract-parties-from-judgments
+    (extract-osp-judgments s)))
 
 (defn count-osp-judgments [s]
   (count
@@ -198,7 +314,10 @@
               (clojure.java.io/file "/home/floydian/icm/osp/base/"))
           file-paths
             (take 10
-              (filter-ending-with file-paths "_con.xml"))
+                ;(filter #(matches? (str %) #"[\s\S]*3\d\d_con\.xml")
+                (filter #(matches? (str %) #"[\s\S]*_con\.xml")
+                file-paths))
+          ;file-paths ["test.xml"]
           files
             (map
               #(slurp %)
@@ -207,22 +326,19 @@
             (map
               #(remove-xtexts %)
               files)
-          judgments-counts
-            (map
-              #(count-osp-judgments %)
-              ss)
-          judgments-count
-            (reduce + judgments-counts)
+          judgments (mapcat #(extract-osp-judgments %) ss)
+          judgments
+            [(filter #(matches? %
+        #"[\s\S]*154505000005127_XVII_AmC_002338_2013_Uz_2013-08-14_001[\s\S]*")
+              judgments)]
           osp-parties
             (mapcat
-              #(extract-parties-from-txt %)
-              ss)
+              ;#(extract-parties-from-judgments %) judgments)
+              #(extract-parties-from-txt %) ss)
           ids-not-extracted
             (filter
               #(string? %)
               osp-parties)
-          _ (prn (count ids-not-extracted))
-          _ (prn ids-not-extracted) 
           osp-parties
             (remove
               #(string? %)
@@ -235,12 +351,19 @@
             (map
               #(:plaintiff %)
               osp-parties)
-          _ (prn judgments-count)
+          ids
+            (map
+              #(:id %)
+              osp-parties)
+          txts
+            (map
+              #(:txt %)
+              osp-parties)
     ]
-    (spit "defendants.txt"
-      (join-newline defendants))
-    (spit "plaintiffs.txt"
-      (join-newline plaintiffs))))
+    (spit "tmp/defendants.txt"
+      (join-newline defendants ids txts))
+    (spit "tmp/plaintiffs.txt"
+      (join-newline plaintiffs ids txts))))
 
 (defn get-osp-judgment-by-id [id s]
   (apply str
