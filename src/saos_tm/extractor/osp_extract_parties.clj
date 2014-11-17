@@ -254,7 +254,8 @@
            :id]
           [(extract-plaintiff match) (extract-defendant match)
            ;match
-           id])))))
+           id]))
+      (prn id))))
 
 (defn dexmlise-cleanse [s]
   (when (not-nil? s)
@@ -350,7 +351,7 @@
 
 (defn extract-osp-test-xml []
   (let [
-          ids-file (slurp "test-data/osp-parties/results.txt")
+          ids-file (slurp "test-data/osp-parties/answers.txt")
           ids-lines
             (str/split ids-file (re-pattern system-newline))
           ids

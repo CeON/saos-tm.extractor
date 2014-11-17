@@ -18,11 +18,10 @@
   (let [
           judgments (get-judgments [test-set-xml-path])
           extracted-parties
-          (into #{}
-            (mapcat
-              #(extract-parties-from-judgments %)
-             judgments))
-          _ (spit "extracted-parties.txt" extracted-parties)
+            (into #{}
+              (mapcat
+                #(extract-parties-from-judgments %)
+               judgments))
           answers-txt (slurp "test-data/osp-parties/answers.txt")
           answers-lines
             (str/split
@@ -33,14 +32,24 @@
              #(subs % 1 (dec (count %)))
              answers-lines)
           answers
-          (into #{}
-            (map
-             #(zipmap [:id :plaintiff :defendant] (split-csv %))
-             answers-without-quots))
-          _ (spit "answers.txt" answers)
+            (into #{}
+              (map
+               #(zipmap [:id :plaintiff :defendant] (split-csv %))
+               answers-without-quots))
+          errors (difference answers extracted-parties)
+          errors1 (difference extracted-parties answers)
+          are-equal (= errors errors1)
+          ;_ (prn are-equal)
+          ;_ (prn errors)
+          ;_ (prn errors1)
+          ;_ (prn (count errors))
+          ;_ (prn (count errors1))
+          ;_ (prn (count answers))
+          ;_ (prn (count extracted-parties))
           precision-recall (get-precision-recall extracted-parties answers)
           precision (precision-recall :precision)
           recall (precision-recall :recall)
+          _ (prn (str "precision: " precision " recall: " recall))
         ]
     (is (> precision 0.54))
     (is (> recall 0.46))))
