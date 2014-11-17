@@ -73,7 +73,21 @@
     (not-nil? s)
       (str/trim
         (replace-several s
-           #"\-\</xText\>" "</xText>"
+           #"[^-]\-\</xText\>" "</xText>"
+           #"[^-]-$" ""
+           #"\.\</xText\>" "</xText>"
+           #"\.$" ""
+           #";\<" "<"
+           #";$" ""
+           #"\<xBx\>" ""
+           #"\</xBx\>" ""
+           #"\<xBx/\>" ""
+           #"\<xBRx\>" ""
+           #"\</xBRx\>" ""
+           #"\<xBRx/\>" ""
+           #"\<xIx\>" ""
+           #"\</xIx\>" ""
+           #"\<xIx/\>" ""
            (re-pattern system-newline) ""
            #"\s+" " "
            #"z odwołania" ""
@@ -92,7 +106,6 @@
            #"^\s*:" ""
            #"^\d+" ""
            #"­\." ""
-           #"-$" ""
            #"\>\d+" ">"
           ;#"\.\<" ""
           ;#"^\s*\((\.)*\)" ""
@@ -146,10 +159,16 @@
             (map
               #(get-regex-match % to-next-xtext s)
               coll)
+          match
+            (find-first
+             #(not-nil? %)
+             matches)
+          match
+            (if (string? match)
+              match
+              (first match))
     ]
-    (find-first
-      #(not-nil? %)
-      matches)))
+    match))
 
 (defn get-first-regex-match-case-ins [coll to-next-xtext s]
   (get-first-regex-match
@@ -171,7 +190,9 @@
            ;"skazane(j|go)|"
            "o zasądzenie|"
            "o odszkodowanie|"
-           "odszkodowanie")))))
+           "odszkodowanie|"
+           "prowadzącym działalność"
+         )))))
 
 (defn remove-xLexLink-tags [s]
   (str/replace s
@@ -182,9 +203,10 @@
     (cleanse-party
       (identify-defendant s))))
 
+(def to-next-xtext "((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)")
+
 (defn extract-defendant [s]
   (let [
-        to-next-xtext "((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)"
         match
           (get-first-regex-match
             ["(?<=sprawy z wniosku?\\</xText\\>)"
@@ -210,12 +232,14 @@
   (let [
           whatever "[\\s\\S]*"
           without-lex-links (remove-xLexLink-tags s)
-          match
+           match
             (get-first-regex-match-case-ins
-              ["(?<=przy udziale)"
-               "(?<=w obecności)"
+              ["(?<=przy udziale)((?!\\</xText\\>)[\\s\\S])*prok"
+               "(?<=przy udziale)((?!\\</xText\\>)[\\s\\S])*oskarżyciela"
+               "(?<=przy udziale)((?!\\</xText\\>)[\\s\\S])*przedstawiciela urzędu"
                "prokurator prokuratury"
                "prokuratora prok"
+               "prokurator[^i]"
                "(?<=sprawy z wniosku)"
                "(?<=spraw z wniosków)"
                "(?<=sprawy z powództwa)"
@@ -230,9 +254,11 @@
                "(?<=z wniosków)"
                "(?<=w sprawie ze skargi)"
                "(?<=po rozpoznaniu w sprawie)"
-               "(?<=w sprawie)"
                "(?<=w obecności oskarżyciela publ)"
-               "(?<=<xText>sprawy)"]
+               ;"(?<=w obecności)"
+               "(?<=\\<xText\\>sprawy)"
+               "(?<=\\<xBx\\>sprawy)"
+               "(?<=w sprawie)"]
                whatever
                without-lex-links)
           id (extract-osp-judgment-id without-lex-links)
@@ -247,7 +273,9 @@
          without-lex-links))
       (if
         (nil? match)
-        id
+        (zipmap
+          [:plaintiff :defendant :id]
+          [nil nil id])
         (zipmap
           [:plaintiff :defendant
            ;:txt

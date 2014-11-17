@@ -152,8 +152,8 @@
             " <xAnon>W.</xAnon>i <xAnon>J.</xAnon>, <xAnon>ur. (...)</xAnon>w"
             " <xAnon>S.</xAnon></xText><xText>o odszkodowanie i"
             " zadośćuczynienie za doznaną krzywdę"))
-          (str "<xText><xBx><xAnon>W."
-            " A.</xAnon></xBx>(<xBx><xAnon>A.</xAnon></xBx>), s."
+          (str "<xText><xAnon>W."
+            " A.</xAnon>(<xAnon>A.</xAnon>), s."
             " <xAnon>W.</xAnon>i <xAnon>J.</xAnon>, <xAnon>ur. (...)</xAnon>w"
             " <xAnon>S.</xAnon></xText>"))))
 
@@ -161,7 +161,7 @@
   (is (=
       (cleanse-party
         " <xBx><xAnon>B. W.\n\n</xAnon> i  <xAnon>S. W. (1)</xAnon></xBx>")
-      "<xBx><xAnon>B. W.</xAnon> i <xAnon>S. W. (1)</xAnon></xBx>"))
+      "<xAnon>B. W.</xAnon> i <xAnon>S. W. (1)</xAnon>"))
   )
 
 (deftest close-xtext-tags-test []

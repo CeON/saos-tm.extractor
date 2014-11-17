@@ -14,6 +14,12 @@
    s
    (re-pattern (str "\"" csv-delimiter "\""))))
 
+(defn answers-to-string [coll]
+  (map #(str  (:id %) system-newline
+              (:plaintiff %) system-newline
+              (:defendant %) system-newline)
+       coll))
+
 (deftest extract-parties-efficiency-test []
   (let [
           judgments (get-judgments [test-set-xml-path])
@@ -36,20 +42,16 @@
               (map
                #(zipmap [:id :plaintiff :defendant] (split-csv %))
                answers-without-quots))
-          errors (difference answers extracted-parties)
-          errors1 (difference extracted-parties answers)
-          are-equal (= errors errors1)
-          ;_ (prn are-equal)
-          ;_ (prn errors)
-          ;_ (prn errors1)
-          ;_ (prn (count errors))
-          ;_ (prn (count errors1))
-          ;_ (prn (count answers))
-          ;_ (prn (count extracted-parties))
+          correct (sort-by #(:id %) (difference answers extracted-parties))
+          correct (answers-to-string correct)
+          errors (sort-by #(:id %) (difference extracted-parties answers))
+          errors (answers-to-string errors)
+          ;_ (spit "correct.txt" (apply str correct))
+          ;_ (spit "errors.txt" (apply str errors))
           precision-recall (get-precision-recall extracted-parties answers)
           precision (precision-recall :precision)
           recall (precision-recall :recall)
           _ (prn (str "precision: " precision " recall: " recall))
         ]
-    (is (> precision 0.54))
-    (is (> recall 0.46))))
+    (is (> precision 0.94))
+    (is (> recall 0.94))))
