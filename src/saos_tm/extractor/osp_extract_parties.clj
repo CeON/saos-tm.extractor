@@ -134,7 +134,7 @@
     (map #(str "(?i)" %) coll)
     to-next-xtext
     s))
-  
+
 (defn identify-defendant [s]
   (first
     (str/split
@@ -172,17 +172,15 @@
     ]
     both-tags-closed))
 
-
 (defn remove-xLexLink-tags [s]
   (str/replace s
     #"\<xLexLink((?!\<xLexLink)[\s\S])*\</xLexLink\>" ""))
-
 
 (defn handle-defendant [s]
   (close-xtext-tags
     (cleanse-party
       (identify-defendant s))))
-  
+
 (defn extract-defendant [s]
   (let [
         to-next-xtext "((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)"
@@ -213,26 +211,26 @@
           without-lex-links (remove-xLexLink-tags s)
           match
             (get-first-regex-match-case-ins
-              ["(?<=przy udziale)" 
-               "(?<=w obecności)" 
-               "prokurator prokuratury" 
-               "prokuratora prok" 
-               "(?<=sprawy z wniosku)" 
-               "(?<=spraw z wniosków)" 
-               "(?<=sprawy z powództwa)" 
-               "(?<=spraw z powództw)" 
-               "(?<=sprawy z odwołania)" 
-               "(?<=spraw z odwołań)" 
-               "(?<=z powództwa)" 
-               "(?<=z powództw)" 
-               "(?<=z odwołania)" 
-               "(?<=z odwołań)" 
-               "(?<=z wniosku)" 
-               "(?<=z wniosków)" 
-               "(?<=w sprawie ze skargi)" 
-               "(?<=po rozpoznaniu w sprawie)" 
-               "(?<=w sprawie)" 
-               "(?<=w obecności oskarżyciela publ)" 
+              ["(?<=przy udziale)"
+               "(?<=w obecności)"
+               "prokurator prokuratury"
+               "prokuratora prok"
+               "(?<=sprawy z wniosku)"
+               "(?<=spraw z wniosków)"
+               "(?<=sprawy z powództwa)"
+               "(?<=spraw z powództw)"
+               "(?<=sprawy z odwołania)"
+               "(?<=spraw z odwołań)"
+               "(?<=z powództwa)"
+               "(?<=z powództw)"
+               "(?<=z odwołania)"
+               "(?<=z odwołań)"
+               "(?<=z wniosku)"
+               "(?<=z wniosków)"
+               "(?<=w sprawie ze skargi)"
+               "(?<=po rozpoznaniu w sprawie)"
+               "(?<=w sprawie)"
+               "(?<=w obecności oskarżyciela publ)"
                "(?<=<xText>sprawy)"]
                whatever
                without-lex-links)
@@ -289,7 +287,6 @@
 (defn remove-xtexts [s]
   (str/replace s #"\<xText/\>" ""))
 
-
 (defn extract-parties-from-judgments [coll]
   (dexmlise-parties-osp
     (remove nil?
@@ -307,17 +304,30 @@
   (count
     (extract-osp-judgments s)))
 
-(defn spit-parties []
+(defn get-file-paths [dir re]
   (let [
           file-paths
             (.listFiles
-              (clojure.java.io/file "/home/floydian/icm/osp/base/"))
+              (clojure.java.io/file dir))
           file-paths
             (take 10
-                ;(filter #(matches? (str %) #"[\s\S]*3\d\d_con\.xml")
-                (filter #(matches? (str %) #"[\s\S]*_con\.xml")
+              (filter #(matches? (str %) re)
                 file-paths))
-          ;file-paths ["test.xml"]
+        ]
+    file-paths))
+
+(defn take-to-regex [s re]
+  (first
+   (str/split s re)))
+
+(defn contains-some [s coll]
+  (some
+   #(substring? % s)
+   coll))
+
+; removed <xText/> tags
+(defn get-judgments [file-paths]
+  (let [
           files
             (map
               #(slurp %)
@@ -326,15 +336,66 @@
             (map
               #(remove-xtexts %)
               files)
-          judgments (mapcat #(extract-osp-judgments %) ss)
+          judgments (map #(extract-osp-judgments %) ss)
+        ]
+    judgments))
+
+(def test-set-xml-path "test-data/osp-parties/test-set.xml")
+
+(defn extract-osp-test-xml []
+  (let [
+          ids-file (slurp "test-data/osp-parties/results.txt")
+          ids-lines
+            (str/split ids-file (re-pattern system-newline))
+          ids
+            (map
+             #(take-to-regex %
+               (re-pattern
+                (str "\"" csv-delimiter "\"")))
+             ids-lines)
+          ids
+            (map
+             #(str/replace % #"\"" "")
+             ids)
+          file-paths
+            (get-file-paths
+             "/home/floydian/saos-ext/test-data/osp-parties-copy"
+             #"[\s\S]*_con\.xml")
+          judgments (apply concat (get-judgments file-paths))
           judgments
-            [(filter #(matches? %
-        #"[\s\S]*154505000005127_XVII_AmC_002338_2013_Uz_2013-08-14_001[\s\S]*")
-              judgments)]
+            (filter
+             #(contains-some % ids)
+             judgments)
+          judgments-str
+            (clojure.string/join
+              system-newline
+              judgments)
+          opening-str
+            (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                 system-newline
+                 "<judgements>")
+          closing-str "</judgements>"
+          xml
+            (str opening-str
+                 system-newline
+                 judgments-str
+                 system-newline
+                 closing-str)
+          _ (spit test-set-xml-path xml)
+        ]))
+
+(defn spit-parties []
+  (let [
+          file-paths
+            (get-file-paths
+             "/home/floydian/saos-ext/test-data/osp-parties-copy"
+             #"[\s\S]*_con\.xml")
+          file-paths [test-set-xml-path]
+          judgments (get-judgments file-paths)
           osp-parties
             (mapcat
-              ;#(extract-parties-from-judgments %) judgments)
-              #(extract-parties-from-txt %) ss)
+              #(extract-parties-from-judgments %) judgments)
+              ;#(extract-parties-from-txt %) ss)
           ids-not-extracted
             (filter
               #(string? %)

@@ -120,10 +120,10 @@
     coll1
     coll2))
 
-(def law-tests-data-path "test-data/")
+(def links-test-data-path "test-data/links/")
 (def log-data-path "log/")
 
-(defn map-fn [func coll additional-item] 
+(defn map-fn [func coll additional-item]
   (map
     #(func % additional-item)
       coll))
@@ -131,7 +131,7 @@
 (defn get-log-files-paths [ext-files-paths]
   (map
     #(str/replace
-      (str %) law-tests-data-path log-data-path)
+      (str %) links-test-data-path log-data-path)
     ext-files-paths))
 
 (defn spit-all-csv [result-to-csv-fn path data]
@@ -146,7 +146,7 @@
     (let [
              file-paths
                (.listFiles
-                 (clojure.java.io/file law-tests-data-path))
+                 (clojure.java.io/file links-test-data-path))
              ext-files-paths (filter-ending-with file-paths ext)
              files (read-files ext ext-regex ext-files-paths)
              ext-files (:ext files)
@@ -163,7 +163,7 @@
              average-recall (get-average recalls)
              ext-files-paths-str (map #(str %) ext-files-paths)
              names-precs-recalls
-               (sort #(compare (last %1) (last %2)) 
+               (sort #(compare (last %1) (last %2))
                  (map
                    vector
                    ext-files-paths-str precisions recalls))

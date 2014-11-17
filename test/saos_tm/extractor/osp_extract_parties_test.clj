@@ -171,7 +171,7 @@
   (is (= (close-xtext-tags "<xText>sth") expected))
   (is (= (close-xtext-tags "sth</xText>") expected))
   (is (= (close-xtext-tags "<xText>sth</xText>") expected))))
-  
+
 (deftest remove-xLexLink-tags-test []
   (is (=
       (remove-xLexLink-tags
@@ -181,7 +181,7 @@
           " 1 k.k.</xLexLink> orzeka"))
       "<xText>na podstawie  orzeka")))
 
-; (def not-thrown? (complement nil?))
-; 
-; (deftest spit-parties-test []
-  ; (is (not-thrown? Exception (spit-parties))))
+;; (def not-thrown? (complement nil?))
+
+;; (deftest spit-parties-test []
+;;   (is (not-thrown? Exception (spit-parties))))
