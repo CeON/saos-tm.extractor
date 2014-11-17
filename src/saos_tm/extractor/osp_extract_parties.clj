@@ -13,7 +13,7 @@
     (re-seq #"\<judgement((?!\<judgement)[\s\S])*\</judgement\>" s)))
 
 (defn extract-osp-judgment-id [s]
-  (re-find #"id=.\d+[_a-zA-Z0-9\-]+" s))
+  (re-find #"(?<=id=').\d+[_a-zA-Z0-9\-]+" s))
 
 ; removing newlines if are inserted in content
 ; clj.xml/emit inserts newlines in content of xml nodes
@@ -106,11 +106,33 @@
         (str
           "przeciwko")))))
 
+(defn close-opening-tag [s]
+  (if
+    (nil?
+      (re-find #"^\<xText\>" s))
+    (str "<xText>" s)
+    s))
+
+(defn close-closing-tag [s]
+  (if
+    (nil?
+      (re-find #"\</xText\>$" s))
+    (str s "</xText>")
+    s))
+
+(defn close-xtext-tags [s]
+  (let [
+          opening-tag-closed (close-opening-tag s)
+          both-tags-closed (close-closing-tag opening-tag-closed)
+    ]
+    both-tags-closed))
+
 (defn extract-plaintiff [s]
-  (cleanse-party
-    (identify-plaintiff
-      (first
-        (str/split s #"\</xText\>")))))
+  (close-xtext-tags
+    (cleanse-party
+      (identify-plaintiff
+        (first
+          (str/split s #"\</xText\>"))))))
 
 (defn get-regex-match [regex to-next-xtext s]
   (re-find
@@ -150,27 +172,6 @@
            "o zasądzenie|"
            "o odszkodowanie|"
            "odszkodowanie")))))
-
-(defn close-opening-tag [s]
-  (if
-    (nil?
-      (re-find #"^\<xText\>" s))
-    (str "<xText>" s)
-    s))
-
-(defn close-closing-tag [s]
-  (if
-    (nil?
-      (re-find #"\</xText\>$" s))
-    (str s "</xText>")
-    s))
-
-(defn close-xtext-tags [s]
-  (let [
-          opening-tag-closed (close-opening-tag s)
-          both-tags-closed (close-closing-tag opening-tag-closed)
-    ]
-    both-tags-closed))
 
 (defn remove-xLexLink-tags [s]
   (str/replace s
@@ -248,8 +249,12 @@
         (nil? match)
         id
         (zipmap
-          [:plaintiff :defendant :txt :id]
-          [(extract-plaintiff match) (extract-defendant match) match id])))))
+          [:plaintiff :defendant
+           ;:txt
+           :id]
+          [(extract-plaintiff match) (extract-defendant match)
+           ;match
+           id])))))
 
 (defn dexmlise-cleanse [s]
   (when (not-nil? s)
@@ -259,10 +264,12 @@
   (map
     #(if (map? %)
       (zipmap
-      [:plaintiff :defendant :txt :id]
+      [:plaintiff :defendant
+       ;:txt
+       :id]
       [(dexmlise-cleanse (:plaintiff %))
        (dexmlise-cleanse (:defendant %))
-       (:txt %)
+       ;(:txt %)
        (:id %)])
       %)
     coll))
@@ -288,13 +295,12 @@
   (str/replace s #"\<xText/\>" ""))
 
 (defn extract-parties-from-judgments [coll]
-  (dexmlise-parties-osp
-    (remove nil?
-      (map
-        #(extract-parties-osp
-          (first
-            (split-osp-judgment-to-parts %)))
-        coll))))
+  (remove nil?
+          (map
+           #(extract-parties-osp
+             (first
+              (split-osp-judgment-to-parts %)))
+           coll)))
 
 (defn extract-parties-from-txt [s]
   (extract-parties-from-judgments
@@ -394,8 +400,10 @@
           judgments (get-judgments file-paths)
           osp-parties
             (mapcat
-              #(extract-parties-from-judgments %) judgments)
-              ;#(extract-parties-from-txt %) ss)
+              #((dexmlise-parties-osp
+                 (extract-parties-from-judgments %))
+                judgments))
+              ;#(dexmlise-parties-osp (extract-parties-from-txt %)) ss)
           ids-not-extracted
             (filter
               #(string? %)

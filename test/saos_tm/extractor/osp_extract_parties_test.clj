@@ -4,6 +4,7 @@
     [ clojure.string :as str ]
     [ clojure.set :refer :all ]
     [ langlab.core.parsers :refer :all ]
+    [saos-tm.extractor.common :refer :all]
     [saos-tm.extractor.osp-extract-parties :refer :all])
   (:import java.io.File)
   (:gen-class))
