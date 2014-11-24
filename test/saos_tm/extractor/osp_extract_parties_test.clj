@@ -51,7 +51,7 @@
 
 (deftest split-osp-judgment-to-parts-test []
   (let [
-          judgment
+          judgment1
             (str "<?xml version='1.0' encoding='UTF-8'?>\n"
                  "<judgement id='0'>\n"
                  "  <xPart>\n"
@@ -69,7 +69,7 @@
                  "    </xBlock>\n"
                  "  </xPart>\n"
                  "</judgement>")
-          expected
+          expected1
             [(str
               "<?xml version='1.0' encoding='UTF-8'?>\n"
               "<judgement id='0'>\n"
@@ -97,10 +97,108 @@
               "</xBlock>\n"
               "</xPart>\n"
               "</judgement>\n")]
-          actual
-            (split-osp-judgment-to-parts judgment)
+          actual1
+            (split-osp-judgment-to-parts judgment1)
+          judgment2
+            (str "<?xml version='1.0' encoding='UTF-8'?>\n"
+                 "<judgement id='0'>\n"
+                 "  <xPart>\n"
+                 "    <xName>Postanowienie+Uzasadnienie</xName>\n"
+                 "    <xBlock>\n"
+                 "      <xUnit xIsTitle='true' xBold='true' xType='part'>\n"
+                 "        <xName>POSTANOWIENIE</xName>\n"
+                 "        <xUnit xIsTitle='false' xType='none'/>\n"
+                 "      </xUnit>\n"
+                 "      <xUnit xIsTitle='true' xType='part'>\n"
+                 "        <xName>UZASADNIENIE</xName>\n"
+                 "        <xUnit xIsTitle='false' xType='none'/>\n"
+                 "      </xUnit>\n"
+                 "    </xBlock>\n"
+                 "  </xPart>\n"
+                 "</judgement>")
+          expected2
+            [(str
+              "<?xml version='1.0' encoding='UTF-8'?>\n"
+              "<judgement id='0'>\n"
+              "<xPart>\n"
+              "<xName>Postanowienie+Uzasadnienie</xName>\n"
+              "<xBlock>\n"
+              "<xUnit xIsTitle='true' xBold='true' xType='part'>\n"
+              "<xName>POSTANOWIENIE</xName>\n"
+              "<xUnit xIsTitle='false' xType='none'/>\n"
+              "</xUnit>\n"
+              "</xBlock>\n"
+              "</xPart>\n"
+              "</judgement>\n")
+            (str
+              "<?xml version='1.0' encoding='UTF-8'?>\n"
+              "<judgement id='0'>\n"
+              "<xPart>\n"
+              "<xName>Postanowienie+Uzasadnienie</xName>\n"
+              "<xBlock>\n"
+              "<xUnit xIsTitle='true' xType='part'>\n"
+              "<xName>UZASADNIENIE</xName>\n"
+              "<xUnit xIsTitle='false' xType='none'/>\n"
+              "</xUnit>\n"
+              "</xBlock>\n"
+              "</xPart>\n"
+              "</judgement>\n")]
+          actual2
+            (split-osp-judgment-to-parts judgment2)
+          judgment3
+            (str "<?xml version='1.0' encoding='UTF-8'?>\n"
+                 "<judgement id='0'>\n"
+                 "  <xPart>\n"
+                 "    <xName>Postanowienie+Uzasadnienie</xName>\n"
+                 "    <xBlock>\n"
+                 "      <xText>Sygn. akt III U 474/13</xText>"
+                 "      <xText xALIGNx=\"center\"/>"
+                 "      <xUnit xIsTitle='true' xBold='true' xType='part'>\n"
+                 "        <xName>POSTANOWIENIE</xName>\n"
+                 "        <xUnit xIsTitle='false' xType='none'/>\n"
+                 "      </xUnit>\n"
+                 "      <xUnit xIsTitle='true' xType='part'>\n"
+                 "        <xName>UZASADNIENIE</xName>\n"
+                 "        <xUnit xIsTitle='false' xType='none'/>\n"
+                 "      </xUnit>\n"
+                 "    </xBlock>\n"
+                 "  </xPart>\n"
+                 "</judgement>")
+          expected3
+            [(str
+              "<?xml version='1.0' encoding='UTF-8'?>\n"
+              "<judgement id='0'>\n"
+              "<xPart>\n"
+              "<xName>Postanowienie+Uzasadnienie</xName>\n"
+              "<xBlock>\n"
+              "<xText>Sygn. akt III U 474/13</xText>"
+              "<xUnit xIsTitle='true' xBold='true' xType='part'>\n"
+              "<xName>POSTANOWIENIE</xName>\n"
+              "<xUnit xIsTitle='false' xType='none'/>\n"
+              "</xUnit>\n"
+              "</xBlock>\n"
+              "</xPart>\n"
+              "</judgement>\n")
+            (str
+              "<?xml version='1.0' encoding='UTF-8'?>\n"
+              "<judgement id='0'>\n"
+              "<xPart>\n"
+              "<xName>Postanowienie+Uzasadnienie</xName>\n"
+              "<xBlock>\n"
+              "<xUnit xIsTitle='true' xType='part'>\n"
+              "<xName>UZASADNIENIE</xName>\n"
+              "<xUnit xIsTitle='false' xType='none'/>\n"
+              "</xUnit>\n"
+              "</xBlock>\n"
+              "</xPart>\n"
+              "</judgement>\n")]
+          actual3
+            (split-osp-judgment-to-parts judgment3)
+
           ]
-          (is (= actual expected))))
+          (is (= actual1 expected1))
+          (is (= actual2 expected2))
+          (is (= actual3 expected3))))
 
 (deftest split-osp-judgment-to-parts-only1part-test []
   (let [
@@ -181,6 +279,11 @@
           " Kodeks karny' xAddress='Dz. U. z 1997 r. Nr 88, poz. 553'>art. 46 §"
           " 1 k.k.</xLexLink> orzeka"))
       "<xText>na podstawie  orzeka")))
+
+(deftest remove-xTexts-test []
+  (is (= (remove-xTexts "aaa<xText/>bbb") "aaabbb"))
+  (is (= (remove-xTexts "aaa<xText xALIGNx=\"center\"/>bbb") "aaabbb")))
+
 
 ;; (def not-thrown? (complement nil?))
 

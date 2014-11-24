@@ -41,6 +41,19 @@
     zip/remove
     zip/root))])
 
+(defn emit-xmls-2 [to-remove]
+[(emit-xml
+  (->
+    to-remove
+    zip/right
+    zip/remove
+    zip/root))
+ (emit-xml
+  (->
+    to-remove
+    zip/remove
+    zip/root))])
+
 (defn split-osp-judgment-to-parts [s]
   (let [
           root (zip-str s)
@@ -60,19 +73,30 @@
               zip/next
               zip/right
               zip/next)
-    ]
+        ]
     (if
       (or
         (nil? to-remove-1)
         (nil? to-remove-2))
-      [(emit-xml (zip/node root))]
+      (if (= :xText (:tag (first to-remove-2)))
+         [(emit-xml (zip/node root))]
+         (emit-xmls-2 to-remove-2))
       (emit-xmls to-remove-1 to-remove-2))))
+
+(defn xml-tag-regex [tag-name]
+  (re-pattern
+   (str "\\<" tag-name "((?!\\>)[\\s\\S])*\\>")))
 
 (defn cleanse-party [s]
   (when
     (not-nil? s)
       (str/trim
         (replace-several s
+           (xml-tag-regex "xText") ""
+           #"\</xText\>" ""
+           #"\<xText\>" ""
+           #"\<xText" ""
+
            #"[^-]\-\</xText\>" "</xText>"
            #"[^-]-$" ""
            #"\.\</xText\>" "</xText>"
@@ -100,6 +124,8 @@
            #"pozwan(ej|emu|ych|ego)" ""
            #"oskarżon(ej|emu|ych|ego)" ""
            #"skazan(ej|emu|ych|ego)" ""
+           #"obwinione(j|go)" ""
+           #"skarga" ""
            #"^ie" ""
            #"^y" ""
            #"^u\s" ""
@@ -205,21 +231,52 @@
 
 (def to-next-xtext "((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)")
 
+(defn get-first-defendant-end-indicator-match
+  [defendant-indicators defendant-end-indicators s]
+  (let [
+          matches
+            (map
+              #(get-first-regex-match defendant-indicators % s)
+              defendant-end-indicators)
+          match
+            (find-first
+             #(not-nil? %)
+             matches)
+          match
+            (if (string? match)
+              match
+              (first match))
+    ]
+    match))
+
 (defn extract-defendant [s]
   (let [
-        match
-          (get-first-regex-match
-            ["(?<=sprawy z wniosku?\\</xText\\>)"
-             "(?<=sprawy z wniosku?)"
-             "(?<=sprawy z wniosku)"
-             "(?<=przeciwko\\</xText\\>)"
-             "(?<=przeciwko)"
-             "(?<=z wniosku)"
-             "(?<=sprawy?\\</xText\\>)"
-             "(?<=s p r a w y)"
-             "(?<=sprawy)"]
-             to-next-xtext
-             s)
+        defendant-indicators
+          ["(?<=sprawy z wniosku?\\</xText\\>)"
+           "(?<=sprawy z wniosku?)"
+           "(?<=sprawy z wniosku)"
+           "(?<=przeciwko\\</xText\\>)"
+           "(?<=przeciwko)"
+           "(?<=z wniosku)"
+           "(?<=sprawy?\\</xText\\>)"
+           "(?<=s p r a w y)"
+           "(?<=sprawy)"]
+        defendant-end-indicators
+          ["((?!przy udziale)[\\s\\S])*(?=przy udziale)"
+           "((?!\\>o )[\\s\\S])*\\>(?=o )"
+           "((?!na skutek apelacji)[\\s\\S])*\\>(?=na skutek apelacji)"
+           "((?!z powodu apelacji)[\\s\\S])*\\>(?=z powodu apelacji)"
+           "((?!oskarżon)[\\s\\S])*(?=oskarżon)"
+           "((?!\\>w [^\\<])[\\s\\S])*\\>(?=w )"
+           "((?! w [^\\<])[\\s\\S])*(?= w )"]
+
+        ; extracting defendant to nearest </xText>
+        match (get-first-regex-match defendant-indicators to-next-xtext s)
+
+        ; extracting defendant to certain phrases
+        ;match (get-first-defendant-end-indicator-match
+         ;      defendant-indicators defendant-end-indicators s)
+
         ]
         (when
           (not-nil? match)
@@ -320,8 +377,9 @@
       system-newline
       pairs)))
 
-(defn remove-xtexts [s]
-  (str/replace s #"\<xText/\>" ""))
+(defn remove-xTexts [s]
+;  (str/replace s #"\<xText\s*/\>" ""))
+(str/replace s #"\<xText((?!\>)[\s\S])*/\>" ""))
 
 (defn extract-parties-from-judgments [coll]
   (remove nil?
@@ -345,9 +403,8 @@
             (.listFiles
               (clojure.java.io/file dir))
           file-paths
-            (take 10
-              (filter #(matches? (str %) re)
-                file-paths))
+            (filter #(matches? (str %) re)
+                    file-paths)
         ]
     file-paths))
 
@@ -360,7 +417,7 @@
    #(substring? % s)
    coll))
 
-; removed <xText/> tags
+; removing <xText/> tags
 (defn get-judgments [file-paths]
   (let [
           files
@@ -369,7 +426,7 @@
               file-paths)
           ss
             (map
-              #(remove-xtexts %)
+              #(remove-xTexts %)
               files)
           judgments (map #(extract-osp-judgments %) ss)
         ]
@@ -379,7 +436,7 @@
 
 (defn extract-osp-test-xml []
   (let [
-          ids-file (slurp "test-data/osp-parties/answers.txt")
+          ids-file (slurp "test-data/osp-parties/answers-1.txt")
           ids-lines
             (str/split ids-file (re-pattern system-newline))
           ids
@@ -394,7 +451,7 @@
              ids)
           file-paths
             (get-file-paths
-             "/home/floydian/saos-ext/test-data/osp-parties-copy"
+             "/home/floydian/icm/osp/base/"
              #"[\s\S]*_con\.xml")
           judgments (apply concat (get-judgments file-paths))
           judgments
@@ -423,7 +480,7 @@
   (let [
           file-paths
             (get-file-paths
-             "/home/floydian/saos-ext/test-data/osp-parties-copy"
+             "/home/floydian/icm/osp/base/"
              #"[\s\S]*_con\.xml")
           file-paths [test-set-xml-path]
           judgments (get-judgments file-paths)

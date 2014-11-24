@@ -5,6 +5,7 @@
     [ clojure.set :refer :all ]
     [ langlab.core.parsers :refer :all ]
     [saos-tm.extractor.common :refer :all]
+    [saos-tm.extractor.common-test :refer :all]
     [saos-tm.extractor.osp-extract-parties :refer :all])
   (:import java.io.File)
   (:gen-class))
@@ -20,38 +21,86 @@
               (:defendant %) system-newline)
        coll))
 
+(def osp-parties-test-data-path "test-data/osp-parties/")
+
+(defn remove-opening-closing-quots [coll]
+  (map
+   #(subs % 1 (dec (count %)))
+   coll))
+
+(defn create-osp-parties-map [coll]
+  (into #{}
+        (map
+         #(zipmap [:id :plaintiff :defendant] (split-csv %))
+         coll)))
+
+(defn extract-parties [coll]
+  (prn "extract-parties")
+  (prn (count coll))
+  (into #{}
+        (mapcat
+         #(extract-parties-from-judgments %)
+         coll)))
+
+(defn get-elements-sorted-by-id [elements]
+  (sort-by
+   #(:id %)
+   elements))
+
+(defn spit-many [paths coll]
+  (doall
+   (map
+    #(spit %1 (apply str %2))
+    paths
+    coll)))
+
+(defn handle-results [results paths]
+  (let [
+        results-sorted (map #(get-elements-sorted-by-id %) results)
+        results-strs (map #(answers-to-string %) results-sorted)
+        _ (spit-many paths results-strs)
+        ]))
+
+(defn osp-parties-paths [file-names]
+  (map
+   #(str osp-parties-test-data-path %)
+   file-names))
+
 (deftest extract-parties-efficiency-test []
   (let [
-          judgments (get-judgments [test-set-xml-path])
+          file-names
+            {:test-sets ["test-set-1.xml" "test-set-2.xml"]
+             :answers   ["answers-1.txt"  "answers-2.txt"]
+             :corrects  ["corrects-1.txt" "corrects-2.txt"]
+             :errors    ["errors-1.txt"   "errors-2.txt"]}
+
+          judgments (get-judgments (osp-parties-paths (file-names :test-sets)))
           extracted-parties
-            (into #{}
-              (mapcat
-                #(extract-parties-from-judgments %)
-               judgments))
-          answers-txt (slurp "test-data/osp-parties/answers.txt")
-          answers-lines
-            (str/split
-             answers-txt
-             (re-pattern system-newline))
-          answers-without-quots
             (map
-             #(subs % 1 (dec (count %)))
-             answers-lines)
-          answers
-            (into #{}
-              (map
-               #(zipmap [:id :plaintiff :defendant] (split-csv %))
-               answers-without-quots))
-          correct (sort-by #(:id %) (difference answers extracted-parties))
-          correct (answers-to-string correct)
-          errors (sort-by #(:id %) (difference extracted-parties answers))
-          errors (answers-to-string errors)
-          ;_ (spit "correct.txt" (apply str correct))
-          ;_ (spit "errors.txt" (apply str errors))
-          precision-recall (get-precision-recall extracted-parties answers)
-          precision (precision-recall :precision)
-          recall (precision-recall :recall)
-          _ (prn (str "precision: " precision " recall: " recall))
+             #(into #{} (extract-parties-from-judgments %))
+             judgments)
+
+          answers-txts
+            (map #(slurp %) (osp-parties-paths (file-names :answers)))
+          answers-lines
+            (map
+             #(str/split
+             %
+             (re-pattern system-newline))
+             answers-txts)
+          answers-without-quots (map #(remove-opening-closing-quots %) answers-lines)
+          answers (map #(create-osp-parties-map %) answers-without-quots)
+
+          corrects (map #(difference %1 %2) answers extracted-parties)
+          _ (handle-results corrects (file-names :corrects))
+
+          errors (map #(difference %1 %2) extracted-parties answers)
+          _ (handle-results errors (file-names :errors))
+
+          precisions-recalls (get-precisions-recalls extracted-parties answers)
+          _ (prn precisions-recalls)
         ]
-    (is (> precision 0.94))
-    (is (> recall 0.94))))
+    (is (> ((first precisions-recalls) :precision) 0.94))
+    (is (> ((first precisions-recalls) :recall) 0.94))
+    (is (> ((second precisions-recalls) :precision) 0.78))
+    (is (> ((second precisions-recalls) :recall) 0.77))))
