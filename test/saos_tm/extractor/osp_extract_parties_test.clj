@@ -145,60 +145,9 @@
               "</judgement>\n")]
           actual2
             (split-osp-judgment-to-parts judgment2)
-          judgment3
-            (str "<?xml version='1.0' encoding='UTF-8'?>\n"
-                 "<judgement id='0'>\n"
-                 "  <xPart>\n"
-                 "    <xName>Postanowienie+Uzasadnienie</xName>\n"
-                 "    <xBlock>\n"
-                 "      <xText>Sygn. akt III U 474/13</xText>"
-                 "      <xText xALIGNx=\"center\"/>"
-                 "      <xUnit xIsTitle='true' xBold='true' xType='part'>\n"
-                 "        <xName>POSTANOWIENIE</xName>\n"
-                 "        <xUnit xIsTitle='false' xType='none'/>\n"
-                 "      </xUnit>\n"
-                 "      <xUnit xIsTitle='true' xType='part'>\n"
-                 "        <xName>UZASADNIENIE</xName>\n"
-                 "        <xUnit xIsTitle='false' xType='none'/>\n"
-                 "      </xUnit>\n"
-                 "    </xBlock>\n"
-                 "  </xPart>\n"
-                 "</judgement>")
-          expected3
-            [(str
-              "<?xml version='1.0' encoding='UTF-8'?>\n"
-              "<judgement id='0'>\n"
-              "<xPart>\n"
-              "<xName>Postanowienie+Uzasadnienie</xName>\n"
-              "<xBlock>\n"
-              "<xText>Sygn. akt III U 474/13</xText>"
-              "<xUnit xIsTitle='true' xBold='true' xType='part'>\n"
-              "<xName>POSTANOWIENIE</xName>\n"
-              "<xUnit xIsTitle='false' xType='none'/>\n"
-              "</xUnit>\n"
-              "</xBlock>\n"
-              "</xPart>\n"
-              "</judgement>\n")
-            (str
-              "<?xml version='1.0' encoding='UTF-8'?>\n"
-              "<judgement id='0'>\n"
-              "<xPart>\n"
-              "<xName>Postanowienie+Uzasadnienie</xName>\n"
-              "<xBlock>\n"
-              "<xUnit xIsTitle='true' xType='part'>\n"
-              "<xName>UZASADNIENIE</xName>\n"
-              "<xUnit xIsTitle='false' xType='none'/>\n"
-              "</xUnit>\n"
-              "</xBlock>\n"
-              "</xPart>\n"
-              "</judgement>\n")]
-          actual3
-            (split-osp-judgment-to-parts judgment3)
-
           ]
           (is (= actual1 expected1))
-          (is (= actual2 expected2))
-          (is (= actual3 expected3))))
+          (is (= actual2 expected2))))
 
 (deftest split-osp-judgment-to-parts-only1part-test []
   (let [

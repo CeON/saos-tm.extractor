@@ -88,7 +88,8 @@
              %
              (re-pattern system-newline))
              answers-txts)
-          answers-without-quots (map #(remove-opening-closing-quots %) answers-lines)
+          answers-without-quots
+            (map #(remove-opening-closing-quots %) answers-lines)
           answers (map #(create-osp-parties-map %) answers-without-quots)
 
           corrects (map #(difference %1 %2) answers extracted-parties)
