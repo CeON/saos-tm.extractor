@@ -101,7 +101,7 @@
           precisions-recalls (get-precisions-recalls extracted-parties answers)
           _ (prn precisions-recalls)
         ]
-    (is (> ((first precisions-recalls) :precision) 0.94))
-    (is (> ((first precisions-recalls) :recall) 0.94))
-    (is (> ((second precisions-recalls) :precision) 0.78))
-    (is (> ((second precisions-recalls) :recall) 0.77))))
+    (is (> ((first precisions-recalls) :precision) 0.977))
+    (is (> ((first precisions-recalls) :recall) 0.977))
+    (is (> ((second precisions-recalls) :precision) 0.989))
+    (is (> ((second precisions-recalls) :recall) 0.979))))

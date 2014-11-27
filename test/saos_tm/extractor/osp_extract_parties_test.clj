@@ -188,10 +188,6 @@
 (deftest extract-defendant-test []
   (is (=
         (extract-defendant
-          "przeciwko firmie MMM </xText> <xText> jsdkfhskdjf </xText>")
-          "<xText>firmie MMM</xText>"))
-  (is (=
-        (extract-defendant
           (str " Prokuratora Tomasza Janeczka</xText><xText>po rozpoznaniu"
             " w dniu 13 listopada 2008</xText><xText>sprawy z"
             " wniosku</xText><xText><xBx><xAnon>W."
@@ -215,10 +211,10 @@
   (let [
           expected "<xText>sth</xText>"
     ]
-  (is (= (close-xtext-tags "sth") expected))
-  (is (= (close-xtext-tags "<xText>sth") expected))
-  (is (= (close-xtext-tags "sth</xText>") expected))
-  (is (= (close-xtext-tags "<xText>sth</xText>") expected))))
+  (is (= (close-xText-tags "sth") expected))
+  (is (= (close-xText-tags "<xText>sth") expected))
+  (is (= (close-xText-tags "sth</xText>") expected))
+  (is (= (close-xText-tags "<xText>sth</xText>") expected))))
 
 (deftest remove-xLexLink-tags-test []
   (is (=
