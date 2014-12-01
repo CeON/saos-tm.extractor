@@ -69,10 +69,10 @@
 (deftest extract-parties-efficiency-test []
   (let [
           file-names
-            {:test-sets ["test-set-1.xml" "test-set-2.xml"]
-             :answers   ["answers-1.txt"  "answers-2.txt"]
-             :corrects  ["corrects-1.txt" "corrects-2.txt"]
-             :errors    ["errors-1.txt"   "errors-2.txt"]}
+            {:test-sets ["test-set-1.xml" "test-set-2.xml" "test-set-3.xml"]
+             :answers   ["answers-1.txt"  "answers-2.txt" "answers-3.txt"]
+             :corrects  ["corrects-1.txt" "corrects-2.txt" "corrects-3.txt"]
+             :errors    ["errors-1.txt"   "errors-2.txt" "errors-3.txt"]}
 
           judgments (get-judgments (osp-parties-paths (file-names :test-sets)))
           extracted-parties
@@ -101,7 +101,9 @@
           precisions-recalls (get-precisions-recalls extracted-parties answers)
           _ (prn precisions-recalls)
         ]
-    (is (> ((first precisions-recalls) :precision) 0.977))
-    (is (> ((first precisions-recalls) :recall) 0.977))
-    (is (> ((second precisions-recalls) :precision) 0.989))
-    (is (> ((second precisions-recalls) :recall) 0.979))))
+    (is (> ((nth precisions-recalls 0) :recall) 0.977))
+    (is (> ((nth precisions-recalls 0) :precision) 0.977))
+    (is (> ((nth precisions-recalls 1) :recall) 0.979))
+    (is (> ((nth precisions-recalls 1) :precision) 0.989))
+    (is (> ((nth precisions-recalls 2) :recall) 0.809))
+    (is (> ((nth precisions-recalls 2) :precision) 0.835))))

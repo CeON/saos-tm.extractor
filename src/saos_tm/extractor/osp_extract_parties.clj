@@ -550,7 +550,7 @@
 
 (defn extract-osp-test-xml []
   (let [
-          ids-file (slurp "test-data/osp-parties/answers-1.txt")
+          ids-file (slurp "test-data/osp-parties/answers-3.txt")
           ids-lines
             (str/split ids-file (re-pattern system-newline))
           ids
@@ -566,7 +566,7 @@
           file-paths
             (get-file-paths
              "/home/floydian/icm/osp/base/"
-             #"[\s\S]*_con\.xml")
+             #"[\s\S]*0_con\.xml")
           judgments (apply concat (get-judgments file-paths))
           judgments
             (filter
