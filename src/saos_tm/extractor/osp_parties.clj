@@ -1,4 +1,4 @@
-(ns saos-tm.extractor.osp-extract-parties
+(ns saos-tm.extractor.osp-parties
   (:require
     [ clojure.string :as str ]
     [ clojure.xml :as xml ]

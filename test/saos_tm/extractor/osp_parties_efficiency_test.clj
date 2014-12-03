@@ -1,12 +1,12 @@
-(ns saos-tm.extractor.osp-extract-parties-efficiency-test
+(ns saos-tm.extractor.osp-parties-efficiency-test
   (:require
     [clojure.test :refer :all]
-    [ clojure.string :as str ]
-    [ clojure.set :refer :all ]
-    [ langlab.core.parsers :refer :all ]
+    [clojure.string :as str]
+    [clojure.set :refer :all]
+    [langlab.core.parsers :refer :all]
     [saos-tm.extractor.common :refer :all]
     [saos-tm.extractor.common-test :refer :all]
-    [saos-tm.extractor.osp-extract-parties :refer :all])
+    [saos-tm.extractor.osp-parties :refer :all])
   (:import java.io.File)
   (:gen-class))
 

@@ -1,11 +1,11 @@
-(ns saos-tm.extractor.osp-extract-parties-test
+(ns saos-tm.extractor.osp-parties-test
   (:require
     [clojure.test :refer :all]
     [ clojure.string :as str ]
     [ clojure.set :refer :all ]
     [ langlab.core.parsers :refer :all ]
     [saos-tm.extractor.common :refer :all]
-    [saos-tm.extractor.osp-extract-parties :refer :all])
+    [saos-tm.extractor.osp-parties :refer :all])
   (:import java.io.File)
   (:gen-class))
 
