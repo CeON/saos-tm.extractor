@@ -169,7 +169,7 @@
    (Integer. (re-find  #"\d+" s )))
 
 (defn zip-str [s]
-  (zip/xml-zip 
+  (zip/xml-zip
     (xml/parse
       (java.io.ByteArrayInputStream. (.getBytes s)))))
 
@@ -188,3 +188,32 @@
     (filter
       #(.endsWith (str %) s)
       ss)))
+
+(defn get-regex-match [regex following-text-regex s]
+  (re-find
+    (re-pattern
+      (str regex following-text-regex))
+    s))
+
+(defn get-first-regex-match [coll following-text-regex s]
+  (let [
+          matches
+            (map
+              #(get-regex-match % following-text-regex s)
+              coll)
+          match
+            (find-first
+             #(not-nil? %)
+             matches)
+          match
+            (if (string? match)
+              match
+              (first match))
+        ]
+    match))
+
+(defn get-first-regex-match-case-ins [coll following-text-regex s]
+  (get-first-regex-match
+    (map #(str "(?i)" %) coll)
+    following-text-regex
+    s))

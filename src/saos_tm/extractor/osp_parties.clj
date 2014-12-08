@@ -253,35 +253,6 @@
         (cleanse-party plaintiff-match))
       (extract-multiple point-indicator plaintiff-match "</xText>" s))))
 
-(defn get-regex-match [regex to-next-xText s]
-  (re-find
-    (re-pattern
-      (str regex to-next-xText))
-    s))
-
-(defn get-first-regex-match [coll to-next-xText s]
-  (let [
-          matches
-            (map
-              #(get-regex-match % to-next-xText s)
-              coll)
-          match
-            (find-first
-             #(not-nil? %)
-             matches)
-          match
-            (if (string? match)
-              match
-              (first match))
-    ]
-    match))
-
-(defn get-first-regex-match-case-ins [coll to-next-xText s]
-  (get-first-regex-match
-    (map #(str "(?i)" %) coll)
-    to-next-xText
-    s))
-
 (defn identify-defendant [s]
   (first
     (str/split
@@ -308,7 +279,7 @@
   (close-xText-tags
     (cleanse-party s)))
 
-(def to-next-xText "((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)")
+(def to-next-text "((?!\\</xText\\>)[\\s\\S])*(?=\\</xText\\>)")
 
 (defn get-first-defendant-end-indicator-match
   [defendant-indicators defendant-end-indicators s]
@@ -357,7 +328,7 @@
          "((?! w [^\\<])[\\s\\S])*(?= w )"]
 
         ; extracting defendant to nearest </xText>
-        ;match (get-first-regex-match defendant-indicators to-next-xText s)
+        ;match (to-next-text defendant-indicators to-next-text s)
 
         ; extracting defendant to certain phrases
         match (get-first-defendant-end-indicator-match
@@ -511,17 +482,6 @@
   (count
     (extract-osp-judgments s)))
 
-(defn get-file-paths [dir re]
-  (let [
-          file-paths
-            (.listFiles
-              (clojure.java.io/file dir))
-          file-paths
-            (filter #(matches? (str %) re)
-                    file-paths)
-        ]
-    file-paths))
-
 (defn take-to-regex [s re]
   (first
    (str/split s re)))
@@ -530,113 +490,3 @@
   (some
    #(substring? % s)
    coll))
-
-; removing <xText/> tags
-(defn get-judgments [file-paths]
-  (let [
-          files
-            (map
-              #(slurp %)
-              file-paths)
-          ss
-            (map
-              #(remove-xTexts %)
-              files)
-          judgments (map #(extract-osp-judgments %) ss)
-        ]
-    judgments))
-
-(def test-set-xml-path "test-data/osp-parties/test-set.xml")
-
-(defn extract-osp-test-xml []
-  (let [
-          ids-file (slurp "test-data/osp-parties/answers-3.txt")
-          ids-lines
-            (str/split ids-file (re-pattern system-newline))
-          ids
-            (map
-             #(take-to-regex %
-               (re-pattern
-                (str "\"" csv-delimiter "\"")))
-             ids-lines)
-          ids
-            (map
-             #(str/replace % #"\"" "")
-             ids)
-          file-paths
-            (get-file-paths
-             "/home/floydian/icm/osp/base/"
-             #"[\s\S]*0_con\.xml")
-          judgments (apply concat (get-judgments file-paths))
-          judgments
-            (filter
-             #(contains-some % ids)
-             judgments)
-          judgments-str
-            (clojure.string/join
-              system-newline
-              judgments)
-          opening-str
-            (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                 system-newline
-                 "<judgements>")
-          closing-str "</judgements>"
-          xml
-            (str opening-str
-                 system-newline
-                 judgments-str
-                 system-newline
-                 closing-str)
-          _ (spit test-set-xml-path xml)
-        ]))
-
-(defn spit-parties []
-  (let [
-          file-paths
-            (get-file-paths
-             "/home/floydian/icm/osp/base/"
-             #"[\s\S]*_con\.xml")
-          file-paths [test-set-xml-path]
-          judgments (get-judgments file-paths)
-          osp-parties
-            (mapcat
-              #((dexmlise-parties-osp
-                 (extract-parties-from-judgments %))
-                judgments))
-              ;#(dexmlise-parties-osp (extract-parties-from-txt %)) ss)
-          ids-not-extracted
-            (filter
-              #(string? %)
-              osp-parties)
-          osp-parties
-            (remove
-              #(string? %)
-              osp-parties)
-          defendants
-            (map
-              #(:defendant %)
-              osp-parties)
-          plaintiffs
-            (map
-              #(:plaintiff %)
-              osp-parties)
-          ids
-            (map
-              #(:id %)
-              osp-parties)
-          txts
-            (map
-              #(:txt %)
-              osp-parties)
-    ]
-    (spit "tmp/defendants.txt"
-      (join-newline defendants ids txts))
-    (spit "tmp/plaintiffs.txt"
-      (join-newline plaintiffs ids txts))))
-
-(defn get-osp-judgment-by-id [id s]
-  (apply str
-    (filter
-      #(not-nil?
-        (re-find (re-pattern id) %))
-      (extract-osp-judgments s))))

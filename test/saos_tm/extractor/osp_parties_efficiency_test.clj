@@ -66,6 +66,116 @@
    #(str osp-parties-test-data-path %)
    file-names))
 
+; removing <xText/> tags
+(defn get-judgments [file-paths]
+  (let [
+          files
+            (map
+              #(slurp %)
+              file-paths)
+          ss
+            (map
+              #(remove-xTexts %)
+              files)
+          judgments (map #(extract-osp-judgments %) ss)
+        ]
+    judgments))
+
+(def test-set-xml-path "test-data/osp-parties/test-set.xml")
+
+(defn extract-osp-test-xml []
+  (let [
+          ids-file (slurp "test-data/osp-parties/answers-3.txt")
+          ids-lines
+            (str/split ids-file (re-pattern system-newline))
+          ids
+            (map
+             #(take-to-regex %
+               (re-pattern
+                (str "\"" csv-delimiter "\"")))
+             ids-lines)
+          ids
+            (map
+             #(str/replace % #"\"" "")
+             ids)
+          file-paths
+            (get-file-paths
+             "/home/floydian/icm/osp/base/"
+             #"[\s\S]*0_con\.xml")
+          judgments (apply concat (get-judgments file-paths))
+          judgments
+            (filter
+             #(contains-some % ids)
+             judgments)
+          judgments-str
+            (clojure.string/join
+              system-newline
+              judgments)
+          opening-str
+            (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                 system-newline
+                 "<judgements>")
+          closing-str "</judgements>"
+          xml
+            (str opening-str
+                 system-newline
+                 judgments-str
+                 system-newline
+                 closing-str)
+          _ (spit test-set-xml-path xml)
+        ]))
+
+(defn spit-parties []
+  (let [
+          file-paths
+            (get-file-paths
+             "/home/floydian/icm/osp/base/"
+             #"[\s\S]*_con\.xml")
+          file-paths [test-set-xml-path]
+          judgments (get-judgments file-paths)
+          osp-parties
+            (mapcat
+              #((dexmlise-parties-osp
+                 (extract-parties-from-judgments %))
+                judgments))
+              ;#(dexmlise-parties-osp (extract-parties-from-txt %)) ss)
+          ids-not-extracted
+            (filter
+              #(string? %)
+              osp-parties)
+          osp-parties
+            (remove
+              #(string? %)
+              osp-parties)
+          defendants
+            (map
+              #(:defendant %)
+              osp-parties)
+          plaintiffs
+            (map
+              #(:plaintiff %)
+              osp-parties)
+          ids
+            (map
+              #(:id %)
+              osp-parties)
+          txts
+            (map
+              #(:txt %)
+              osp-parties)
+    ]
+    (spit "tmp/defendants.txt"
+      (join-newline defendants ids txts))
+    (spit "tmp/plaintiffs.txt"
+      (join-newline plaintiffs ids txts))))
+
+(defn get-osp-judgment-by-id [id s]
+  (apply str
+    (filter
+      #(not-nil?
+        (re-find (re-pattern id) %))
+      (extract-osp-judgments s))))
+
 (deftest extract-parties-efficiency-test []
   (let [
           file-names

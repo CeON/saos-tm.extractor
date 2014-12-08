@@ -5,6 +5,17 @@
     [ clojure-csv.core :refer :all ]
     [saos-tm.extractor.common :refer :all]))
 
+(defn get-file-paths [dir re]
+  (let [
+          file-paths
+            (.listFiles
+              (clojure.java.io/file dir))
+          file-paths
+            (filter #(matches? (str %) re)
+                    file-paths)
+        ]
+    file-paths))
+
 (deftest article-coords-test
   (is(=
     [["4" "0" "0" "2" "0" "0"]]

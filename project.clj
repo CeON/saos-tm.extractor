@@ -6,7 +6,7 @@
   :aot :all
   :main saos-tm.extractor.main
 
-  :dependencies [
-    [org.clojure/clojure "1.6.0"]
-    [langlab "1.2.0"]
-    [clojure-csv/clojure-csv "2.0.1"]])
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [langlab "1.2.0"]
+                 [clojure-csv/clojure-csv "2.0.1"]
+                 [cheshire "5.3.1"]])
