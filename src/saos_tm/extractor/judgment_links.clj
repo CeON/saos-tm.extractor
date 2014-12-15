@@ -8,11 +8,11 @@
   (:import java.io.File)
   (:gen-class))
 
-(defn extract [reg s]
+(defn extract [re s]
   (set
     (map
       #(str/replace % system-newline " ")
-      (re-seq reg s))))
+      (re-seq re s))))
 
 (def osp-regex
   #"[IVXLCDM]+[\s\.]+[0-9]*[\s\.]*[a-zA-Z]*-?[a-zA-Z]*[\s\.]+\d+/\d+")
@@ -149,7 +149,7 @@
               #(extract-signature-universal %)
               having-slash-token-candidates)))
     nil)))
-    
+
 
 (defn extract-all-signatures [s]
   (let [
@@ -217,7 +217,6 @@
               [nsa-signatures-count]
               [unknown-signatures-count]
               signatures)
-          csv (seq-to-csv to-write) 
+          csv (seq-to-csv to-write)
         ]
         (spit output-file-path csv))))
- 

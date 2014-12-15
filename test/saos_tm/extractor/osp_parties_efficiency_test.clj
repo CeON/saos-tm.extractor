@@ -194,9 +194,7 @@
             (map #(slurp %) (osp-parties-paths (file-names :answers)))
           answers-lines
             (map
-             #(str/split
-             %
-             (re-pattern system-newline))
+             #(split-lines %)
              answers-txts)
           answers-without-quots
             (map #(remove-opening-closing-quots %) answers-lines)

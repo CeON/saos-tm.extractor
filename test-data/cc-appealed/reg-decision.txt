@@ -64,7 +64,7 @@
 "155025000001506_III_Ko-o_000481_2008_Uz_2010-02-18_001","","","","","",""
 "155025000002006_IV_Kz_000445_2013_Uz_2013-06-24_001","zażalenia","oskarżonego","postanowienie","Sądu Rejonowego dla Wrocławia-Fabrycznej","8.04.2013 roku",""
 "155510000001006_II_K_000058_2013_Uz_2013-06-25_001","","","","","",""
-"155515000001003_II_Cs_000104_2014_Uz_2014-05-15_001","skargi","<span class="anon-block">A. G. (1)</span> oraz ze skargi <span class="anon-block">A. G. (2)</span>","stwierdzenie przewlekłości postępowania","Sądem Rejonowym w Goleniowie","","I Ns 581/12"
+"155515000001003_II_Cs_000104_2014_Uz_2014-05-15_001","skargi","<span class="anon-block">A. G. (1)</span> oraz ze skargi <span class="anon-block">A. G. (2)</span>","stwierdzenie przewlekłości postępowania","Sądem Rejonowym w Goleniowie","7 kwietnia 2014 r.","I Ns 581/12"
 "155515000001003_II_Cz_000610_2014_Uz_2014-04-22_001","zażalenia","uczestnika <span class="anon-block">W. N. (2)</span>","punktu III postanowienia ","Sądu Rejonowego w Stargardzie Szczecińskim","10 października 2013 roku","I Ns 1208/13"
 "155515000001003_II_Cz_001099_2013_Uz_2013-11-28_001","zażalenia","dłużniczki","postanowienie","Sądu Rejonowego Szczecin – Prawobrzeże i Zachód w Szczecinie","2 maja 2013 r.","IX Co 1172/13"
 "155515000001003_II_Cz_001245_2014_Uz_2014-08-14_001","zażalenia","pozwanej","postanowienie","Sądu Rejonowego Szczecin - Prawobrzeże i Zachód w Szczecinie","6 marca 2014 r.","I Nc 1059/13"

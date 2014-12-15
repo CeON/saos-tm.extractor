@@ -153,18 +153,6 @@
     nil
     (float (/ true-positives-count elements-count))))
 
-(defn get-precision-recall [extracted-set benchmark-set]
-  (let [
-          true-positives-count
-            (count
-              (intersection extracted-set benchmark-set))
-          extracted-count (count extracted-set)
-          benchmark-count (count benchmark-set)
-          precision (get-measure true-positives-count extracted-count)
-          recall (get-measure true-positives-count benchmark-count)
-    ]
-    (zipmap [:precision :recall] [precision recall])))
-
 (defn parse-int [s]
    (Integer. (re-find  #"\d+" s )))
 
@@ -217,3 +205,8 @@
     (map #(str "(?i)" %) coll)
     following-text-regex
     s))
+
+(defn str-to-regex [s]
+  (re-pattern
+   (replace-several s
+                   #"\." (str "\\" "."))))

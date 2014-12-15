@@ -2,6 +2,7 @@
   (:require
     [clojure.test :refer :all]
     [ clojure.string :as str ]
+    [clojure.set :refer :all]
     [ clojure-csv.core :refer :all ]
     [saos-tm.extractor.common :refer :all]))
 
@@ -15,6 +16,18 @@
                     file-paths)
         ]
     file-paths))
+
+(defn get-precision-recall [extracted-set benchmark-set]
+  (let [
+          true-positives-count
+            (count
+              (intersection extracted-set benchmark-set))
+          extracted-count (count extracted-set)
+          benchmark-count (count benchmark-set)
+          precision (get-measure true-positives-count extracted-count)
+          recall (get-measure true-positives-count benchmark-count)
+    ]
+    (zipmap [:precision :recall] [precision recall])))
 
 (deftest article-coords-test
   (is(=
@@ -150,14 +163,16 @@
     (apply str
       (map-fn result-to-csv-fn data "signature"))))
 
+(defn list-file-paths [dir-path]
+  (.listFiles
+   (clojure.java.io/file dir-path)))
+
 (defn links-efficiency-test
   [ext ext-regex benchmark-records-fn extracted-records-fn
   precision-threshold recall-threshold result-to-csv-fn]
   (time
     (let [
-             file-paths
-               (.listFiles
-                 (clojure.java.io/file links-test-data-path))
+             file-paths (list-file-paths links-test-data-path)
              ext-files-paths (filter-ending-with file-paths ext)
              files (read-files ext ext-regex ext-files-paths)
              ext-files (:ext files)
@@ -199,3 +214,6 @@
           ", <xAnon>L. P. (1)</xAnon> i <xAnon>A. G. (1)</xAnon></xBx>"))
       " Szpitalowi (...) w Ł., L. P. (1) i A. G. (1)"))
   )
+
+(defn split-lines [s]
+  (str/split s (re-pattern system-newline)))
