@@ -191,8 +191,6 @@
     ]
     (last splits)))
 
-(def not-matches? (complement matches?))
-
 (defn close-xUnit-tag [s]
   (if
     (and

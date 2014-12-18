@@ -164,6 +164,8 @@
 (defn matches? [s re]
   (not-nil? (re-matches re s)))
 
+(def not-matches? (complement matches?))
+
 (defn dexmlise [s]
   (when (not-nil? s)
     (str/replace s #"\<((?![\<\>])[\s\S])*\>" "")))
@@ -209,4 +211,7 @@
 (defn str-to-regex [s]
   (re-pattern
    (replace-several s
-                   #"\." (str "\\" "."))))
+                    #"\." (str "\\")
+                    #"\(" (str "\\" "(")
+                    #"\)" (str "\\" ")")
+                    )))

@@ -1,0 +1,3 @@
+"155000000001006_II_S_000018_2014_Uz_2014-04-29_001","skargę","<span class="anon-block">T. P.</span>","przewlekłość postępowania","Prokuratury Okręgowej we Wrocławiu","","V Ds 2/05"
+"155000000001006_II_S_000024_2014_Uz_2014-07-14_001","skargę","Skazany <span class="anon-block">W. J.</span>","przewlekłość postępowania","Sądu Okręgowego we Wrocławiu","24 czerwca 2014r.","V Pen 26/14/wz"
+"155000000001521_III_AUa_001294_2011_Uz_2012-07-11_001","skargi kasacyjnej","<span class="anon-block">E. W.</span>","wyroku","Sądu Apelacyjnego we Wrocławiu","17 listopada 2011r.","III A Ua 1294/11"

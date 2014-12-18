@@ -1,0 +1,5 @@
+"151025000004003_VIII_S_000001_2014_Uz_2014-01-24_002","skardze","<span class="anon-block">J. J.</span>","postępowaniu sądowym","Sąd Rejonowy w Toruniu","5 grudnia 2013 r.","I C 1485/13"
+"151025000004003_VIII_S_000030_2013_Uz_2013-11-29_001","skardze","<span class="anon-block">J. J.</span>","postępowaniu sądowym","Sąd Rejonowy w Toruniu","30 października 2013 r.","I C 325/12"
+"151515000001503_III_S_000122_2014_Uz_2014-07-01_001","skargę","<span class="anon-block">D. W.</span>","przewlekłość postępowania","Sądu Rejonowego w Zabrzu","6 czerwca 2014r.","I Ns 976/13"
+"153005000001003_II_S_000065_2013_Uz_2013-05-25_001","skargę","<span class="anon-block">J. J.</span>","naruszenie prawa strony do rozpoznania sprawy w postępowaniu sądowym","Sąd Rejonowy Lublin – Zachód w Lublinie","21 lutego 2012 roku","I Co 143/11"
+"155515000001003_II_Cs_000104_2014_Uz_2014-05-15_001","skargi","<span class="anon-block">A. G. (1)</span> oraz ze skargi <span class="anon-block">A. G. (2)</span>","stwierdzenie przewlekłości postępowania","Sądem Rejonowym w Goleniowie","7 kwietnia 2014 r.","I Ns 581/12"
