@@ -110,7 +110,7 @@
         ]
     appeal-parts-map))
 
-(defn extract-appeal-from-sentence [s]
+(defn extract-appeal-or-grievance [s]
   (let [
          appeal-match-groups
          (map #(first (find-from-to-first-case-ins s % osp-regex))
@@ -131,7 +131,7 @@
         ]
     result))
 
-(defn extract-complaint [s]
+(defn identify-complaint [s]
   (let [
         s (cleanse-appeal-str s)
         part (first (find-from-to-first-case-sen s "UZASADNIENIE" osp-regex))
@@ -168,7 +168,7 @@
              (map #(when (not-nil? %) (str/trim %))
                   [appeal-type appellant reason court date signature]))))
 
-(defn extract-appeal-from-decision [s]
+(defn extract-complaint [s]
   (let [
         appeal-match-groups-complaint
           (map #(first (find-from-to-first-case-ins s % osp-regex))
@@ -184,6 +184,6 @@
            (nil? appeal-match-str-complaint)
            nil
            :else
-           (extract-complaint s))
+           (identify-complaint s))
         ]
     result))

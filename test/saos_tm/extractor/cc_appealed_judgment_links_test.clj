@@ -80,12 +80,12 @@
            "app-decision" "reg-decision"
            "app-decision-complaint" "reg-decision-complaint"]
         extract-fns
-          [extract-appeal-from-sentence
-           extract-appeal-from-sentence
-           extract-appeal-from-sentence
-           extract-appeal-from-sentence
-           extract-appeal-from-decision
-           extract-appeal-from-decision]
+          [extract-appeal-or-grievance
+           extract-appeal-or-grievance
+           extract-appeal-or-grievance
+           extract-appeal-or-grievance
+           extract-complaint
+           extract-complaint]
 
         results
           (map
