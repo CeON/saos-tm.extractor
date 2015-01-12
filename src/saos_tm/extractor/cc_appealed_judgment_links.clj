@@ -8,7 +8,7 @@
 
 (def osp-regex
   (str "[IVXLCDM]+[\\s\\.]*[0-9]*[\\s\\.]*"
-      "[a-zA-Z]*-?[a-zA-Z]*[\\s\\.]+\\d+\\s*/\\s*\\d+(/[A-Z]+)?(\\s*upr\\.)?"))
+    "[a-zA-Z]*-?[a-zA-Z]*[\\s\\.]+\\d+\\s*/\\s*\\d+(/[A-Z]+)?(\\s*upr\\.?)?"))
 
 (defn remove-html-tags-other-than-span [s]
   (str/replace s #"<(?!/?span)((?!>)[\s\S])*>" " "))
@@ -50,7 +50,7 @@
         parts
           (str/split
            remainder
-           #"z\s*dnia|\(?sygn?(atura)?\s*(akt[\.:]?)?|w sprawie")
+           #"z\s*dnia|o? ?\(?sygn?(atura)?\s*(akt[\.:]?)?|w sprawie")
         date-index 1
         parts
         (if (> (count parts) 1)
@@ -58,6 +58,7 @@
             parts
             date-index
             (first (str/split (second parts) #"(?<=r\.)|(?<=roku)"))))
+        parts (filter #(not-matches? % #"\s*") parts)
         ]
     (concat [appeal-type appellant judgment-type] parts)))
 
@@ -113,14 +114,14 @@
 (defn extract-appeal-or-grievance [s]
   (let [
          appeal-match-groups
-         (map #(first (find-from-to-first-case-ins s % osp-regex))
-           ["(?<=skutek) apelacji" "(?<=z powodu) apelacji"
-            "(?<=skutek) zażalenia"
-            "(?<=z powodu) zażalenia" "zażalenia wniesionego"
-            "(?<=w związku z) zażaleniem" "zażalenia wnioskodawc"
-            "zażalenia pow" "(?<=w przedmiocie) zażalenia"
-            "zażalenia pokrzywdz" "zażalenia str"
-            "zażalenia oskarżon"])
+           (map #(first (find-from-to-first-case-ins s % osp-regex))
+             ["(?<=skutek) apelacji" "(?<=z powodu) apelacji"
+              "(?<=skutek) zażalenia"
+              "(?<=z powodu) zażalenia" "zażalenia wniesionego"
+              "(?<=w związku z) zażaleniem" "zażalenia wnioskodawc"
+              "zażalenia pow" "(?<=w przedmiocie) zażalenia"
+              "zażalenia pokrzywdz" "zażalenia str"
+              "zażalenia oskarżon"])
         appeal-match-str (find-first #(not-nil? %) appeal-match-groups)
         result
           (cond

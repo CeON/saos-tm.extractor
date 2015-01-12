@@ -14,7 +14,7 @@
 "151020000002003_IV_Cz_000425_2013_Uz_2013-08-08_001","zażalenia","powodów","postanowienie","Sądu Rejonowego w Słupsku Zamiejscowego Wydziału Cywilnego w Miastku","3.06.2013r.","XV C 199/13"
 "151020000002003_IV_Cz_000447_2013_Uz_2013-08-08_001","zażalenia","uczestnika <span class="anon-block">J. K.</span>","postanowienie","Sądu Rejonowego w Chojnicach","24 maja 2013 r.","III Nsm 69/13"
 "151020000002003_IV_Cz_000615_2013_Uz_2013-11-06_001","zażalenia","pozwanego","postanowienia","Sądu Rejonowego w Lęborku","28 sierpnia 2013 roku",""
-"151020000002521_V_Pz_000020_2013_Uz_2013-08-05_001","zażalenia","pozwanego","postanowienie","Sądu Rejonowego w <span class="anon-block">C.</span>","11.06.2013 r.",""
+"151020000002521_V_Pz_000020_2013_Uz_2013-08-05_001","zażalenia","pozwanego","postanowienie","Sądu Rejonowego w <span class="anon-block">C.</span>","11.06.2013 r.","<span class="anon-block">(...)</span>"
 "151515000001503_III_Ca_001343_2012_Uz_2014-01-22_001","apelacji","uczestników postępowania","postanowienia","Sądu Rejonowego w Gliwicach","6 czerwca 2012 r.","I Ns 412/12"
 "151515000001503_III_Cz_000005_2014_Uz_2014-01-23_001","zażalenia","dłużnika","postanowienie","Sądu Rejonowego w Gliwicach","27 czerwca 2013 r.","II Co 7512/12"
 "151515000001503_III_Cz_000684_2014_Uz_2014-06-10_001","zażalenia","dłużnika","postanowienie","Sądu Rejonowego w Jastrzębiu-Zdroju","1 kwietnia 2014 r.","III RCo 4/14"
