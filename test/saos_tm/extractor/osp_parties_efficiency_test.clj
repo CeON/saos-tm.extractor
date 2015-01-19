@@ -66,152 +66,72 @@
    #(str osp-parties-test-data-path %)
    file-names))
 
-; removing <xText/> tags
-(defn get-judgments [file-paths]
-  (let [
-          files
-            (map
-              #(slurp %)
-              file-paths)
-          ss
-            (map
-              #(remove-xTexts %)
-              files)
-          judgments (map #(extract-osp-judgments %) ss)
-        ]
-    judgments))
-
-(def test-set-xml-path "test-data/osp-parties/test-set.xml")
-
-(defn extract-osp-test-xml []
-  (let [
-          ids-file (slurp "test-data/osp-parties/answers-3.txt")
-          ids-lines
-            (str/split ids-file (re-pattern system-newline))
-          ids
-            (map
-             #(take-to-regex %
-               (re-pattern
-                (str "\"" csv-delimiter "\"")))
-             ids-lines)
-          ids
-            (map
-             #(str/replace % #"\"" "")
-             ids)
-          file-paths
-            (get-file-paths
-             "/home/floydian/icm/osp/base/"
-             #"[\s\S]*0_con\.xml")
-          judgments (apply concat (get-judgments file-paths))
-          judgments
-            (filter
-             #(contains-some % ids)
-             judgments)
-          judgments-str
-            (clojure.string/join
-              system-newline
-              judgments)
-          opening-str
-            (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                 system-newline
-                 "<judgements>")
-          closing-str "</judgements>"
-          xml
-            (str opening-str
-                 system-newline
-                 judgments-str
-                 system-newline
-                 closing-str)
-          _ (spit test-set-xml-path xml)
-        ]))
-
-(defn spit-parties []
-  (let [
-          file-paths
-            (get-file-paths
-             "/home/floydian/icm/osp/base/"
-             #"[\s\S]*_con\.xml")
-          file-paths [test-set-xml-path]
-          judgments (get-judgments file-paths)
-          osp-parties
-            (mapcat
-              #((dexmlise-parties-osp
-                 (extract-parties-from-judgments %))
-                judgments))
-              ;#(dexmlise-parties-osp (extract-parties-from-txt %)) ss)
-          ids-not-extracted
-            (filter
-              #(string? %)
-              osp-parties)
-          osp-parties
-            (remove
-              #(string? %)
-              osp-parties)
-          defendants
-            (map
-              #(:defendant %)
-              osp-parties)
-          plaintiffs
-            (map
-              #(:plaintiff %)
-              osp-parties)
-          ids
-            (map
-              #(:id %)
-              osp-parties)
-          txts
-            (map
-              #(:txt %)
-              osp-parties)
-    ]
-    (spit "tmp/defendants.txt"
-      (join-newline defendants ids txts))
-    (spit "tmp/plaintiffs.txt"
-      (join-newline plaintiffs ids txts))))
-
-(defn get-osp-judgment-by-id [id s]
-  (apply str
-    (filter
-      #(not-nil?
-        (re-find (re-pattern id) %))
-      (extract-osp-judgments s))))
+(defn join-with-ids [extracted-parties ids]
+  (map
+   #(zipmap [:defendant :plaintiff :id]
+            [(%1 :defendant) (%1 :plaintiff) %2])
+   extracted-parties ids))
 
 (deftest extract-parties-efficiency-test []
   (let [
-          file-names
-            {:test-sets ["test-set-1.xml" "test-set-2.xml" "test-set-3.xml"]
-             :answers   ["answers-1.txt"  "answers-2.txt" "answers-3.txt"]
-             :corrects  ["corrects-1.txt" "corrects-2.txt" "corrects-3.txt"]
-             :errors    ["errors-1.txt"   "errors-2.txt" "errors-3.txt"]}
+        files
+          {:test-sets ["answers-1/"
+                       "answers-2/"
+                       "answers-3/"
+                       ]
+           :answers   ["answers-1.txt"
+                       "answers-2.txt"
+                       "answers-3.txt"
+                       ]
+           :corrects  ["corrects-1.txt"
+                       "corrects-2.txt"
+                       "corrects-3.txt"
+                       ]
+           :errors    ["errors-1.txt"
+                       "errors-2.txt"
+                       "errors-3.txt"
+                       ]}
 
-          judgments (get-judgments (osp-parties-paths (file-names :test-sets)))
-          extracted-parties
-            (map
-             #(into #{} (extract-parties-from-judgments %))
-             judgments)
+        judgments
+          (map
+            #(get-file-contents (str osp-parties-test-data-path %) #"[\s\S]*")
+             (files :test-sets))
 
-          answers-txts
-            (map #(slurp %) (osp-parties-paths (file-names :answers)))
-          answers-lines
-            (map
-             #(split-lines %)
-             answers-txts)
-          answers-without-quots
-            (map #(remove-opening-closing-quots %) answers-lines)
-          answers (map #(create-osp-parties-map %) answers-without-quots)
+        ids
+          (map
+            #(get-file-names (str osp-parties-test-data-path %) #"[\s\S]*")
+             (files :test-sets))
 
-          corrects (map #(difference %1 %2) answers extracted-parties)
-          _ (handle-results corrects (file-names :corrects))
+        extracted-parties
+          (map #(extract-parties-from-judgments %) judgments)
+        extracted-parties-with-ids
+          (map #(join-with-ids %1 %2) extracted-parties ids)
+        extracted-parties-with-ids
+          (map #(into #{} %) extracted-parties-with-ids)
 
-          errors (map #(difference %1 %2) extracted-parties answers)
-          _ (handle-results errors (file-names :errors))
+        answers-txts
+         (map #(slurp %) (osp-parties-paths (files :answers)))
+        answers-lines (map #(split-lines %) answers-txts)
+        answers-without-quots
+          (map #(remove-opening-closing-quots %) answers-lines)
+        answers (map #(create-osp-parties-map %) answers-without-quots)
 
-          precisions-recalls (get-precisions-recalls extracted-parties answers)
-          _ (prn precisions-recalls)
+        corrects
+          (map #(difference %1 %2)
+               answers extracted-parties-with-ids)
+        _ (handle-results corrects (files :corrects))
+
+        errors (map #(difference %1 %2) extracted-parties-with-ids answers)
+        _ (handle-results errors (files :errors))
+
+        precisions-recalls
+          (get-precisions-recalls extracted-parties-with-ids answers)
+        _ (prn precisions-recalls)
         ]
     (is (> ((nth precisions-recalls 0) :recall) 0.977))
     (is (> ((nth precisions-recalls 0) :precision) 0.977))
     (is (> ((nth precisions-recalls 1) :recall) 0.979))
     (is (> ((nth precisions-recalls 1) :precision) 0.989))
-    (is (> ((nth precisions-recalls 2) :recall) 0.809))
-    (is (> ((nth precisions-recalls 2) :precision) 0.835))))
+    (is (> ((nth precisions-recalls 2) :recall) 0.829))
+    (is (> ((nth precisions-recalls 2) :precision) 0.855))
+    ))

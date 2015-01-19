@@ -18,6 +18,10 @@
 (defn substring? [sub st]
   (not= (str/.indexOf st sub) -1))
 
+;; for debugging
+(defn print-if-contains [s element]
+  (if (substring? element s) (prn s)))
+
 (defn extract-nmbs-and-ranges [ s ]
   (map #(str/trim %)
     (str/split s #",| i |(oraz)")))
@@ -147,6 +151,8 @@
 
 (def not-nil? (complement nil?))
 
+(def not-empty? (complement empty?))
+
 (defn get-measure [true-positives-count elements-count]
   (if
     (= elements-count 0)
@@ -155,11 +161,6 @@
 
 (defn parse-int [s]
    (Integer. (re-find  #"\d+" s )))
-
-(defn zip-str [s]
-  (zip/xml-zip
-    (xml/parse
-      (java.io.ByteArrayInputStream. (.getBytes s)))))
 
 (defn matches? [s re]
   (not-nil? (re-matches re s)))
@@ -179,34 +180,61 @@
       #(.endsWith (str %) s)
       ss)))
 
-(defn get-regex-match [regex following-text-regex s]
-  (re-find
-    (re-pattern
-      (str regex following-text-regex))
-    s))
+(defn re-pos [re s]
+  (loop [m (re-matcher re s) res {}]
+    (if (.find m)
+      (recur m (assoc res (.start m) (.group m)))
+      res)))
 
-(defn get-first-regex-match [coll following-text-regex s]
+(defn get-regex-match [func regex following-text-regex s]
+  (func
+   (re-pattern
+    (str regex following-text-regex))
+   s))
+
+(defn get-matches [func regexes following-text-regex s]
+  (map
+   #(get-regex-match func % following-text-regex s)
+   regexes))
+
+(defn find-first-not-nil [coll]
+  (find-first #(not-nil? %) coll))
+
+(defn find-first-not-empty [coll]
+  (find-first #(not-empty? %) coll))
+
+(defn get-first-if-groups [match]
+  (if (string? match) match (first match)))
+
+(defn get-first-regex-match [regexes following-text-regex s]
   (let [
-          matches
-            (map
-              #(get-regex-match % following-text-regex s)
-              coll)
-          match
-            (find-first
-             #(not-nil? %)
-             matches)
-          match
-            (if (string? match)
-              match
-              (first match))
+        matches (get-matches re-find regexes following-text-regex s)
+        match (find-first-not-nil matches)
+        match (get-first-if-groups match)
         ]
     match))
 
-(defn get-first-regex-match-case-ins [coll following-text-regex s]
-  (get-first-regex-match
-    (map #(str "(?i)" %) coll)
-    following-text-regex
-    s))
+(defn get-closest-regex-match [regexes following-text-regex s]
+  (let [
+        matches-positions (get-matches re-pos regexes following-text-regex s)
+        matches-positions
+          (sort #(compare (first %1) (first %2)) matches-positions)
+        match-pos (find-first-not-empty matches-positions)
+        match-pos (get-first-if-groups match-pos)
+        ]
+    match-pos))
+
+(defn get-regex-match-case-ins [func regexes following-text-regex s]
+  (func
+    (map #(str "(?i)" %) regexes) following-text-regex s))
+
+(defn get-first-regex-match-case-ins [regexes following-text-regex s]
+  (get-regex-match-case-ins
+   get-first-regex-match regexes following-text-regex s))
+
+(defn get-closest-regex-match-case-ins [regexes following-text-regex s]
+  (get-regex-match-case-ins
+   get-closest-regex-match regexes following-text-regex s))
 
 (defn str-to-regex [s]
   (re-pattern
@@ -215,3 +243,10 @@
                     #"\(" (str "\\" "(")
                     #"\)" (str "\\" ")")
                     )))
+
+(defn remove-html-tags-other-than [tag-name s]
+  (str/replace s
+               (re-pattern (str "<(?!/?" tag-name ")((?!>)[\\s\\S])*>")) " "))
+
+(defn remove-html-tags-other-than-span [s]
+  (remove-html-tags-other-than "span" s))

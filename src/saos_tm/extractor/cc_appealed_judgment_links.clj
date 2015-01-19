@@ -10,9 +10,6 @@
   (str "[IVXLCDM]+[\\s\\.]*[0-9]*[\\s\\.]*"
     "[a-zA-Z]*-?[a-zA-Z]*[\\s\\.]+\\d+\\s*/\\s*\\d+(/[A-Z]+)?(\\s*upr\\.?)?"))
 
-(defn remove-html-tags-other-than-span [s]
-  (str/replace s #"<(?!/?span)((?!>)[\s\S])*>" " "))
-
 (defn cleanse-appeal-str [s]
   (let [
         without-html-tags (remove-html-tags-other-than-span s)

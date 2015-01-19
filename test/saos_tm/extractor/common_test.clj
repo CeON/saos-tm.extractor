@@ -17,6 +17,19 @@
         ]
     file-paths))
 
+(defn get-file-names [dir re]
+  (let [
+        sorted-paths (sort (get-file-paths dir re))
+        ]
+    (map #(last (str/split (str %) #"/")) sorted-paths)))
+
+(defn get-file-contents [dir re]
+  (let [
+        sorted-paths (sort (get-file-paths dir re))
+        ;_ (prn sorted-paths)
+        ]
+    (map #(slurp %) sorted-paths)))
+
 (defn get-precision-recall [extracted-set benchmark-set]
   (let [
           true-positives-count
