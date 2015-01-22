@@ -1,8 +1,6 @@
 (ns saos-tm.extractor.common
   (:require
     [ clojure.string :as str ]
-    [ clojure.xml :as xml ]
-    [ clojure.zip :as zip ]
     [ clojure.set :refer :all ]
     [ langlab.core.parsers :refer :all ])
   (:import java.io.File)
@@ -221,6 +219,10 @@
           (sort #(compare (first %1) (first %2)) matches-positions)
         match-pos (find-first-not-empty matches-positions)
         match-pos (get-first-if-groups match-pos)
+;;         _ (if (and (not-nil? matches-positions) (substring? "T. K." s))
+;;             (doall (prn matches-positions)
+;; ;;                    (prn match-pos)
+;;                    ))
         ]
     match-pos))
 
@@ -235,14 +237,6 @@
 (defn get-closest-regex-match-case-ins [regexes following-text-regex s]
   (get-regex-match-case-ins
    get-closest-regex-match regexes following-text-regex s))
-
-(defn str-to-regex [s]
-  (re-pattern
-   (replace-several s
-                    #"\." (str "\\")
-                    #"\(" (str "\\" "(")
-                    #"\)" (str "\\" ")")
-                    )))
 
 (defn remove-html-tags-other-than [tag-name s]
   (str/replace s

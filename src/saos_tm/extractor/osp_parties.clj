@@ -1,8 +1,6 @@
 (ns saos-tm.extractor.osp-parties
   (:require
     [ clojure.string :as str ]
-    [ clojure.xml :as xml ]
-    [ clojure.zip :as zip ]
     [saos-tm.extractor.common :refer :all])
   (:import java.io.File)
   (:gen-class))
@@ -20,7 +18,7 @@
                         #"\s+[a-z]\s*$" ""
 
                         (re-pattern system-newline) ""
-                        #"\s+" " "
+
                         #"\>\s\<" "><"
 
                         #"(?<=[^A-Z])\.\s*$" ""
@@ -32,62 +30,27 @@
                         #"z powództwa" ""
                         #"powództwa" ""
                         #"z wniosku" ""
-                        #"wnioskodawc(zyń:?|zyni|y|ów:?)" ""
+                        #"wnioskodawc[^\s]*" ""
                         #"w wniosku" ""
                         #"stronie pozwanej" ""
-                        #"pozwan(ej|emu|ych|ego)" ""
+                        #"pozwan[^\s]*" ""
 
-                        #"oskarżon(ej|emu|ych|ego) o czyny? z" ""
-                        #"oskarżon(ej|emu|ych|ego) z" ""
-                        #"oskarżon(ej|emu|ych|ego)" ""
+                        #"oskarżon[^\s]* o czyny? z" ""
+                        #"oskarżon[^\s]* z" ""
+                        #"oskarżon[^\s]*" ""
 
-                        #"skazan(ej|emu|ych|ego)" ""
-                        #"obwinione(j|go)" ""
+                        #"skazan[^\s]*" ""
+                        #"obwinione[^\s]*" ""
                         #"skarga" ""
                         #"^ie" ""
                         #"^y" ""
                         #"^u\s" ""
                         #"^\s*:" ""
                         #"­\." ""
-                        ;#"^\d+" ""
-                        ;#"\>\d+" ">"
-                        ;#"\.\<" ""
-                        ;#"^\s*\((\.)*\)" ""
-                        )))))
 
-(defn close-opening-tag [s]
-  (if
-    (nil?
-      (re-find #"^\<xText\>" s))
-    (str "<xText>" s)
-    s))
-
-(defn close-closing-tag [s]
-  (if
-    (nil?
-      (re-find #"\</xText\>$" s))
-    (str s "</xText>")
-    s))
-
-(defn close-xText-tags [s]
-  (let [
-          opening-tag-closed (close-opening-tag s)
-          both-tags-closed (close-closing-tag opening-tag-closed)
-    ]
-    both-tags-closed))
-
-(defn get-first-split [s splitting-regexes]
-   (let [
-          splits
-            (map
-              #(str/split s %)
-              splitting-regexes)
-          splits
-           (sort-by
-            #(count (second %))
-            splits)
-    ]
-    (last splits)))
+                        #"\s+" " "
+                        #" +" " "
+                        #"[^\S]+" " ")))))
 
 (defn extract-multiple [point-indicator defendant-match splitter s]
   (let [
@@ -98,11 +61,14 @@
             defendant-match
             (re-pattern
              (str "\\" (first points-indicator-strs)
-                  "1" "\\" (second points-indicator-strs)))))
+                  "1"
+                  "\\" (second points-indicator-strs)
+                  ))))
         points-indicator-str
           (str "\\" (first points-indicator-strs)
                "\\d"
-               "\\" (second points-indicator-strs))
+               "\\" (second points-indicator-strs)
+               )
         points-indicator-regex (re-pattern points-indicator-str)
         points-indicators (re-seq points-indicator-regex s)
         points-indicators
@@ -127,29 +93,37 @@
            defendants-complete)
         defendants-in-one-str (apply str defendants-complete)
         ]
-    (close-xText-tags defendants-in-one-str)))
+     defendants-in-one-str))
+
+(def point-indicator-regex #"\>\s*1[\.\)]")
 
 (defn extract-plaintiff [s]
   (let [
         plaintiff-match
           (first
-           (str/split s #"po rozpoznaniu|przy udziale|przeciwko"))
-
-;;         point-indicator (re-find #"\>1[\.\<]" plaintiff-match)
+           (str/split
+            s
+            (re-pattern
+             (str "po rozpoznaniu|"
+                  "przy udziale|"
+                  "z udziałem|"
+                  "przeciwko|"
+                  "obwinion|"
+                  "od decyzji"))))
+        point-indicator (re-find point-indicator-regex plaintiff-match)
         ]
-;;     (if (nil? point-indicator)
-        (cleanse-party plaintiff-match)))
-;;     )
-;;       (extract-multiple point-indicator plaintiff-match "</xText>" s))))
+    (if (nil? point-indicator)
+      plaintiff-match
+      (extract-multiple
+       point-indicator plaintiff-match "</strong>|</p>" s))))
 
 (defn identify-defendant [s]
-;;   (print-if-contains s "A. L.")
   (first
     (str/split
       s
      (re-pattern
       (str
-       "oskarżon[^\\s]* z|"
+       "oskarżon[^\\s]*|"
        "\\so\\s|"
        "w przedmiocie|"
        "-o\\s|"
@@ -160,9 +134,6 @@
        "zapłat|"
        "obwinion|"
        "prowadzącym działalność")))))
-
-(defn handle-defendant [s]
-  (cleanse-party s))
 
 (defn get-first-defendant-end-indicator-match
   [defendant-indicators defendant-end-indicators s]
@@ -201,7 +172,6 @@
         defendant-end-indicators
           ["((?!oskarżon)[\\s\\S])*(?=oskarżon)"
            "((?!z powodu apelacji)[\\s\\S])*\\>(?=z powodu apelacji)"
-           ;"((?!na skutek apelacji)[\\s\\S])*\\>(?=na skutek apelacji)"
            "((?!przy udziale)[\\s\\S])*(?=przy udziale)"
            "((?!\\>o )[\\s\\S])*\\>(?=o )"
            "((?!\\>o\\<)[\\s\\S])*\\>(?=o)"
@@ -221,98 +191,74 @@
         (string? match)
         (let [
               match (identify-defendant match)
-              point-indicator (re-find #"\>1[\.\<]" match)
+              point-indicator (re-find point-indicator-regex match)
               ]
-;;           (if (nil? point-indicator)
-            (handle-defendant match)
-;;             (extract-multiple point-indicator match "oskarżon" s))
-          )
-        (handle-defendant (identify-defendant (first match)))))))
+          (if (nil? point-indicator)
+            match
+            (extract-multiple point-indicator match "oskarżon" s)))
+        (identify-defendant (first match))))))
 
 (defn extract-parties-osp [s]
   (let [
         whatever "[\\s\\S]*"
-;;         without-html-tags (remove-html-tags-other-than-span s)
         match
-          (get-first-regex-match-case-ins
-           [
-            "(?<=przy udziale) prok"
-            "(?<=przy udziale) oskarżyciel"
-            "(?<=sprawy z odwołania)"
-            "(?<=przy udziale)"
-            "prokurator prokuratury"
-            "prokuratora prok"
-            "prokurator[^i]"
+          (second
+           (get-closest-regex-match-case-ins
+            [
+             "(?<=przy udziale) prok"
+             "(?<=przy udziale) oskarżyciel"
+             "(?<=sprawy z odwołania)"
 
-            "(?<=sprawy z wniosk)"
-            "(?<=spraw z powództw)"
-            "(?<=sprawy z powództwa)"
-            "(?<=spraw z odwołań)"
+             "(?<=przy udziale)"
+             "prokurator prokuratury"
+             "prokuratora prok"
+             "prokurator[^i]"
 
-            "(?<=\\>sprawy)"
-            "(?<=z powództwa)"
-            "(?<=z powództw)"
-            "(?<=z odwołania)"
-            "(?<=z odwołań)"
-            "(?<=z wniosku)"
-            "(?<=z wniosków)"
-            "(?<=w sprawie ze skargi)"
-            "(?<=po rozpoznaniu w sprawie)"
-            "(?<=w obecności oskarżyciela publ)"
-            "(?<=w sprawie)"]
-           whatever s)
-    ]
+             "(?<=sprawy z wniosk)"
+             "(?<=spraw z powództw)"
+             "(?<=sprawy z powództwa)"
+             "(?<=spraw z odwołań)"
+
+             "(?<=\\>sprawy( z wniosku)?)"
+             "(?<=z powództwa)"
+;;           "(?<=z powództw)"
+             "(?<=z odwołania)"
+             "(?<=z odwołań)"
+             "(?<=z wniosku)"
+             "(?<=z wniosków)"
+             "(?<=w sprawie ze skargi)"
+             "(?<=po rozpoznaniu w sprawie)"
+             "(?<=w obecności oskarżyciela publ)"
+             "(?<=w sprawie)"]
+            whatever s))
+        match
+          (when (not-nil? match)
+            (str/replace
+             match
+             #"^\s*z\s*(wniosku|powództwa|odwołania)" ""))
+        ]
     (if
-      (nil?
-        (re-find
-          (re-pattern
-            (str
-              "(?i)\\<xName\\>\\s*postanowienie.?\\s*\\</xName\\>|"
-              "(?i)\\<xName\\>\\s*uzasadnienie.?\\s*\\</xName\\>"))
-         s))
-      (if
-        (nil? match)
+      (nil? match)
+      (zipmap
+       [:plaintiff :defendant]
+       [nil nil])
+      (let [
+            plaintiff (extract-plaintiff match)
+            defendant (extract-defendant match)
+            ]
         (zipmap
-          [:plaintiff :defendant]
-          [nil nil])
-        (let [
-              plaintiff (extract-plaintiff match)
-              defendant (extract-defendant match)
-              ]
-          (zipmap
-           [:plaintiff
-           :defendant
-           ;:txt
-           ]
-           (if
-             (nil? defendant)
-             ["" (cleanse-party (identify-defendant plaintiff))]
-             [plaintiff defendant])))))))
-
-(defn join-newline [coll1 coll2 coll3]
-  (let [
-          pairs
-            (map
-              #(str %1
-                system-newline "\t" %2
-                ;system-newline %3
-                )
-              coll1
-              coll2
-              ;coll3
-              )
-    ]
-    (clojure.string/join
-      system-newline
-      pairs)))
+         [:plaintiff :defendant]
+         (if
+           (nil? defendant)
+           ["" (cleanse-party (identify-defendant plaintiff))]
+           [(cleanse-party plaintiff) (cleanse-party defendant)]))))))
 
 (defn extract-sentence [s]
   (let [
+        s (str/replace s #" " " ")
         match (re-find #"(?i)\>\s*WYROK\s*\<[\s\S]*\>\s*UZASADNIENIE\s*\<" s)
         ]
-    (if (nil? match)
-      s
-      match)))
+    (if (nil? match) s match)))
 
 (defn extract-parties-from-judgments [judgments]
   (remove nil?

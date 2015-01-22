@@ -130,8 +130,8 @@
         ]
     (is (> ((nth precisions-recalls 0) :recall) 0.977))
     (is (> ((nth precisions-recalls 0) :precision) 0.977))
-    (is (> ((nth precisions-recalls 1) :recall) 0.979))
-    (is (> ((nth precisions-recalls 1) :precision) 0.989))
-    (is (> ((nth precisions-recalls 2) :recall) 0.829))
-    (is (> ((nth precisions-recalls 2) :precision) 0.855))
+    (is (> ((nth precisions-recalls 1) :recall) 0.969))
+    (is (> ((nth precisions-recalls 1) :precision) 0.969))
+    (is (> ((nth precisions-recalls 2) :recall) 0.869))
+    (is (> ((nth precisions-recalls 2) :precision) 0.869))
     ))
