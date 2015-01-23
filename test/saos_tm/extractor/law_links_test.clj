@@ -1,11 +1,14 @@
 (ns saos-tm.extractor.law-links-test
   (:require [clojure.test :refer :all]
             [clojure.string :as str ]
-            [ clojure-csv.core :refer :all ]
+            [clojure.java.io :as io]
+            [clojure-csv.core :refer :all ]
             [saos-tm.extractor.common :refer :all]
             [saos-tm.extractor.law-links :refer :all]
             [saos-tm.extractor.common-test :refer :all ]
             [langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
+
+(def ^:private act-dictionary (load-dictionary (io/resource "act_dictionary.txt")))
 
 (deftest article-ranges-test []
   (let [
@@ -75,7 +78,7 @@
   (:extracted-links (extract-law-links
     (str "art. 3 ust. 1-6, art. 4 pkt 5 i 6, art. 57 ustawy z dnia 19 grudnia"
          " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
-    "dictionary.txt"))))
+    act-dictionary))))
   (is(=
     '({:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "4-6", :par "0", :art "3"}}
@@ -89,7 +92,7 @@
     (str "art. 3 ust. 4-6 i art. 4 pkt 6 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656) "
          "z art. 2 i art. 32 ust. 1 Konstytucji")
-    "dictionary.txt")))
+    act-dictionary)))
   (is(=
     '({:act {:poz "1656", :nr "237", :year "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}
@@ -98,13 +101,13 @@
   (:extracted-links (extract-law-links
     (str "art. 3 w związku z art. 5 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
-    "dictionary.txt")))
+    act-dictionary)))
   (is(=
     '({:act {:nr "16" :poz "93", :year "1964"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}))
   (:extracted-links (extract-law-links
     (str "art. 3 kc według ustawy o trybunale oprócz kodeksu wykroczeń ")
-    "dictionary.txt")))
+    act-dictionary)))
   )
 
 (deftest tokens-to-string-test []
@@ -142,20 +145,11 @@
         " ustawy z dnia 28 grudnia 1989 r. – Prawo celne"
         " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)")))))
 
-(def dictionary-file-path "dictionary.txt")
-
-(def dictionary
-  (let [
-          dictionary (load-dictionary dictionary-file-path)
-          merged-dictionary (concat dictionary dictionary-for-acts)
-    ]
-    merged-dictionary))
-
 (defn extract-nr-poz-case-one [s answer]
   (is (=
     (extract-nr-poz-case
       (split-to-tokens s)
-      dictionary)
+      act-dictionary)
     answer)))
 
 (deftest extract-nr-poz-case-test []

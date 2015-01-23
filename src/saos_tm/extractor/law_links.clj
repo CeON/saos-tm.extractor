@@ -117,7 +117,6 @@
     ]
     without-unnecessary-spaces))
 
-
 (def not-map? (complement map?))
 
 (defn min-index [coll]
@@ -207,7 +206,6 @@
             [:year :nr :poz]
             [year (:nr nr-poz) (:poz nr-poz)]))) 
 
-
 (defn convert-year-to-full [year]
   (if (= (count year) 4)
     year
@@ -241,7 +239,6 @@
       (extract-year-nr-poz tokens)
       (extract-dictionary-case tokens dictionary))))
     
-
 (defn coord-to-text [token]
   (if (or (= "." token) (= "-" token))
     token
@@ -431,10 +428,8 @@
                     (cleanse (:zd art))
                     (cleanse (:lit art))])])))
     
-
-(defn extract-law-links [s dictionary-file-path]
+(defn extract-law-links [s dictionary]
   (let [
-        dictionary (load-dictionary dictionary-file-path)
         merged-dictionary (concat dictionary dictionary-for-acts)
         txt (replace-several s
               #"art\." " art. "
@@ -489,9 +484,10 @@
 
 (defn extract-law-links-from-file
   [input-file-path output-file-path orphaned-links-file-path
-   dictionary-file-path signature ]
-   (time
-     (let [
+   dictionary-file-path signature]
+  (time
+    (let [
+          dictionary (load-dictionary dictionary-file-path)
           input-txt (slurp input-file-path)
           signature
             (if (nil? signature)
@@ -501,15 +497,16 @@
             (last
               (str/split input-file-path #"/"))
           links
-            (extract-law-links input-txt dictionary-file-path)
-        ]
-        (spit output-file-path
-          (get-csv-for-links
-            get-csv-for-extracted-link
-            (:extracted-links links)
-            signature))
-        (spit orphaned-links-file-path
-          (get-csv-for-links
-            get-csv-for-orphaned-link
-            (:orphaned-links links)
-            signature)))))
+            (extract-law-links input-txt dictionary)
+          ]
+      (spit
+        output-file-path
+        (get-csv-for-links
+          get-csv-for-extracted-link
+          (:extracted-links links)
+          signature))
+      (spit orphaned-links-file-path
+        (get-csv-for-links
+          get-csv-for-orphaned-link
+          (:orphaned-links links)
+          signature)))))

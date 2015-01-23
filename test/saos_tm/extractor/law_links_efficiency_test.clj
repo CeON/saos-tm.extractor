@@ -1,6 +1,7 @@
 (ns saos-tm.extractor.law-links-efficiency-test
   (:require [clojure.test :refer :all]
             [clojure.string :as str ]
+            [clojure.java.io :as io]
             [clojure-csv.core :refer :all ]
             [saos-tm.extractor.common :refer :all]
             [saos-tm.extractor.law-links :refer :all]
@@ -28,9 +29,12 @@
     files))
 
 (defn law-links-extract [txt-files]
-  (map
-    #(into #{} (:extracted-links (extract-law-links % "dictionary.txt")))
-    txt-files))
+  (let [
+        dictionary (load-dictionary (io/resource "act_dictionary.txt"))
+        ]
+    (map
+      #(into #{} (:extracted-links (extract-law-links % dictionary)))
+      txt-files)))
 
 (deftest law-links-efficiency-test
   (links-efficiency-test ".law" #"\.law" get-benchmark-records
