@@ -317,63 +317,16 @@
     ]
     (map #(zipmap [:art :act] [(create-map-for-art-coords %1) act]) art)))
 
-(defn get-art-coords-csv [art-coords]
-  (let [
-          art-nr (:art art-coords)
-          par-nr (:par art-coords)
-          ust-nr (:ust art-coords)
-          pkt-nr (:pkt art-coords)
-          zd-nr (:zd art-coords)
-          lit-nr (:lit art-coords)
-    ]
-    (apply str
-      "\"" art-nr "\"" csv-delimiter
-      "\"" par-nr "\"" csv-delimiter
-      "\"" ust-nr "\"" csv-delimiter
-      "\"" pkt-nr "\"" csv-delimiter
-      "\"" zd-nr "\"" csv-delimiter
-      "\"" lit-nr "\"" csv-delimiter)))
-
-(defn get-csv-for-extracted-link [link signature]
-  (let [
-          art (:art link)
-          act (:act link)
-    ]
-  (apply str (get-art-coords-csv art)
-    "\"" signature "\"" csv-delimiter
-    "\"" (:year act) "\"" csv-delimiter
-    "\"" (:nr act) "\"" csv-delimiter
-    "\"" (:poz act) "\"" system-newline)))
-
-(defn get-csv-for-orphaned-link [link signature]
-  (let [
-          art (:art link)
-          txt (:txt link)
-    ]
-    (apply str
-      "\"" txt "\"" csv-delimiter
-      (apply str
-        (map
-          #(str "\"" % "\"" csv-delimiter)
-          art))
-      "\"" signature "\"" system-newline)))
-
-(defn get-csv-for-links [get-csv-func links signature]
-  (str/join ""
-    (map
-      #(get-csv-func % signature)
-      links)))
-
 (defn get-data-for-orphaned-link [orphaned-link]
   (let [
-          txt (tokens-to-string (:act orphaned-link))
-    ]
+        txt (tokens-to-string (:act orphaned-link))
+        ]
     (map
       #(zipmap
         [:txt :art]
         [txt %])
       (:art orphaned-link))))
-  
+
 (defn load-dictionary [path]
   (let [
           txt (slurp path)
@@ -476,37 +429,7 @@
               #(not-map? (:act %))
               links))
           ]
-          (->>
-            (zipmap
-            [:extracted-links :orphaned-links]
-            [extracted-links
-             (mapcat get-data-for-orphaned-link orphaned-links)]))))
-
-(defn extract-law-links-from-file
-  [input-file-path output-file-path orphaned-links-file-path
-   dictionary-file-path signature]
-  (time
-    (let [
-          dictionary (load-dictionary dictionary-file-path)
-          input-txt (slurp input-file-path)
-          signature
-            (if (nil? signature)
-              (extract-signature (get-line-with-signature input-txt))
-              signature)
-          signature-file-name
-            (last
-              (str/split input-file-path #"/"))
-          links
-            (extract-law-links input-txt dictionary)
-          ]
-      (spit
-        output-file-path
-        (get-csv-for-links
-          get-csv-for-extracted-link
-          (:extracted-links links)
-          signature))
-      (spit orphaned-links-file-path
-        (get-csv-for-links
-          get-csv-for-orphaned-link
-          (:orphaned-links links)
-          signature)))))
+        (zipmap
+          [:extracted-links :orphaned-links]
+          [extracted-links
+            (mapcat get-data-for-orphaned-link orphaned-links)])))

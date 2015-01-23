@@ -7,8 +7,38 @@
   (:gen-class))
 
 (def csv-delimiter ",")
+
 (def ^String system-newline
   (System/getProperty "line.separator"))
+
+(defn get-art-coords-csv [art-coords]
+  (let [
+        art-nr (:art art-coords)
+        par-nr (:par art-coords)
+        ust-nr (:ust art-coords)
+        pkt-nr (:pkt art-coords)
+        zd-nr (:zd art-coords)
+        lit-nr (:lit art-coords)
+        ]
+    (apply str
+           "\"" art-nr "\"" csv-delimiter
+           "\"" par-nr "\"" csv-delimiter
+           "\"" ust-nr "\"" csv-delimiter
+           "\"" pkt-nr "\"" csv-delimiter
+           "\"" zd-nr "\"" csv-delimiter
+           "\"" lit-nr "\"" csv-delimiter)))
+
+(defn get-csv-for-extracted-link [link signature]
+  (let [
+        art (:art link)
+        act (:act link)
+        ]
+    (apply str (get-art-coords-csv art)
+           "\"" signature "\"" csv-delimiter
+           "\"" (:year act) "\"" csv-delimiter
+           "\"" (:nr act) "\"" csv-delimiter
+           "\"" (:poz act) "\"" system-newline)))
+
 
 (defn split-to-tokens [s]
   (lg-split-tokens-bi "pl" s))
