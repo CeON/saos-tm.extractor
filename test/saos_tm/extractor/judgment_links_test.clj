@@ -65,22 +65,22 @@
         (str "podanej wyżej sygnaturze akt w celu rozpoznania, czy w tej"
           " sprawie nie zachodzą przesłanki Tw 19/08 do wyłączenia"))
       #{"Tw 19/08"}))
-    (is (= (extract-all-signatures
+  (is (= (extract-all-signatures
         "15 października 2008 r. (sygn. Tw 19/08, OTK ZU nr 2/B/2009, poz. 67)")
       #{"Tw 19/08"}))
   (is (= (extract-all-signatures
         (str "się pod sygnaturą XI GCo 74/11, nie doprowadziło 15 października "
         "2008 r. (sygn. Tw 19/08, OTK ZU nr 2/B/2009, poz. 67)"))
       #{"XI GCo 74/11", "Tw 19/08"}))
-  (is (= (extract-all-signatures
-        (str "1998 r., sygn. K 3/98, OTK ZU nr 4/1998, poz. 52; 23 lutego 1999"
-          " r., sygn. K 25/98, OTK ZU nr 2/1999, poz. 23; 19 czerwca 2002 r."
-          ", sygn. K 11/02, OTK ZU Sygn. akt K 10/09*"
-          "CZP 161/06 opubl. w OSNC 1/208 poz. 4 "))
-      #{"K 3/98" "K 25/98" "K 11/02" "K 10/09"}))
     (is (= (extract-all-signatures
         (str "lkjldfkj Tw 19/08 sdkfjhsdfnr Tw 19/08"))
       #{"Tw 19/08"}))
+  (is (= (extract-all-signatures
+        (str "Sygn. akt 1990/1991"))
+      #{}))
+  (is (= (extract-all-signatures
+        (str "1990/1991"))
+      #{}))
   )
 
 (deftest is-signature-test

@@ -182,42 +182,48 @@
 
 (defn links-efficiency-test
   [ext ext-regex benchmark-records-fn extracted-records-fn
-  precision-threshold recall-threshold result-to-csv-fn]
+   precision-threshold recall-threshold result-to-csv-fn]
   (time
-    (let [
-             file-paths (list-file-paths links-test-data-path)
-             ext-files-paths (filter-ending-with file-paths ext)
-             files (read-files ext ext-regex ext-files-paths)
-             ext-files (:ext files)
-             txt-files (:txt files)
-             log-files-paths (get-log-files-paths ext-files-paths)
-             _ (.mkdir (java.io.File. log-data-path))
-             benchmark-items (benchmark-records-fn ext-files)
-             extracted-items (extracted-records-fn txt-files)
-             precisions-recalls
-              (get-precisions-recalls extracted-items benchmark-items)
-             precisions (get-elements :precision precisions-recalls)
-             recalls (get-elements :recall precisions-recalls)
-             average-precision (get-average precisions)
-             average-recall (get-average recalls)
-             ext-files-paths-str (map #(str %) ext-files-paths)
-             names-precs-recalls
-               (sort #(compare (last %1) (last %2))
+   (let [
+         file-paths (list-file-paths links-test-data-path)
+         ext-files-paths (filter-ending-with file-paths ext)
+         files (read-files ext ext-regex ext-files-paths)
+         ext-files (:ext files)
+         txt-files (:txt files)
+         log-files-paths (get-log-files-paths ext-files-paths)
+         _ (.mkdir (java.io.File. log-data-path))
+         benchmark-items (benchmark-records-fn ext-files)
+         extracted-items (extracted-records-fn txt-files)
+         precisions-recalls
+         (get-precisions-recalls extracted-items benchmark-items)
+         precisions (get-elements :precision precisions-recalls)
+         recalls (get-elements :recall precisions-recalls)
+         average-precision (get-average precisions)
+         average-recall (get-average recalls)
+         min-precision (apply min precisions)
+         min-recall (apply min recalls)
+         ext-files-paths-str (map #(str %) ext-files-paths)
+         names-precs-recalls
+           (sort
+;;             #(compare (last %1) (last %2))
+            #(compare (second %1) (second %2))
                  (map
-                   vector
-                   ext-files-paths-str precisions recalls))
-             _ (doseq [i names-precs-recalls] (println i))
-             _ (println (str \newline "av. precision: " average-precision
-                  " av. recall: " average-recall))
-             _
-              (doall
-                (map
-                  #(spit-all-csv result-to-csv-fn %1 %2)
-                  log-files-paths
-                  extracted-items))
-       ]
-       (is (> average-precision precision-threshold))
-       (is (> average-recall recall-threshold)))))
+                  vector
+                  ext-files-paths-str precisions recalls))
+         _ (doseq [i names-precs-recalls] (println i))
+         _ (println (str \newline "av. precision: " average-precision
+                         " av. recall: " average-recall))
+         _ (println (str "min precision: " min-precision
+                         " min recall: " min-recall \newline))
+         _
+           (doall
+            (map
+             #(spit-all-csv result-to-csv-fn %1 %2)
+             log-files-paths
+             extracted-items))
+         ]
+     (is (> average-precision precision-threshold))
+     (is (> average-recall recall-threshold)))))
 
 (deftest dexmlise-test
   (is

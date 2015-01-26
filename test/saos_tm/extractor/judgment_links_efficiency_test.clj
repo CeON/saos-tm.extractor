@@ -10,15 +10,15 @@
 
 (defn get-benchmark-signatures [ext-files]
   (let [
-           jdg-signatures
-            (map
-              #(get-signature %)
-              ext-files)
-           benchmark-signatures
-            (map
-              #(set (remove empty? (split-coll %)))
-              jdg-signatures)
-    ]
+        jdg-signatures
+          (map
+           #(get-signature %)
+           ext-files)
+        benchmark-signatures
+          (map
+           #(set (remove empty? (split-coll %)))
+           jdg-signatures)
+        ]
     benchmark-signatures))
 
 (defn judgment-links-extract [txt-files]
@@ -31,4 +31,4 @@
 
 (deftest judgment-links-efficiency-test
   (links-efficiency-test ".jdg" #"\.jdg" get-benchmark-signatures
-    judgment-links-extract 0.818 0.943 signature-to-csv))
+    judgment-links-extract 0.941 0.985 signature-to-csv))

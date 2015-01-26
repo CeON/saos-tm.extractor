@@ -253,9 +253,12 @@
            ["" (cleanse-party (identify-defendant plaintiff))]
            [(cleanse-party plaintiff) (cleanse-party defendant)]))))))
 
+(defn remove-hard-spaces [s]
+  (str/replace s #"\u00A0" " "))
+
 (defn extract-sentence [s]
   (let [
-        s (str/replace s #" " " ")
+        s (remove-hard-spaces s)
         match (re-find #"(?i)\>\s*WYROK\s*\<[\s\S]*\>\s*UZASADNIENIE\s*\<" s)
         ]
     (if (nil? match) s match)))
