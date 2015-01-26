@@ -2,7 +2,8 @@
   (:require
     [clojure.string :as str]
     [saos-tm.extractor.common :refer
-      [csv-delimiter system-newline  get-csv-for-extracted-link get-art-coords-csv ]]
+      [csv-delimiter system-newline
+       get-csv-for-extracted-link get-art-coords-csv ]]
     [saos-tm.extractor.law-links-trainset :as law-links-trainset]
     [saos-tm.extractor.law-links :as law-links]
     [saos-tm.extractor.judgment-links :as judgment-links])
@@ -37,7 +38,8 @@
           input-txt (slurp input-file-path)
           signature
           (if (nil? signature)
-            (law-links/extract-signature (law-links/get-line-with-signature input-txt))
+            (law-links/extract-signature
+             (law-links/get-line-with-signature input-txt))
             signature)
           signature-file-name
           (last
