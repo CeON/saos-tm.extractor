@@ -443,5 +443,6 @@
         ]
     (zipmap
      [:extracted-links :orphaned-links]
-     [extracted-links
-      (mapcat get-data-for-orphaned-link orphaned-links)])))
+     [ (into [] extracted-links)
+       (into []
+         (mapcat get-data-for-orphaned-link orphaned-links))])))
