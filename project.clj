@@ -7,6 +7,8 @@
   :main saos-tm.extractor.main
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [langlab "1.2.0"]
+                 [org.apache.tika/tika-parsers "1.6"]
+                 [commons-io/commons-io "2.4"]
                  [clojure-csv/clojure-csv "2.0.1"]
-                 [cheshire "5.3.1"]])
+                 [cheshire "5.3.1"]
+                 [langlab "1.2.0"]])

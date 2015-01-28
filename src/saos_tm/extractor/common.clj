@@ -3,8 +3,14 @@
     [ clojure.string :as str ]
     [ clojure.set :refer :all ]
     [ langlab.core.parsers :refer :all ])
-  (:import java.io.File)
-  (:gen-class))
+  (:import [java.io File]
+           [org.apache.commons.io IOUtils]
+           [org.apache.tika.parser Parser ParseContext]
+           [org.apache.tika.parser.html HtmlParser]
+           [org.apache.tika.language LanguageIdentifier]
+           [org.apache.tika.metadata Metadata]
+           [org.apache.tika Tika]
+           [org.apache.tika.sax BodyContentHandler]))
 
 (def csv-delimiter ",")
 
@@ -38,7 +44,6 @@
            "\"" (:year act) "\"" csv-delimiter
            "\"" (:nr act) "\"" csv-delimiter
            "\"" (:poz act) "\"" system-newline)))
-
 
 (defn split-to-tokens [s]
   (lg-split-tokens-bi "pl" s))
@@ -282,3 +287,15 @@
 
 (defn remove-html-tags-other-than-span [s]
   (remove-html-tags-other-than "span" s))
+
+(defn conv-html-to-text [ ^String s]
+  (let [
+          istream (IOUtils/toInputStream s "UTF-8");
+          parser (HtmlParser.)
+          context (ParseContext.)
+          metadata (Metadata.)
+          handler (BodyContentHandler.)
+          ]
+      (.set context Parser parser)
+      (.parse parser istream handler metadata context)
+      (.toString  handler)))
