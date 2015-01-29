@@ -68,8 +68,11 @@
         ]
     (if (map? (nth tokens-and-coords i))
       (nth tokens-and-coords i)
-      (if (w-zwiazku-z? (nth tokens-and-coords i))
-        (nth tokens-and-coords (+ i 1))
+      (if
+        (and
+         (w-zwiazku-z? (nth tokens-and-coords i))
+         (> (count tokens-and-coords) (inc i)))
+        (nth tokens-and-coords (inc i))
         (nth tokens-and-coords i)))))
 
 (def dictionary-for-acts
