@@ -118,7 +118,9 @@
   (let [
          appeal-match-groups
            (map
-            #(first (find-from-to-first-case-ins s re-pos-sort % osp-regex))
+            #(first
+              (find-from-to-first-case-ins
+               s re-pos-sort-start-end % osp-regex))
              ["(?<=skutek)\\s+apelacji" "(?<=z powodu)\\s+apelacji"
               "(?<=skutek)\\s+zażalenia"
               "(?<=z powodu)\\s+zażalenia" "zażalenia\\s+wniesionego"

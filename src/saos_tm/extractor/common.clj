@@ -223,13 +223,6 @@
         ]
     re-pos))
 
-(defn re-pos-sort [re s]
-  (let [
-        re-pos (re-pos re s)
-        sorted (sort re-pos)
-        ]
-    sorted))
-
 (defn re-start-end [re s]
   (loop [m (re-matcher re s) res {}]
     (if (.find m)
@@ -242,6 +235,9 @@
         sorted (sort re-pos)
         ]
     sorted))
+
+(defn re-pos-sort-start-end [re s]
+  (re-pos-sort re-start-end re s))
 
 (defn get-regex-match [func regex following-text-regex s]
   (re-pos-sort func
