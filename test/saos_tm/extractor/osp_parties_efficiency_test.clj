@@ -83,13 +83,13 @@
                        "answers-2.txt"
                        "answers-3.txt"
                        ]
-           :corrects  ["corrects-1.txt"
-                       "corrects-2.txt"
-                       "corrects-3.txt"
+           :corrects  ["log/corrects-1.txt"
+                       "log/corrects-2.txt"
+                       "log/corrects-3.txt"
                        ]
-           :errors    ["errors-1.txt"
-                       "errors-2.txt"
-                       "errors-3.txt"
+           :errors    ["log/errors-1.txt"
+                       "log/errors-2.txt"
+                       "log/errors-3.txt"
                        ]}
 
         judgments
@@ -132,6 +132,6 @@
     (is (> ((nth precisions-recalls 0) :precision) 0.977))
     (is (> ((nth precisions-recalls 1) :recall) 0.969))
     (is (> ((nth precisions-recalls 1) :precision) 0.969))
-    (is (> ((nth precisions-recalls 2) :recall) 0.869))
-    (is (> ((nth precisions-recalls 2) :precision) 0.869))
+    (is (> ((nth precisions-recalls 2) :recall) 0.849))
+    (is (> ((nth precisions-recalls 2) :precision) 0.849))
     ))

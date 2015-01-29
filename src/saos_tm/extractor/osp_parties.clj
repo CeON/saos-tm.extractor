@@ -109,6 +109,8 @@
                   "z udziałem|"
                   "przeciwko|"
                   "obwinion|"
+                  "oskarżon|"
+                  "skazan|"
                   "od decyzji"))))
         point-indicator (re-find point-indicator-regex plaintiff-match)
         ]
@@ -142,7 +144,23 @@
           (map
            #(get-closest-regex-match defendant-indicators % s)
            defendant-end-indicators)
+        _
+          (spit
+           "log/matches.txt" "=============================="  :append true)
+        _
+          (doall
+           (map
+            #(spit "log/matches.txt" (str % system-newline) :append true)
+            matches))
         matches (sort #(compare (first %1) (first %2)) matches)
+        _
+          (spit
+           "log/matches.txt" "------------------------------"  :append true)
+        _
+          (doall
+           (map
+            #(spit "log/matches.txt" (str % system-newline) :append true)
+            matches))
         match
           (second
            (find-first
@@ -155,35 +173,62 @@
         ]
     match))
 
+(defn to-first-occurence [s]
+  (str "(?i)((?!" s ")[\\s\\S])*(?=" s ")"))
+
 (defn extract-defendant [s]
   (let [
         defendant-indicators
-          ["(?<=sprawy z powództwa)"
-           "(?<=sprawy z wniosku?\\</p\\>)"
-           "(?<=sprawy z wniosku?)"
-           "(?<=sprawy z wniosku)"
-           "(?<=przeciwko\\</p\\>)"
-           "(?<=przeciwko)"
-           "(?<=z wniosku)"
-           "(?<=\\>sprawy)"
-           "(?<=sprawy?:?\\</p\\>)"
-           "(?<=s p r a w y)"
-           "(?<=sprawy)"]
+          [
+           "(?i)(?<=sprawy z powództwa)"
+           "(?i)(?<=sprawy z wniosku?\\</p\\>)"
+           "(?i)(?<=sprawy z wniosku?)"
+           "(?i)(?<=sprawy z wniosku)"
+           "(?i)(?<=przeciwko\\</p\\>)"
+           "(?i)(?<=przeciwko)"
+           "(?i)(?<=z wniosku)"
+           "(?i)(?<=\\>sprawy)"
+           "(?i)(?<=sprawy?:?\\</p\\>)"
+           "(?i)(?<=s p r a w y)"
+           "(?i)(?<=sprawy)"
+           "(?i)(?<=sprawę)"
+           "(?i)(?<=sprawie)"
+           ]
         defendant-end-indicators
-          ["((?!oskarżon)[\\s\\S])*(?=oskarżon)"
-           "((?!z powodu apelacji)[\\s\\S])*\\>(?=z powodu apelacji)"
-           "((?!przy udziale)[\\s\\S])*(?=przy udziale)"
-           "((?!\\>o )[\\s\\S])*\\>(?=o )"
-           "((?!\\>o\\<)[\\s\\S])*\\>(?=o)"
-           "((?!\\>z )[\\s\\S])*\\>(?=z )"
-           "((?!\\>z\\<)[\\s\\S])*\\>(?=z)"
-           "((?!na skutek apelacji)[\\s\\S])*\\>(?=na skutek apelacji)"
-           "((?!\\>w [^\\<])[\\s\\S])*\\>(?=w )"
-           "((?! w [^\\<])[\\s\\S])*(?= w )"]
+          [
+;;            "((?!reprezent)[\\s\\S])*(?=reprezent)"
+;;            (to-first-occurence "oskarżon")
+;;            (to-first-occurence "z powodu apelacji")
+;;            (to-first-occurence "na skutek apelacji")
+;;            (to-first-occurence "przy udziale")
+;;            (to-first-occurence "\\>o ")
+;;            (to-first-occurence "\\>o\\<")
+;;            (to-first-occurence " o ")
+;;            (to-first-occurence "\\>z ")
+;;            (to-first-occurence "\\>z\\<")
+;;            (to-first-occurence " z ")
+           "(?i)((?!oskarżon)[\\s\\S])*(?=oskarżon)"
+           "(?i)((?!z powodu apelacji)[\\s\\S])*\\>(?=z powodu apelacji)"
+           "(?i)((?!na skutek apelacji)[\\s\\S])*\\>(?=na skutek apelacji)"
+
+           "(?i)((?!przy udziale)[\\s\\S])*(?=przy udziale)"
+
+           "(?i)((?!\\>o )[\\s\\S])*\\>(?=o )"
+           "(?i)((?!\\>o\\<)[\\s\\S])*\\>(?=o)"
+           "(?i)((?! o )[\\s\\S])*\\>(?= o )"
+
+;;            "(?i)((?!\\>z )[\\s\\S])*\\>(?=z )"
+;;            "(?i)((?!\\>z\\<)[\\s\\S])*\\>(?=z)"
+;;            "(?i)((?! z )[\\s\\S])*\\>(?= z )"
+
+;;            "(?i)((?!\\>w [^\\<])[\\s\\S])*\\>(?=w )"
+;;            "(?i)((?! w [^\\<])[\\s\\S])*(?= w )"
+           ]
 
         ; extracting defendant to certain phrases
         match (get-first-defendant-end-indicator-match
                defendant-indicators defendant-end-indicators s)
+;;         _ (prn match)
         ]
     (when
       (not-nil? match)
@@ -222,6 +267,7 @@
              "(?<=\\>sprawy( z wniosku)?)"
              "(?<=z powództwa)"
 ;;           "(?<=z powództw)"
+;;              "(?<=odwołania)"
              "(?<=z odwołania)"
              "(?<=z odwołań)"
              "(?<=z wniosku)"
