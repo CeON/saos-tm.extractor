@@ -144,23 +144,7 @@
           (map
            #(get-closest-regex-match defendant-indicators % s)
            defendant-end-indicators)
-        _
-          (spit
-           "log/matches.txt" "=============================="  :append true)
-        _
-          (doall
-           (map
-            #(spit "log/matches.txt" (str % system-newline) :append true)
-            matches))
         matches (sort #(compare (first %1) (first %2)) matches)
-        _
-          (spit
-           "log/matches.txt" "------------------------------"  :append true)
-        _
-          (doall
-           (map
-            #(spit "log/matches.txt" (str % system-newline) :append true)
-            matches))
         match
           (second
            (find-first
@@ -196,17 +180,6 @@
            ]
         defendant-end-indicators
           [
-;;            "((?!reprezent)[\\s\\S])*(?=reprezent)"
-;;            (to-first-occurence "oskarżon")
-;;            (to-first-occurence "z powodu apelacji")
-;;            (to-first-occurence "na skutek apelacji")
-;;            (to-first-occurence "przy udziale")
-;;            (to-first-occurence "\\>o ")
-;;            (to-first-occurence "\\>o\\<")
-;;            (to-first-occurence " o ")
-;;            (to-first-occurence "\\>z ")
-;;            (to-first-occurence "\\>z\\<")
-;;            (to-first-occurence " z ")
            "(?i)((?!oskarżon)[\\s\\S])*(?=oskarżon)"
            "(?i)((?!z powodu apelacji)[\\s\\S])*\\>(?=z powodu apelacji)"
            "(?i)((?!na skutek apelacji)[\\s\\S])*\\>(?=na skutek apelacji)"
@@ -216,19 +189,11 @@
            "(?i)((?!\\>o )[\\s\\S])*\\>(?=o )"
            "(?i)((?!\\>o\\<)[\\s\\S])*\\>(?=o)"
            "(?i)((?! o )[\\s\\S])*\\>(?= o )"
-
-;;            "(?i)((?!\\>z )[\\s\\S])*\\>(?=z )"
-;;            "(?i)((?!\\>z\\<)[\\s\\S])*\\>(?=z)"
-;;            "(?i)((?! z )[\\s\\S])*\\>(?= z )"
-
-;;            "(?i)((?!\\>w [^\\<])[\\s\\S])*\\>(?=w )"
-;;            "(?i)((?! w [^\\<])[\\s\\S])*(?= w )"
            ]
 
         ; extracting defendant to certain phrases
         match (get-first-defendant-end-indicator-match
                defendant-indicators defendant-end-indicators s)
-;;         _ (prn match)
         ]
     (when
       (not-nil? match)
@@ -266,8 +231,6 @@
 
              "(?<=\\>sprawy( z wniosku)?)"
              "(?<=z powództwa)"
-;;           "(?<=z powództw)"
-;;              "(?<=odwołania)"
              "(?<=z odwołania)"
              "(?<=z odwołań)"
              "(?<=z wniosku)"

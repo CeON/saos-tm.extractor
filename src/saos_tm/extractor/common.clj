@@ -213,34 +213,30 @@
       #(.endsWith (str %) s)
       ss)))
 
-(defn re-pos [re s]
-  (let [
-        re-pos
-          (loop [m (re-matcher re s) res {}]
-            (if (.find m)
-              (recur m (assoc res (.start m) (.group m)))
-              res))
-        ]
-    re-pos))
+(defn regexes-with-starts [re s]
+  (loop [m (re-matcher re s) res {}]
+    (if (.find m)
+      (recur m (assoc res (.start m) (.group m)))
+      res)))
 
-(defn re-start-end [re s]
+(defn regexes-with-starts-ends [re s]
   (loop [m (re-matcher re s) res {}]
     (if (.find m)
       (recur m (assoc res [(.start m) (.end m)] (.group m)))
       res)))
 
-(defn re-pos-sort [func re s]
+(defn regexes-sorted [func re s]
   (let [
-        re-pos (func re s)
-        sorted (sort re-pos)
+        regexes (func re s)
+        sorted (sort regexes)
         ]
     sorted))
 
-(defn re-pos-sort-start-end [re s]
-  (re-pos-sort re-start-end re s))
+(defn regexes-with-starts-ends-sorted [re s]
+  (regexes-sorted regexes-with-starts-ends re s))
 
 (defn get-regex-match [func regex following-text-regex s]
-  (re-pos-sort func
+  (regexes-sorted func
    (re-pattern
     (str regex following-text-regex))
    s))
@@ -270,8 +266,7 @@
 (defn get-closest-regex-match [regexes following-text-regex s]
   (let [
         matches-positions
-          (get-matches re-start-end regexes following-text-regex s)
-;;         _ (prn matches-positions)
+          (get-matches regexes-with-starts-ends regexes following-text-regex s)
         matches-positions
           (sort #(compare (first %1) (first %2)) matches-positions)
         match-pos (find-first-not-empty matches-positions)

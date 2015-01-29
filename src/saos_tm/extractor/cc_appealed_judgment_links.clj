@@ -120,7 +120,7 @@
            (map
             #(first
               (find-from-to-first-case-ins
-               s re-pos-sort-start-end % osp-regex))
+               s regexes-with-starts-ends-sorted % osp-regex))
              ["(?<=skutek)\\s+apelacji" "(?<=z powodu)\\s+apelacji"
               "(?<=skutek)\\s+zażalenia"
               "(?<=z powodu)\\s+zażalenia" "zażalenia\\s+wniesionego"
