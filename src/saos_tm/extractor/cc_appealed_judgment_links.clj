@@ -18,17 +18,17 @@
         ]
     without-newlines))
 
-(defn find-from-to-first [s from to case-sensitivity]
-  (re-find
+(defn find-from-to-first [s find-regex-func from to case-sensitivity]
+  (find-regex-func
    (re-pattern
     (str case-sensitivity from "((?!" to ")[\\s\\S])*" to))
    s))
 
-(defn find-from-to-first-case-ins [s from to]
-  (find-from-to-first s from to "(?i)"))
+(defn find-from-to-first-case-ins [s find-regex-func from to]
+  (find-from-to-first s find-regex-func from to "(?i)"))
 
-(defn find-from-to-first-case-sen [s from to]
-  (find-from-to-first s from to ""))
+(defn find-from-to-first-case-sen [s find-regex-func from to]
+  (find-from-to-first s find-regex-func from to ""))
 
 (defn split-appeal-str [s]
   (let [
@@ -37,27 +37,35 @@
         appeal-str (str/replace s (re-pattern appeal-type) "")
         parts (str/split appeal-str #"[\s\>]na[\s\<]|[\s\>]od[\s\<]")
         appellant (first parts)
-        _ (if (< (count parts) 2) (prn parts))
         judgment-type
           (first
            (find-from-to-first-case-ins
             (second parts)
+            re-find
             "" #"postanow[^\s]*|wyrok[^\s]*\s*(wstępn[^\s]*)?|zarządz[^\s]*"))
-        remainder (str/replace (second parts) judgment-type "")
-        parts
-          (str/split
-           remainder
-           #"z\s*dnia|o? ?\(?sygn?(atura)?\s*(akt[\.:]?)?|w sprawie")
-        date-index 1
-        parts
-        (if (> (count parts) 1)
-          (assoc
-            parts
-            date-index
-            (first (str/split (second parts) #"(?<=r\.)|(?<=roku)"))))
-        parts (filter #(not-matches? % #"\s*") parts)
-        ]
-    (concat [appeal-type appellant judgment-type] parts)))
+        appeal-parts
+          (if
+            (nil? judgment-type)
+            (take 6 (repeat ""))
+            (let [
+                  remainder (str/replace (second parts) judgment-type "")
+                  parts
+                    (str/split
+                     remainder
+                     #"z\s*dnia|o? ?\(?sygn?(atura)?\s*(akt[\.:]?)?|w sprawie")
+                  date-index 1
+                  parts
+                    (if (> (count parts) 1)
+                      (assoc
+                        parts
+                        date-index
+                        (first
+                         (str/split (second parts) #"(?<=r\.)|(?<=roku)"))))
+                  parts (filter #(not-matches? % #"\s*") parts)
+                  ]
+              (concat [appeal-type appellant judgment-type] parts)))
+              ]
+            appeal-parts))
 
 (defn post-process-appellant [s]
   (if (substring? "przez" s)
@@ -66,9 +74,7 @@
 
 (defn cleanse-appeal [s]
   (let [
-        s (if (string? s)
-            s
-            (first s))
+        s (if (string? s) s (first s))
         result
           (when (not-nil? s)
             (str/trim
@@ -111,15 +117,17 @@
 (defn extract-appeal-or-grievance [s]
   (let [
          appeal-match-groups
-           (map #(first (find-from-to-first-case-ins s % osp-regex))
-             ["(?<=skutek) apelacji" "(?<=z powodu) apelacji"
-              "(?<=skutek) zażalenia"
-              "(?<=z powodu) zażalenia" "zażalenia wniesionego"
-              "(?<=w związku z) zażaleniem" "zażalenia wnioskodawc"
+           (map
+            #(first (find-from-to-first-case-ins s re-pos-sort % osp-regex))
+             ["(?<=skutek)\\s+apelacji" "(?<=z powodu)\\s+apelacji"
+              "(?<=skutek)\\s+zażalenia"
+              "(?<=z powodu)\\s+zażalenia" "zażalenia\\s+wniesionego"
+              "(?<=w związku z)\\s+zażaleniem" "zażalenia\\s+wnioskodawc"
               "zażalenia pow" "(?<=w przedmiocie) zażalenia"
               "zażalenia pokrzywdz" "zażalenia str"
               "zażalenia oskarżon"])
-        appeal-match-str (find-first #(not-nil? %) appeal-match-groups)
+        appeal-match-groups (sort (remove #(nil? %) appeal-match-groups))
+        appeal-match-str (second (first appeal-match-groups))
         result
           (cond
            (nil? appeal-match-str)
@@ -132,12 +140,14 @@
 (defn identify-complaint [s]
   (let [
         s (cleanse-appeal-str s)
-        part (first (find-from-to-first-case-sen s "UZASADNIENIE" osp-regex))
+        part
+          (first
+           (find-from-to-first-case-sen s re-find  "UZASADNIENIE" osp-regex))
         signature
           (first (re-find (re-pattern osp-regex) part))
         date-str
           (first
-           (find-from-to-first-case-ins part "dni[a|u]" "r\\."))
+           (find-from-to-first-case-ins part re-find "dni[a|u]" "r\\."))
         date
           (when (not-nil? date-str)
             (second (str/split date-str #"\s" 2)))
@@ -169,7 +179,7 @@
 (defn extract-complaint [s]
   (let [
         appeal-match-groups-complaint
-          (map #(first (find-from-to-first-case-ins s % osp-regex))
+          (map #(first (find-from-to-first-case-ins s re-find  % osp-regex))
              ["na skutek skarg" "z powodu skarg" "sprawy ze skarg"
               "przedmiocie skarg" "skargi? wniesion"
               "w związku ze skarg"])
