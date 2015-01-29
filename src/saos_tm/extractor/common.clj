@@ -214,10 +214,21 @@
       ss)))
 
 (defn re-pos [re s]
-  (loop [m (re-matcher re s) res {}]
-    (if (.find m)
-      (recur m (assoc res (.start m) (.group m)))
-      res)))
+  (let [
+        re-pos
+          (loop [m (re-matcher re s) res {}]
+            (if (.find m)
+              (recur m (assoc res (.start m) (.group m)))
+              res))
+        ]
+    re-pos))
+
+(defn re-pos-sort [re s]
+  (let [
+        re-pos (re-pos re s)
+        sorted (sort re-pos)
+        ]
+    sorted))
 
 (defn get-regex-match [func regex following-text-regex s]
   (func
