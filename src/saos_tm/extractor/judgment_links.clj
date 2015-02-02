@@ -48,13 +48,6 @@
    (matches? s kio-space-regex)
    (matches? s kio-uzp-regex)))
 
-(defn not-tk? [s]
-  (or
-   (substring? "nr" s)
-   (substring? "Nr" s)
-   (substring? "OSNC" s)
-   (= (last s) "/")))
-
 (def tk-regex-str
   "(Co|K|Kp|U|P|SK|Kpt|Pp|M|S|Tp|Ts|Tw|Twn|Kw|Uw|W)\\s+\\d+/\\d+")
 (def tk-extraction-regex

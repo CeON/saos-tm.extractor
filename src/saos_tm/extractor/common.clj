@@ -246,22 +246,11 @@
    #(get-regex-match func % following-text-regex s)
    regexes))
 
-(defn find-first-not-nil [coll]
-  (find-first #(not-nil? %) coll))
-
 (defn find-first-not-empty [coll]
   (find-first #(not-empty? %) coll))
 
 (defn get-first-if-groups [match]
   (if (string? match) match (first match)))
-
-(defn get-first-regex-match [regexes following-text-regex s]
-  (let [
-        matches (get-matches re-find regexes following-text-regex s)
-        match (find-first-not-nil matches)
-        match (get-first-if-groups match)
-        ]
-    match))
 
 (defn get-closest-regex-match [regexes following-text-regex s]
   (let [
@@ -278,21 +267,9 @@
   (func
     (map #(str "(?i)" %) regexes) following-text-regex s))
 
-(defn get-first-regex-match-case-ins [regexes following-text-regex s]
-  (get-regex-match-case-ins
-   get-first-regex-match regexes following-text-regex s))
-
 (defn get-closest-regex-match-case-ins [regexes following-text-regex s]
   (get-regex-match-case-ins
    get-closest-regex-match regexes following-text-regex s))
-
-(defn str-to-regex [s]
-  (re-pattern
-   (replace-several s
-                    #"\." (str "\\")
-                    #"\(" (str "\\" "(")
-                    #"\)" (str "\\" ")")
-                    )))
 
 (defn remove-all-html-tags [s]
   (str/replace s

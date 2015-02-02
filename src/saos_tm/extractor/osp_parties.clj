@@ -104,14 +104,23 @@
            (str/split
             s
             (re-pattern
-             (str "po rozpoznaniu|"
-                  "przy udziale|"
-                  "z udziałem|"
-                  "przeciwko|"
-                  "obwinion|"
-                  "oskarżon|"
-                  "skazan|"
-                  "od decyzji"))))
+             (str "(?i)po\\s+rozpoznaniu|"
+                  "(?i)przy\\s+udziale|"
+                  "(?i)przy\\s+uczestnictwie|"
+                  "(?i)z\\s+udziałem|"
+                  "(?i)z\\s+urzędu|"
+                  "(?i)przeciwko|"
+                  "(?i)obwinion|"
+                  "(?i)oskarżon|"
+                  "(?i)ukarane|"
+                  "(?i)skazan|"
+                  "(?i)sprawy|"
+                  "(?i)\\s+o\\s+|"
+                  "(?i)(?<=>)o\\s+|"
+                  "(?i)(?<=>)o(?<=<)|"
+                  "(?i)prowadząc[^\\s]+\\s+działaln[^\\s]+|"
+;;                   "(?i) przez |"
+                  "(?i)od\\s+decyzji"))))
         point-indicator (re-find point-indicator-regex plaintiff-match)
         ]
     (if (nil? point-indicator)
@@ -126,16 +135,18 @@
      (re-pattern
       (str
        "oskarżon[^\\s]*|"
-       "\\so\\s|"
-       "w przedmiocie|"
-       "-o\\s|"
-       "osk\\. z|"
-       "o zasądzenie|"
-       "o odszkodowanie|"
+       "\\s+o\\s+|"
+       "w\\s+przedmiocie|"
+       "-o\\s+|"
+       "osk\\.\\s+z|"
+       "o\\s+zasądzenie|"
+       "o\\s+odszkodowanie|"
        "odszkodowanie|"
        "zapłat|"
        "obwinion|"
-       "prowadzącym działalność")))))
+       "pozwan|"
+       "prowadząc[^\\s]+\\s+działaln[^\\s]+"
+       )))))
 
 (defn get-first-defendant-end-indicator-match
   [defendant-indicators defendant-end-indicators s]
@@ -157,20 +168,17 @@
         ]
     match))
 
-(defn to-first-occurence [s]
-  (str "(?i)((?!" s ")[\\s\\S])*(?=" s ")"))
-
 (defn extract-defendant [s]
   (let [
         defendant-indicators
           [
-           "(?i)(?<=sprawy z powództwa)"
-           "(?i)(?<=sprawy z wniosku?\\</p\\>)"
-           "(?i)(?<=sprawy z wniosku?)"
-           "(?i)(?<=sprawy z wniosku)"
+           "(?i)(?<=sprawy\\s\\s?z\\s\\s?powództwa)"
+           "(?i)(?<=sprawy\\s\\s?z\\s\\s?wniosku?\\</p\\>)"
+           "(?i)(?<=sprawy\\s\\s?z\\s\\s?wniosku?)"
+           "(?i)(?<=sprawy\\s\\s?z\\s\\s?wniosku)"
            "(?i)(?<=przeciwko\\</p\\>)"
            "(?i)(?<=przeciwko)"
-           "(?i)(?<=z wniosku)"
+           "(?i)(?<=z\\s\\s?wniosku)"
            "(?i)(?<=\\>sprawy)"
            "(?i)(?<=sprawy?:?\\</p\\>)"
            "(?i)(?<=s p r a w y)"
@@ -181,14 +189,18 @@
         defendant-end-indicators
           [
            "(?i)((?!oskarżon)[\\s\\S])*(?=oskarżon)"
-           "(?i)((?!z powodu apelacji)[\\s\\S])*\\>(?=z powodu apelacji)"
-           "(?i)((?!na skutek apelacji)[\\s\\S])*\\>(?=na skutek apelacji)"
 
-           "(?i)((?!przy udziale)[\\s\\S])*(?=przy udziale)"
+           (str "(?i)((?!z\\s\\s?powodu\\s\\s?apelacji)[\\s\\S])*"
+                "\\>(?=z\\s\\s?powodu\\s\\s?apelacji)")
 
-           "(?i)((?!\\>o )[\\s\\S])*\\>(?=o )"
+           (str "(?i)((?!na\\s\\s?skutek\\s\\s?apelacji)[\\s\\S])*"
+                "\\>(?=na\\s\\s?skutek\\s\\s?apelacji)")
+
+           "(?i)((?!przy\\s\\s?udziale)[\\s\\S])*(?=przy\\s\\s?udziale)"
+
+           "(?i)((?!\\>o\\s\\s?)[\\s\\S])*\\>(?=o\\s\\s?)"
            "(?i)((?!\\>o\\<)[\\s\\S])*\\>(?=o)"
-           "(?i)((?! o )[\\s\\S])*\\>(?= o )"
+           "(?i)((?!\\s\\s?o\\s\\s?)[\\s\\S])*\\>(?=\\s\\s?o\\s\\s?)"
            ]
 
         ; extracting defendant to certain phrases
@@ -215,36 +227,56 @@
           (second
            (get-closest-regex-match-case-ins
             [
-             "(?<=przy udziale) prok"
-             "(?<=przy udziale) oskarżyciel"
-             "(?<=sprawy z odwołania)"
+             "(?<=przy udziale)\\s+prok"
+             "(?<=przy udziale)\\s+oskarżyciel"
+             "(?<=sprawy\\s\\s?z\\s\\s?odwołania)"
 
-             "(?<=przy udziale)"
-             "prokurator prokuratury"
-             "prokuratora prok"
+             "(?<=przy\\s\\s?udziale)"
+             "prokurator\\s+prokuratury"
+             "prokuratora\\s+prok"
              "prokurator[^i]"
 
-             "(?<=sprawy z wniosk)"
-             "(?<=spraw z powództw)"
-             "(?<=sprawy z powództwa)"
-             "(?<=spraw z odwołań)"
+             "(?<=sprawy\\s\\s?z\\s\\s?wniosk)"
+             "(?<=spraw\\s\\s?z\\s\\s?powództw)"
+             "(?<=sprawy\\s\\s?z\\s\\s?powództwa)"
+             "(?<=spraw\\s\\s?z\\s\\s?odwołań)"
 
-             "(?<=\\>sprawy( z wniosku)?)"
-             "(?<=z powództwa)"
-             "(?<=z odwołania)"
-             "(?<=z odwołań)"
-             "(?<=z wniosku)"
-             "(?<=z wniosków)"
-             "(?<=w sprawie ze skargi)"
-             "(?<=po rozpoznaniu w sprawie)"
-             "(?<=w obecności oskarżyciela publ)"
-             "(?<=w sprawie)"]
+             "(?<=powodowi)"
+             "(?<=powodom)"
+             "(?<=powódce)"
+             "(?<=powód(ztw)?)"
+
+             "(?<=z\\s\\s?powództwa)"
+             "(?<=z\\s\\s?powództw)"
+             "(?<=z\\s\\s?odwołania)"
+             "(?<=z\\s\\s?odwołań)"
+             "(?<=z\\s\\s?wniosku)"
+             "(?<=z\\s\\s?wniosków)"
+             "(?<=ze\\s\\s?skargi)"
+             "(?<=ze\\s\\s?skarg)"
+
+             "(?<=\\>sprawy\\s\\s?z\\s\\s?wniosku)"
+             "(?<=w\\s\\s?sprawie\\s\\s?ze\\s\\s?skargi)"
+             "(?<=sprawy\\s\\s?ze\\s\\s?skargi)"
+             "(?<=po\\s\\s?rozpoznaniu\\s\\s?w\\s\\s?sprawie)"
+             "(?<=w\\s\\s?obecności\\s\\s?oskarżyciela\\s\\s?publ)"
+             "(?<=w\\s\\s?obecności)"
+
+             "(?<=\\>sprawy)"
+             "(?<=w\\s\\s?sprawie)"
+             "(?<=sprawy)"
+             ]
             whatever s))
         match
           (when (not-nil? match)
-            (str/replace
+            (replace-several
              match
-             #"^\s*z\s*(wniosku|powództwa|odwołania)" ""))
+             #"^\s*z\s*(wniosku|powództwa|odwołania)" ""
+             #"^a:?\s" ""
+             #"^a:?<" "<"
+             #"^ztwa:?\s" ""
+             #"^ztwa:?<" "<"
+             ))
         ]
     (if
       (nil? match)
