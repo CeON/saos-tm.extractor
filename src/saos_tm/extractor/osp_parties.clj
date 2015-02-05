@@ -6,11 +6,11 @@
   (:gen-class))
 
 (defn cleanse-party [s]
-  (let [
-        without-html-tags (remove-html-tags-other-than-span s)
-        ]
-    (when
-      (not-nil? without-html-tags)
+  (when
+    (not-nil? s)
+    (let [
+          without-html-tags (remove-html-tags-other-than-span s)
+          ]
       (str/trim
        (replace-several without-html-tags
 
@@ -114,7 +114,8 @@
                   "(?i)oskarżon|"
                   "(?i)ukarane|"
                   "(?i)skazan|"
-                  "(?i)sprawy|"
+                  "(?i)spraw|"
+                  "(?i)rozpozn|"
                   "(?i)\\s+o\\s+|"
                   "(?i)(?<=>)o\\s+|"
                   "(?i)(?<=>)o(?<=<)|"
@@ -220,22 +221,40 @@
             (extract-multiple point-indicator match "oskarżon" s)))
         (identify-defendant (first match))))))
 
-(defn extract-parties-osp [s]
+(defn extract-parties-osp-criminal [s]
+  (let [
+        whatever "[\\s\\S]*"
+        closest-match-with-position
+          (get-closest-regex-match-case-sen
+            [
+             "(?i)(?<=przy\\s\\s?udziale)"
+             "(?i)prokurator:"
+             "(?i)prokuratora?\\s+prok"
+             "[p|P]rokuratora?\\s+[A-Z]"
+             ]
+            whatever s)
+        match (second closest-match-with-position)
+        plaintiff
+          (if
+            (or
+             (nil? match)
+             (matches? match #"(?i)^prokurat[^\s]*\s+rejonow[^\s]*[\S\s]*")
+             (matches? match #"(?i)^prokurat[^\s]*\s+generaln[^\s]*[\S\s]*"))
+            ""
+            (cleanse-party (extract-plaintiff match)))
+        ]
+    (zipmap
+     [:plaintiff :defendant]
+     [plaintiff ""])))
+
+(defn extract-parties-osp-civil [s]
   (let [
         whatever "[\\s\\S]*"
         match
           (second
            (get-closest-regex-match-case-ins
             [
-             "(?<=przy udziale)\\s+prok"
-             "(?<=przy udziale)\\s+oskarżyciel"
              "(?<=sprawy\\s\\s?z\\s\\s?odwołania)"
-
-             "(?<=przy\\s\\s?udziale)"
-             "prokurator\\s+prokuratury"
-             "prokuratora\\s+prok"
-             "prokurator[^i]"
-
              "(?<=sprawy\\s\\s?z\\s\\s?wniosk)"
              "(?<=spraw\\s\\s?z\\s\\s?powództw)"
              "(?<=sprawy\\s\\s?z\\s\\s?powództwa)"
@@ -304,8 +323,8 @@
         ]
     (if (nil? match) s match)))
 
-(defn extract-parties-from-judgments [judgments]
+(defn extract-parties-from-judgments [judgments extract-parties-func]
   (remove nil?
           (map
-           #(extract-parties-osp (extract-sentence %))
+           #(extract-parties-func (extract-sentence %))
            judgments)))

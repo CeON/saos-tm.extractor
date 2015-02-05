@@ -267,8 +267,15 @@
   (func
     (map #(str "(?i)" %) regexes) following-text-regex s))
 
+(defn get-regex-match-case-sen [func regexes following-text-regex s]
+  (func regexes following-text-regex s))
+
 (defn get-closest-regex-match-case-ins [regexes following-text-regex s]
   (get-regex-match-case-ins
+   get-closest-regex-match regexes following-text-regex s))
+
+(defn get-closest-regex-match-case-sen [regexes following-text-regex s]
+  (get-regex-match-case-sen
    get-closest-regex-match regexes following-text-regex s))
 
 (defn remove-all-html-tags [s]

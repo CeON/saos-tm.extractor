@@ -28,15 +28,20 @@
    #(subs % 1 (dec (count %)))
    coll))
 
-(defn create-osp-parties-map [coll]
+(defn create-osp-parties-map [answers is-civil]
   (into #{}
         (map
-         #(zipmap [:id :plaintiff :defendant] (split-csv %))
-         coll)))
+         #(zipmap
+           [:id :plaintiff :defendant]
+                      (let [
+                            parts (split-csv %)
+                            ]
+           (if is-civil
+             parts
+             [(first parts) (second parts) ""])))
+        answers)))
 
 (defn extract-parties [coll]
-  (prn "extract-parties")
-  (prn (count coll))
   (into #{}
         (mapcat
          #(extract-parties-from-judgments %)
@@ -74,64 +79,82 @@
 
 (deftest extract-parties-efficiency-test []
   (let [
-        files
-          {:test-sets ["answers-1/"
-                       "answers-2/"
-                       "answers-3/"
-                       ]
-           :answers   ["answers-1.txt"
-                       "answers-2.txt"
-                       "answers-3.txt"
-                       ]
-           :corrects  ["log/corrects-1.txt"
-                       "log/corrects-2.txt"
-                       "log/corrects-3.txt"
-                       ]
-           :errors    ["log/errors-1.txt"
-                       "log/errors-2.txt"
-                       "log/errors-3.txt"
-                       ]}
+        files-funcs
+          {:test-sets ["answers-1/civil/" "answers-1/criminal/"
+                       "answers-2/civil/" "answers-2/criminal/"
+                       "answers-3/civil/" "answers-3/criminal/"]
+           :answers  ["answers-1-civil.txt" "answers-1-criminal.txt"
+                      "answers-2-civil.txt" "answers-2-criminal.txt"
+                      "answers-3-civil.txt" "answers-3-criminal.txt"]
+           :corrects ["log/corrects-1-civil.txt" "log/corrects-1-criminal.txt"
+                      "log/corrects-2-civil.txt" "log/corrects-2-criminal.txt"
+                      "log/corrects-3-civil.txt" "log/corrects-3-criminal.txt"]
+           :errors    ["log/errors-1-civil.txt" "log/errors-1-criminal.txt"
+                       "log/errors-2-civil.txt" "log/errors-2-criminal.txt"
+                       "log/errors-3-civil.txt" "log/errors-3-criminal.txt"]
+           :extract-parties-funcs
+             [extract-parties-osp-civil extract-parties-osp-criminal
+              extract-parties-osp-civil extract-parties-osp-criminal
+              extract-parties-osp-civil extract-parties-osp-criminal]
+           }
 
         judgments
           (map
             #(get-file-contents (str osp-parties-test-data-path %) #"[\s\S]*")
-             (files :test-sets))
+             (files-funcs :test-sets))
 
         ids
           (map
             #(get-file-names (str osp-parties-test-data-path %) #"[\s\S]*")
-             (files :test-sets))
+             (files-funcs :test-sets))
 
         extracted-parties
-          (map #(extract-parties-from-judgments %) judgments)
+          (map #(extract-parties-from-judgments %1 %2)
+               judgments
+               (files-funcs :extract-parties-funcs))
         extracted-parties-with-ids
           (map #(join-with-ids %1 %2) extracted-parties ids)
         extracted-parties-with-ids
           (map #(into #{} %) extracted-parties-with-ids)
 
         answers-txts
-         (map #(slurp %) (osp-parties-paths (files :answers)))
+         (map #(slurp %) (osp-parties-paths (files-funcs :answers)))
         answers-lines (map #(split-lines %) answers-txts)
         answers-without-quots
           (map #(remove-opening-closing-quots %) answers-lines)
-        answers (map #(create-osp-parties-map %) answers-without-quots)
+        is-civil [true false true false true false]
+        answers
+          (map #(create-osp-parties-map %1 %2)
+               answers-without-quots
+               is-civil)
 
         corrects
           (map #(difference %1 %2)
                answers extracted-parties-with-ids)
-        _ (handle-results corrects (files :corrects))
+        _ (handle-results corrects (files-funcs :corrects))
 
         errors (map #(difference %1 %2) extracted-parties-with-ids answers)
-        _ (handle-results errors (files :errors))
+        _ (handle-results errors (files-funcs :errors))
 
         precisions-recalls
           (get-precisions-recalls extracted-parties-with-ids answers)
-        _ (prn precisions-recalls)
+
+        _
+          (doall
+           (map
+            #(prn %1 %2)
+            (files-funcs :test-sets)
+            precisions-recalls))
         ]
-    (is (> ((nth precisions-recalls 0) :recall) 0.977))
-    (is (> ((nth precisions-recalls 0) :precision) 0.977))
-    (is (> ((nth precisions-recalls 1) :recall) 0.969))
-    (is (> ((nth precisions-recalls 1) :precision) 0.969))
-    (is (> ((nth precisions-recalls 2) :recall) 0.849))
-    (is (> ((nth precisions-recalls 2) :precision) 0.849))
-    ))
+    (is (= ((nth precisions-recalls 0) :recall)    1.0    ))
+    (is (= ((nth precisions-recalls 0) :precision) 1.0    ))
+    (is (= ((nth precisions-recalls 1) :recall)    1.0  ))
+    (is (= ((nth precisions-recalls 1) :precision) 1.0  ))
+    (is (> ((nth precisions-recalls 2) :recall)    0.972  ))
+    (is (> ((nth precisions-recalls 2) :precision) 0.972  ))
+    (is (> ((nth precisions-recalls 3) :recall)    0.956  ))
+    (is (> ((nth precisions-recalls 3) :precision) 0.956  ))
+    (is (> ((nth precisions-recalls 4) :recall)    0.904  ))
+    (is (> ((nth precisions-recalls 4) :precision) 0.904  ))
+    (is (> ((nth precisions-recalls 5) :recall)    0.962  ))
+    (is (> ((nth precisions-recalls 5) :precision) 0.962  ))))
