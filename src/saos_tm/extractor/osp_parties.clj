@@ -193,8 +193,19 @@
             (extract-multiple match #"oskarżon" s)))
         (identify-defendant (first match))))))
 
+(defn remove-hard-spaces [s]
+  (str/replace s #"\u00A0" " "))
+
+(defn extract-sentence [s]
+  (let [
+        s (remove-hard-spaces s)
+        match (re-find #"(?i)\>\s*WYROK\s*\<[\s\S]*\>\s*UZASADNIENIE\s*\<" s)
+        ]
+    (if (nil? match) s match)))
+
 (defn extract-parties-osp-criminal [s]
   (let [
+        sentence (extract-sentence s)
         whatever "[\\s\\S]*"
         closest-match-with-position
           (get-closest-regex-match-case-sen
@@ -204,7 +215,7 @@
              "(?i)prokuratora?\\s+prok"
              "[p|P]rokuratora?\\s+[A-Z]"
              ]
-            whatever s)
+            whatever sentence)
         match (second closest-match-with-position)
         plaintiff
           (if
@@ -221,6 +232,7 @@
 
 (defn extract-parties-osp-civil [s]
   (let [
+        sentence (extract-sentence s)
         whatever "[\\s\\S]*"
         match
           (second
@@ -257,7 +269,7 @@
              "(?<=w\\s\\s?sprawie)"
              "(?<=sprawy)"
              ]
-            whatever s))
+            whatever sentence))
         match
           (when (not-nil? match)
             (replace-several
@@ -285,18 +297,8 @@
            ["" (cleanse-party (identify-defendant plaintiff))]
            [(cleanse-party plaintiff) (cleanse-party defendant)]))))))
 
-(defn remove-hard-spaces [s]
-  (str/replace s #"\u00A0" " "))
-
-(defn extract-sentence [s]
-  (let [
-        s (remove-hard-spaces s)
-        match (re-find #"(?i)\>\s*WYROK\s*\<[\s\S]*\>\s*UZASADNIENIE\s*\<" s)
-        ]
-    (if (nil? match) s match)))
-
 (defn extract-parties-from-judgments [judgments extract-parties-func]
   (remove nil?
           (map
-           #(extract-parties-func (extract-sentence %))
+           #(extract-parties-func %)
            judgments)))
