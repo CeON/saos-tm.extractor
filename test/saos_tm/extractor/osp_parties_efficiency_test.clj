@@ -138,23 +138,19 @@
 
         precisions-recalls
           (get-precisions-recalls extracted-parties-with-ids answers)
+        efficiencies (map #(:recall %) precisions-recalls)
 
         _
           (doall
            (map
-            #(prn %1 %2)
+            #(prn (str %1 %2 %3))
             (files-funcs :test-sets)
-            precisions-recalls))
+            (repeat ", efficiency: ")
+            efficiencies))
         ]
     (is (= ((nth precisions-recalls 0) :recall)    1.0    ))
-    (is (= ((nth precisions-recalls 0) :precision) 1.0    ))
-    (is (= ((nth precisions-recalls 1) :recall)    1.0  ))
-    (is (= ((nth precisions-recalls 1) :precision) 1.0  ))
-    (is (> ((nth precisions-recalls 2) :recall)    0.972  ))
-    (is (> ((nth precisions-recalls 2) :precision) 0.972  ))
+    (is (= ((nth precisions-recalls 1) :recall)    1.0    ))
+    (is (> ((nth precisions-recalls 2) :recall)    0.973  ))
     (is (> ((nth precisions-recalls 3) :recall)    0.956  ))
-    (is (> ((nth precisions-recalls 3) :precision) 0.956  ))
     (is (> ((nth precisions-recalls 4) :recall)    0.904  ))
-    (is (> ((nth precisions-recalls 4) :precision) 0.904  ))
-    (is (> ((nth precisions-recalls 5) :recall)    0.962  ))
-    (is (> ((nth precisions-recalls 5) :precision) 0.962  ))))
+    (is (> ((nth precisions-recalls 5) :recall)    0.962  ))))

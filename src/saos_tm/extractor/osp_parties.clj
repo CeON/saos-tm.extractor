@@ -1,7 +1,8 @@
 (ns saos-tm.extractor.osp-parties
   (:require
-    [ clojure.string :as str ]
-    [saos-tm.extractor.common :refer :all])
+   [ clojure.string :as str ]
+   [saos-tm.extractor.common :refer :all]
+   [ langlab.core.parsers :refer :all ])
   (:import java.io.File)
   (:gen-class))
 
@@ -48,54 +49,27 @@
                         #"^\s*:" ""
                         #"­\." ""
 
-                        #"\s+" " "
-                        #" +" " "
                         #"[^\S]+" " ")))))
 
-(defn extract-multiple [point-indicator defendant-match splitter s]
+(def point-indicator-regex #"(?<=>)\s*\d+[\.\)]")
+
+(defn extract-multiple [match splitter s]
   (let [
-        points-indicator-strs (str/split point-indicator #"1")
         to-first-point
           (first
            (str/split
-            defendant-match
-            (re-pattern
-             (str "\\" (first points-indicator-strs)
-                  "1"
-                  "\\" (second points-indicator-strs)
-                  ))))
-        points-indicator-str
-          (str "\\" (first points-indicator-strs)
-               "\\d"
-               "\\" (second points-indicator-strs)
-               )
-        points-indicator-regex (re-pattern points-indicator-str)
-        points-indicators (re-seq points-indicator-regex s)
-        points-indicators
-          (partition-by #(substring? "1" %) points-indicators)
-        points-indicators (flatten (take 2 points-indicators))
-        defendants
+            match
+            point-indicator-regex))
+        party-entities (split* match point-indicator-regex)
+        party-entities
           (map
-           #(first
-             (re-find
-              (re-pattern
-               (str "\\" (apply str (drop-last %))
-                    "\\" (last %)
-                    "((?!" splitter ")[\\s\\S])*(?=" splitter ")"))
-              s))
-           points-indicators)
-        defendants-complete
-          (sort
-           (map #(str to-first-point %) defendants))
-        defendants-complete
-          (map
-           #(cleanse-party %)
-           defendants-complete)
-        defendants-in-one-str (apply str defendants-complete)
+           #(first (str/split % splitter))
+           party-entities)
+        all
+          (cleanse-party
+           (apply str (map #(str %1 %2) party-entities (repeat " "))))
         ]
-     defendants-in-one-str))
-
-(def point-indicator-regex #"\>\s*1[\.\)]")
+    all))
 
 (defn extract-plaintiff [s]
   (let [
@@ -126,8 +100,7 @@
         ]
     (if (nil? point-indicator)
       plaintiff-match
-      (extract-multiple
-       point-indicator plaintiff-match "</strong>|</p>" s))))
+      (extract-multiple plaintiff-match #"</strong>|</p>" s))))
 
 (defn identify-defendant [s]
   (first
@@ -146,8 +119,7 @@
        "zapłat|"
        "obwinion|"
        "pozwan|"
-       "prowadząc[^\\s]+\\s+działaln[^\\s]+"
-       )))))
+       "prowadząc[^\\s]+\\s+działaln[^\\s]+")))))
 
 (defn get-first-defendant-end-indicator-match
   [defendant-indicators defendant-end-indicators s]
@@ -218,7 +190,7 @@
               ]
           (if (nil? point-indicator)
             match
-            (extract-multiple point-indicator match "oskarżon" s)))
+            (extract-multiple match #"oskarżon" s)))
         (identify-defendant (first match))))))
 
 (defn extract-parties-osp-criminal [s]
