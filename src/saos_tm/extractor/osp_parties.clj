@@ -119,6 +119,8 @@
        "zapłat|"
        "obwinion|"
        "pozwan|"
+       "z\\s+udziałem|"
+       "przy?\\s+udzial|"
        "prowadząc[^\\s]+\\s+działaln[^\\s]+")))))
 
 (defn get-first-defendant-end-indicator-match
@@ -162,6 +164,7 @@
         defendant-end-indicators
           [
            "(?i)((?!oskarżon)[\\s\\S])*(?=oskarżon)"
+           "(?i)((?!obwinion)[\\s\\S])*(?=obwinion)"
 
            (str "(?i)((?!z\\s\\s?powodu\\s\\s?apelacji)[\\s\\S])*"
                 "\\>(?=z\\s\\s?powodu\\s\\s?apelacji)")
@@ -179,6 +182,12 @@
         ; extracting defendant to certain phrases
         match (get-first-defendant-end-indicator-match
                defendant-indicators defendant-end-indicators s)
+
+        match
+          (when (not-nil? match)
+            (replace-several
+             match
+             #"^\s*przeciw[^\s]*" ""))
         ]
     (when
       (not-nil? match)
@@ -203,6 +212,12 @@
         ]
     (if (nil? match) s match)))
 
+(defn no-plaintiff? [match]
+  (or
+   (nil? match)
+   (matches? match #"(?i)^prokurat[^\s]*\s+rejonow[^\s]*[\S\s]*")
+   (matches? match #"(?i)^prokurat[^\s]*\s+generaln[^\s]*[\S\s]*")))
+
 (defn extract-parties-osp-criminal [s]
   (let [
         sentence (extract-sentence s)
@@ -214,6 +229,11 @@
              "(?i)prokurator:"
              "(?i)prokuratora?\\s+prok"
              "[p|P]rokuratora?\\s+[A-Z]"
+             "[p|P]rokuratur[^\\s]*\\s+[A-Z]"
+             "(?<=w\\s\\s?obecności)\\s\\s?oskarżyciela\\s\\s?publ"
+             "(?<=w\\s\\s?obecności)"
+             "(?i)oskarżyciela?\\s+publ"
+             "(?i)oskarżyciela?\\s+prywatn"
              ]
             whatever sentence)
         match (second closest-match-with-position)
@@ -221,14 +241,16 @@
           (if
             (or
              (nil? match)
-             (matches? match #"(?i)^prokurat[^\s]*\s+rejonow[^\s]*[\S\s]*")
-             (matches? match #"(?i)^prokurat[^\s]*\s+generaln[^\s]*[\S\s]*"))
+             (matches? match #"(?i)^prokurator[^\s]*\s+rejonow[^\s]*[\S\s]*")
+             (matches? match #"(?i)^prokurator[^\s]*\s+generaln[^\s]*[\S\s]*"))
             ""
             (cleanse-party (extract-plaintiff match)))
         ]
     (zipmap
      [:plaintiff :defendant]
-     [plaintiff ""])))
+     [plaintiff
+      "" ;; we don't want to extract defendant for criminal cases
+      ])))
 
 (defn extract-parties-osp-civil [s]
   (let [
@@ -262,8 +284,6 @@
              "(?<=w\\s\\s?sprawie\\s\\s?ze\\s\\s?skargi)"
              "(?<=sprawy\\s\\s?ze\\s\\s?skargi)"
              "(?<=po\\s\\s?rozpoznaniu\\s\\s?w\\s\\s?sprawie)"
-             "(?<=w\\s\\s?obecności\\s\\s?oskarżyciela\\s\\s?publ)"
-             "(?<=w\\s\\s?obecności)"
 
              "(?<=\\>sprawy)"
              "(?<=w\\s\\s?sprawie)"
@@ -278,8 +298,7 @@
              #"^a:?\s" ""
              #"^a:?<" "<"
              #"^ztwa:?\s" ""
-             #"^ztwa:?<" "<"
-             ))
+             #"^ztwa:?<" "<"))
         ]
     (if
       (nil? match)
