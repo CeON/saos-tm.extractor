@@ -242,8 +242,7 @@
      :else
      (zipmap
      [:year :nr :poz]
-     [year 0 0])
-     )))
+     [year 0 0]))))
 
 (defn extract-nr-poz-case [tokens dictionary]
   (if (some #{"Dz.U"} tokens)

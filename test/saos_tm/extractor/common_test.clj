@@ -26,7 +26,6 @@
 (defn get-file-contents [dir re]
   (let [
         sorted-paths (sort (get-file-paths dir re))
-        ;_ (prn sorted-paths)
         ]
     (map #(slurp %) sorted-paths)))
 
@@ -180,6 +179,9 @@
   (.listFiles
    (clojure.java.io/file dir-path)))
 
+(defn nils-to-zeros [coll]
+  (map #(if (nil? %) 0 %) coll))
+
 (defn links-efficiency-test
   [ext ext-regex benchmark-records-fn extracted-records-fn
    precision-threshold recall-threshold result-to-csv-fn]
@@ -196,8 +198,10 @@
          extracted-items (extracted-records-fn txt-files)
          precisions-recalls
          (get-precisions-recalls extracted-items benchmark-items)
-         precisions (get-elements :precision precisions-recalls)
-         recalls (get-elements :recall precisions-recalls)
+         precisions
+           (nils-to-zeros (get-elements :precision precisions-recalls))
+         recalls
+           (nils-to-zeros (get-elements :recall precisions-recalls))
          average-precision (get-average precisions)
          average-recall (get-average recalls)
          min-precision (apply min precisions)
@@ -205,7 +209,6 @@
          ext-files-paths-str (map #(str %) ext-files-paths)
          names-precs-recalls
            (sort
-;;             #(compare (last %1) (last %2))
             #(compare (second %1) (second %2))
                  (map
                   vector
@@ -231,8 +234,7 @@
       (dexmlise
         (str "<xBx> Szpitalowi <xAnon>(...)</xAnon> w <xAnon>Ł.</xAnon>"
           ", <xAnon>L. P. (1)</xAnon> i <xAnon>A. G. (1)</xAnon></xBx>"))
-      " Szpitalowi (...) w Ł., L. P. (1) i A. G. (1)"))
-  )
+      " Szpitalowi (...) w Ł., L. P. (1) i A. G. (1)")))
 
 (defn split-lines [s]
   (str/split s (re-pattern system-newline)))
