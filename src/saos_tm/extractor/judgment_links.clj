@@ -34,7 +34,7 @@
 (def kio-space-regex #"KIO\s*/\s*UZP\s+\d+\s*(/\s*\d+)?")
 
 (defn extract-signatures-kio-space [s]
-  (extract kio-no-space-regex s first))
+  (extract kio-space-regex s first))
 
 (def kio-uzp-regex #"UZP\s*/\s*ZO\s*/\s*\d+-\d+\s*/\s*\d+")
 
@@ -117,7 +117,7 @@
                       #"\s+" " "
                       #"[^a-zA-Z0-9]+$" ""
                       #"^[^a-zA-Z0-9]+" "")
-     #"\)" ))))
+     #"\)|," ))))
 
 (defn are-subsequent [first-elem second-elem]
   (= (- second-elem first-elem) 1))
@@ -152,12 +152,12 @@
 (defn remove-empty [coll]
   (remove #(= "" %) coll))
 
-(defn extract-signatures-universal [s]
-  "function splits text by signature indicators"
-  "it takes 5 first tokens in each candidate string"
-  "looks for token with slash char"
-  "if candidate doesn't have such token it is not a signature"
-  "it takes all tokens up to first with slash or second if they are subsequent"
+(defn extract-signatures-universal
+  "Function splits text by signature indicators. It takes 5 first tokens
+  in each candidate string. Looks for token with slash char. If candidate
+  doesn't have such token it is not a signature.
+  It takes all tokens up to first with slash or second if they are subsequent."
+  [s]
   (let [
         signature-candidates (str/split s signature-regex)
         ]
@@ -166,14 +166,14 @@
             signature-candidates
               (map #(str/replace % #"\s+" " ") signature-candidates)
             signature-candidates-in-tokens
-              (map
-               #(take 5
-                      (str/split (str/trim %) #"(?<=[^/])\s+(?=[^/])"))
-               signature-candidates)
+            (map
+             #(take 5
+                    (str/split (str/trim %) #"(?<=[^/])\s+(?=[^/])"))
+             signature-candidates)
             having-slash-token-candidates
-              (filter
-               #(some has-slash? %)
-               signature-candidates-in-tokens)
+            (filter
+             #(some has-slash? %)
+             signature-candidates-in-tokens)
             ]
         (set
          (map
@@ -196,37 +196,54 @@
 (defn remove-partial-duplicates [signatures]
   (remove #(contains-other-substring? signatures %) signatures))
 
+(defn extract-own-signature-line [s]
+  (first
+   (re-find
+    (re-pattern
+     (str "(?i)(sygn\\.|sygnatur)[^" system-newline "]*"))
+    s)))
+
+(defn extract-own-signature [s]
+  (let [
+        own-signature-line (extract-own-signature-line s)
+        own-signature
+        (when (not-nil? own-signature-line)
+          (cleanse-signature
+           (second
+            (str/split own-signature-line #"(?i)sygn[^\s]*\s*(akt:?)?"))))
+        ]
+    own-signature))
+
+(defn remove-signature-headlines
+  "Some law acts have a signature in headline of every page. This makes it
+  difficult to extract some signatures when they appear on two pages."
+  [s]
+  (let [
+        own-signature-line (extract-own-signature-line s)
+        without-own-signature-lines
+          (if (nil? own-signature-line)
+            s
+            (str/replace s (str/trim own-signature-line) " "))
+        ]
+    without-own-signature-lines))
+
 (defn extract-all-signatures [s]
   (let [
-        own-signature
-          (first
-            (re-find
-             (re-pattern
-              (str "(?i)(sygn\\.|sygnatur)[^" system-newline "]*"))
-             s))
-        s
-          (if (nil? own-signature)
-            s
-            (str/replace s (str/trim own-signature) " "))
-        own-signature
-          (when (not-nil? own-signature)
-            (cleanse-signature
-              (second
-               (str/split own-signature #"(?i)sygn[^\s]*\s*(akt:?)?"))))
-        s (remove-newlines s)
+        without-newlines (remove-newlines s)
         all
           (union
-           (extract-signatures-universal s)
-           (extract-signatures-nsa s)
-           (extract-signatures-nsa-1 s)
-           (extract-signatures-sn s)
-           (extract-signatures-sn-1 s)
-           (extract-signatures-tk s)
-           (extract-signatures-osp s)
-           (extract-signatures-kio-uzp s)
-           (extract-signatures-kio-space s)
-           (extract-signatures-kio-no-space s)
-           (when (not-nil? own-signature) (set [own-signature])))
+           (extract-signatures-universal     without-newlines)
+           (extract-signatures-nsa           without-newlines)
+           (extract-signatures-nsa-1         without-newlines)
+           (extract-signatures-sn            without-newlines)
+           (extract-signatures-sn-1          without-newlines)
+           (extract-signatures-tk            without-newlines)
+           (extract-signatures-osp           without-newlines)
+           (extract-signatures-kio-uzp       without-newlines)
+           (extract-signatures-kio-space     without-newlines)
+           (extract-signatures-kio-no-space  without-newlines)
+;;            (when (not-nil? own-signature) (set [own-signature]))
+           )
         clean (map #(cleanse-signature %) all)
         result
           (remove
@@ -236,7 +253,8 @@
               ((complement substring?) " " %)
               ((complement substring?) "UZP" %)
               ((complement substring?) "KIO" %))
-             (= "KIO/UZP" %))
+;;              (= "KIO/UZP" %)
+             )
            clean)
         result-set (set result)
         ]

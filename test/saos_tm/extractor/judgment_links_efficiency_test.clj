@@ -1,12 +1,12 @@
 (ns saos-tm.extractor.judgment-links-efficiency-test
   (:require
-    [ clojure.test :refer :all ]
-    [ clojure.string :as str ]
-    [ clojure.set :refer :all ]
-    [ saos-tm.extractor.common :refer :all ]
-    [ saos-tm.extractor.common-test :refer :all ]
-    [ saos-tm.extractor.judgment-links :refer :all ]
-    [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
+   [ clojure.test :refer :all ]
+   [ clojure.string :as str ]
+   [ clojure.set :refer :all ]
+   [ saos-tm.extractor.common :refer :all ]
+   [ saos-tm.extractor.common-test :refer :all ]
+   [ saos-tm.extractor.judgment-links :refer :all ]
+   [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
 
 (defn get-benchmark-signatures [ext-files]
   (let [
@@ -31,4 +31,4 @@
 
 (deftest judgment-links-efficiency-test
   (links-efficiency-test ".jdg" #"\.jdg" get-benchmark-signatures
-    judgment-links-extract 0.941 0.985 signature-to-csv))
+    judgment-links-extract 0.942 0.985 signature-to-csv))
