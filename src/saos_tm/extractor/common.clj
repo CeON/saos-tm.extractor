@@ -295,7 +295,7 @@
           parser (HtmlParser.)
           context (ParseContext.)
           metadata (Metadata.)
-          handler (BodyContentHandler.)
+          handler (BodyContentHandler. (.length s))
           ]
       (.set context Parser parser)
       (.parse parser istream handler metadata context)
