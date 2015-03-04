@@ -36,11 +36,8 @@
              [:id :plaintiff :defendant]
              (split-csv %))
             (zipmap
-             [:id :prosecutor :defendant]
-             (let [
-                   parts (split-csv %)
-                   ]
-               [(first parts) (second parts) ""])))
+             [:id :prosecutor]
+             (split-csv %)))
          answers)))
 
 (defn extract-parties [coll]
@@ -74,7 +71,12 @@
    file-names))
 
 (defn join-with-ids [extracted-parties ids]
-  (map #(assoc %1 :id %2) extracted-parties ids))
+  (map
+   #(if
+      (or (contains? %1 :prosecutor) (contains? %1 :plaintiff))
+      (assoc %1 :id %2)
+      (zipmap [:prosecutor :id] ["" %2]))
+   extracted-parties ids))
 
 (deftest extract-parties-efficiency-test []
   (let [
@@ -150,7 +152,7 @@
         ]
     (is (= ((nth precisions-recalls 0) :recall)    1.0    ))
     (is (= ((nth precisions-recalls 1) :recall)    1.0    ))
-    (is (> ((nth precisions-recalls 2) :recall)    0.973  ))
+    (is (= ((nth precisions-recalls 2) :recall)    1.0  ))
     (is (> ((nth precisions-recalls 3) :recall)    0.956  ))
     (is (> ((nth precisions-recalls 4) :recall)    0.917  ))
     (is (= ((nth precisions-recalls 5) :recall)    1.0  ))))

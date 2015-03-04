@@ -30,7 +30,7 @@
 "154500000003003_VI_ACa_000596_2012_Uz_2012-10-18_001","<span class="anon-block">J. S.</span>","<span class="anon-block"> (...) S. A.</span> w <span class="anon-block">W.</span>"
 "154505000001503_V_Ca_002856_2012_Uz_2013-01-28_001","<span class="anon-block">B. M.</span>","<span class="anon-block">(...)</span>"
 "154505000001503_V_Ca_002896_2012_Uz_2013-01-28_001","<span class="anon-block">G. R.</span>","<span class="anon-block">(...)</span>"
-"154505000005127_XVII_AmC_000669_2012_Uz_2013-01-28_001","Stowarzyszenia <span class="anon-block">(...)</span> w <span class="anon-block">P.</span>","<span class="anon-block">H. K.</span> i <span class="anon-block">M. K. (1)</span>"
+"154505000005127_XVII_AmC_000669_2012_Uz_2013-01-28_001","Stowarzyszenia <span class="anon-block">(...)</span> w <span class="anon-block">P.</span>","<span class="anon-block">H. K.</span> i <span class="anon-block">M. K. (1)</span> prowadzącym działalność gospodarczą pod <span class="anon-block"> firmą (...)</span>"
 "154505000005127_XVII_AmC_001126_2012_Uz_2013-01-28_001","Stowarzyszenia „<span class="anon-block">(...)</span>” z siedzibą w <span class="anon-block">P.</span>","<span class="anon-block"> (...) sp. z o.o.</span> z siedzibą w <span class="anon-block">Z.</span>"
 "154505000005127_XVII_AmC_003926_2012_Uz_2013-03-28_001","Stowarzyszenia <span class="anon-block">(...)</span> w <span class="anon-block">K.</span>","<span class="anon-block">K. K.</span>"
 "154505000005127_XVII_AmC_005414_2012_Uz_2013-03-28_001","<span class="anon-block">P. K.</span>","<span class="anon-block"> (...) sp. z o.o.</span> z siedzibą w <span class="anon-block">S.</span>"
