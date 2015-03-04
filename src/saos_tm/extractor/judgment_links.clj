@@ -114,10 +114,23 @@
    (first
     (str/split
      (replace-several s
+                      #"\s[a-ż]+\s" " "
+                      #"(?i)sąd[^\s]*" ""
+                      #"(?i)okręg[^\s]*" " "
+                      #"(?i)rejon[^\s]*" " "
+                      #"(?i)apel[^\s]*" " "
+                      #"(?i)uzasadnienie" " "
+                      #"(?i)postanowienie" " "
+                      #"(?i)wyrok" " "
+                      #"(?i)najwyż[^\s]*" " "
+                      #"/[a-ż]+" " "
+                      #"[a-ż]+:" " "
+
                       #"\s+" " "
-                      #"[^a-zA-Z0-9]+$" ""
-                      #"^[^a-zA-Z0-9]+" "")
-     #"\)|," ))))
+                      #"^[a-ż]+\s" " "
+                      #"[^a-żA-Ż0-9]+$" ""
+                      #"^[^a-żA-Ż0-9]+" "")
+     #"\)|,|\(|;|:„|/\s+[A-TV-Ż]|\s+/[A-TV-Ż]" ))))
 
 (defn are-subsequent [first-elem second-elem]
   (= (- second-elem first-elem) 1))
@@ -128,13 +141,16 @@
           (indices
            #(substring? "/" %)
            tokens)
+        first-index-with-slash (first tokens-with-slash-indices)
+        second-index-with-slash (second tokens-with-slash-indices)
         signature-last-token-index
           (if
             (and
              (> (count tokens-with-slash-indices) 1)
              (are-subsequent
-              (first tokens-with-slash-indices)
-              (second tokens-with-slash-indices)))
+              first-index-with-slash
+              second-index-with-slash)
+             (not-matches? (nth tokens second-index-with-slash) #"/[\s\S]*"))
             (second tokens-with-slash-indices)
             (first tokens-with-slash-indices))
         signature-tokens
@@ -166,14 +182,16 @@
             signature-candidates
               (map #(str/replace % #"\s+" " ") signature-candidates)
             signature-candidates-in-tokens
-            (map
-             #(take 5
-                    (str/split (str/trim %) #"(?<=[^/])\s+(?=[^/])"))
-             signature-candidates)
+              (map
+               #(take 5
+                      (str/split
+                       (str/trim %)
+                       #"(?<=[^/])\s+(?=[^/])"))
+               signature-candidates)
             having-slash-token-candidates
-            (filter
-             #(some has-slash? %)
-             signature-candidates-in-tokens)
+              (filter
+               #(some has-slash? %)
+               signature-candidates-in-tokens)
             ]
         (set
          (map
@@ -207,10 +225,10 @@
   (let [
         own-signature-line (extract-own-signature-line s)
         own-signature
-        (when (not-nil? own-signature-line)
-          (cleanse-signature
-           (second
-            (str/split own-signature-line #"(?i)sygn[^\s]*\s*(akt:?)?"))))
+          (when (not-nil? own-signature-line)
+            (cleanse-signature
+             (second
+              (str/split own-signature-line #"(?i)sygn[^\s]*\s*(akt:?)?"))))
         ]
     own-signature))
 
@@ -229,7 +247,8 @@
 
 (defn extract-all-signatures [s]
   (let [
-        without-newlines (remove-newlines s)
+        without-tags (remove-all-html-tags s)
+        without-newlines (remove-newlines without-tags)
         all
           (union
            (extract-signatures-universal     without-newlines)
@@ -259,13 +278,6 @@
         result-set (set result)
         ]
     result-set))
-
-(defn dehtmlise [s]
-  (let [
-        s (remove-all-html-tags s)
-        s (remove-newlines s)
-        ]
-    s))
 
 (defn extract-signatures-from-file
   [input-file-path output-file-path]
