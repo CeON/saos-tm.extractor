@@ -237,7 +237,7 @@
              ]
             whatever sentence)
         match (second closest-match-with-position)
-        plaintiff
+        prosecutor
           (if
             (or
              (nil? match)
@@ -247,8 +247,8 @@
             (cleanse-party (extract-plaintiff match)))
         ]
     (zipmap
-     [:plaintiff :defendant]
-     [plaintiff
+     [:prosecutor :defendant]
+     [prosecutor
       "" ;; we don't want to extract defendant for criminal cases
       ])))
 

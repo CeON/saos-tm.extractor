@@ -31,15 +31,17 @@
 (defn create-osp-parties-map [answers is-civil]
   (into #{}
         (map
-         #(zipmap
-           [:id :plaintiff :defendant]
-                      (let [
-                            parts (split-csv %)
-                            ]
-           (if is-civil
-             parts
-             [(first parts) (second parts) ""])))
-        answers)))
+         #(if is-civil
+            (zipmap
+             [:id :plaintiff :defendant]
+             (split-csv %))
+            (zipmap
+             [:id :prosecutor :defendant]
+             (let [
+                   parts (split-csv %)
+                   ]
+               [(first parts) (second parts) ""])))
+         answers)))
 
 (defn extract-parties [coll]
   (into #{}
@@ -72,10 +74,7 @@
    file-names))
 
 (defn join-with-ids [extracted-parties ids]
-  (map
-   #(zipmap [:defendant :plaintiff :id]
-            [(%1 :defendant) (%1 :plaintiff) %2])
-   extracted-parties ids))
+  (map #(assoc %1 :id %2) extracted-parties ids))
 
 (deftest extract-parties-efficiency-test []
   (let [
@@ -114,7 +113,7 @@
                (files-funcs :extract-parties-funcs))
         extracted-parties-with-ids
           (map #(join-with-ids %1 %2) extracted-parties ids)
-        extracted-parties-with-ids
+        extracted-parties-with-ids-sets
           (map #(into #{} %) extracted-parties-with-ids)
 
         answers-txts
@@ -130,14 +129,15 @@
 
         corrects
           (map #(difference %1 %2)
-               answers extracted-parties-with-ids)
+               answers extracted-parties-with-ids-sets)
         _ (handle-results corrects (files-funcs :corrects))
 
-        errors (map #(difference %1 %2) extracted-parties-with-ids answers)
+        errors
+          (map #(difference %1 %2) extracted-parties-with-ids-sets answers)
         _ (handle-results errors (files-funcs :errors))
 
         precisions-recalls
-          (get-precisions-recalls extracted-parties-with-ids answers)
+          (get-precisions-recalls extracted-parties-with-ids-sets answers)
         efficiencies (map #(:recall %) precisions-recalls)
 
         _
