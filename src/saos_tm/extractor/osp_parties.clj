@@ -96,12 +96,10 @@
                   "(?i)\\s+o\\s+|"
                   "(?i)(?<=>)o\\s+|"
                   "(?i)(?<=>)o(?<=<)|"
-                  "-? sygn|"
+                  "(?i)od\\s+decyzji|"
+                  "(?i)od\\s+orzeczenia|"
+                  "-? sygn"))))
 
-;;                   "(?i)prowadząc[^\\s]+\\s+działaln[^\\s]+|"
-;;                   "(?i) przez |"
-
-                  "(?i)od\\s+decyzji"))))
         point-indicator (re-find point-indicator-regex plaintiff-match)
         ]
     (if (nil? point-indicator)
@@ -126,9 +124,6 @@
        "obwinion|"
        "pozwan|"
        "z\\s+udziałem|"
-
-;;        "prowadząc[^\\s]+\\s+działaln[^\\s]+|"
-
        "przy?\\s+udzial")))))
 
 (defn get-first-defendant-end-indicator-match
@@ -155,36 +150,54 @@
   (let [
         defendant-indicators
           [
-           "(?i)(?<=sprawy\\s\\s?z\\s\\s?powództwa)"
-           "(?i)(?<=sprawy\\s\\s?z\\s\\s?wniosku?\\</p\\>)"
-           "(?i)(?<=sprawy\\s\\s?z\\s\\s?wniosku?)"
-           "(?i)(?<=sprawy\\s\\s?z\\s\\s?wniosku)"
+           "(?i)(?<=sprawy\\sz\\spowództwa)"
+           "(?i)(?<=sprawy\\sz\\swniosku?\\</p\\>)"
+           "(?i)(?<=sprawy\\sz\\swniosku?)"
+           "(?i)(?<=sprawy\\sz\\swniosku)"
+
+           "(?i)(?<=sprawy\\sz\\sodwołania)"
+
            "(?i)(?<=przeciwko\\</p\\>)"
            "(?i)(?<=przeciwko)"
-           "(?i)(?<=z\\s\\s?wniosku)"
+           "(?i)(?<=z\\swniosku)"
            "(?i)(?<=\\>sprawy)"
            "(?i)(?<=sprawy?:?\\</p\\>)"
            "(?i)(?<=s p r a w y)"
            "(?i)(?<=sprawy)"
            "(?i)(?<=sprawę)"
            "(?i)(?<=sprawie)"
+
+           "(?i)(?<=z\\sudziałem\\sprzeciwnika\\sskargi)"
+           "(?i)(?<=na\\sskutek\\sodwołania(\\sod\\sdecyzji)?)"
+
+           "(?i)(?<=od\\sdecyzji)"
+           "(?i)(?<=od\\sorzeczenia)"
            ]
+
         defendant-end-indicators
           [
            "(?i)((?!oskarżon)[\\s\\S])*(?=oskarżon)"
            "(?i)((?!obwinion)[\\s\\S])*(?=obwinion)"
 
-           (str "(?i)((?!z\\s\\s?powodu\\s\\s?apelacji)[\\s\\S])*"
-                "\\>(?=z\\s\\s?powodu\\s\\s?apelacji)")
+           (str "(?i)((?!z\\spowodu\\sapelacji)[\\s\\S])*"
+                "\\>(?=z\\spowodu\\sapelacji)")
 
-           (str "(?i)((?!na\\s\\s?skutek\\s\\s?apelacji)[\\s\\S])*"
-                "\\>(?=na\\s\\s?skutek\\s\\s?apelacji)")
+           (str "(?i)((?!na\\sskutek\\sapelacji)[\\s\\S])*"
+                "\\>(?=na\\sskutek\\sapelacji)")
 
-           "(?i)((?!przy\\s\\s?udziale)[\\s\\S])*(?=przy\\s\\s?udziale)"
+           "(?i)((?!przy\\sudziale)[\\s\\S])*(?=przy\\sudziale)"
 
-           "(?i)((?!\\>o\\s\\s?)[\\s\\S])*\\>(?=o\\s\\s?)"
+           "(?i)((?!\\>o\\s)[\\s\\S])*\\>(?=o\\s)"
            "(?i)((?!\\>o\\<)[\\s\\S])*\\>(?=o)"
-           "(?i)((?!\\s\\s?o\\s\\s?)[\\s\\S])*\\>(?=\\s\\s?o\\s\\s?)"
+
+           "(?i)((?!\\so\\s)[\\s\\S])*(?=\\so\\s)"
+
+           "(?i)((?!zapłatę)[\\s\\S])*(?=zapłatę)"
+           "(?i)((?!w\\sprzedmiocie)[\\s\\S])*(?=w\\sprzedmiocie)"
+           "(?i)((?!w\\ssprawie)[\\s\\S])*(?=w\\ssprawie)"
+           "(?i)((?!z\\sdnia)[\\s\\S])*(?=z\\sdnia)"
+
+           "(?i)((?!zasądza)[\\s\\S])*(?=zasądza)"
            ]
 
         ; extracting defendant to certain phrases
@@ -215,8 +228,12 @@
 
 (defn extract-sentence [s]
   (let [
-        s (remove-hard-spaces s)
-        match (re-find #"(?i)\>\s*WYROK\s*\<[\s\S]*\>\s*UZASADNIENIE\s*\<" s)
+        without-hard-spaces (remove-hard-spaces s)
+        without-double-spaces (str/replace without-hard-spaces #"\s+" " ")
+        match
+          (re-find
+           #"(?i)\>\s*WYROK\s*\<[\s\S]*\>\s*UZASADNIENIE\s*\<"
+           without-double-spaces)
         ]
     (if (nil? match) s match)))
 
@@ -240,27 +257,26 @@
         closest-match-with-position
           (get-closest-regex-match-case-sen
             [
-             "(?i)(?<=przy\\s\\s?udziale)"
-             "(?i)(?<=z\\s\\s?udziałem)"
+             "(?i)(?<=przy\\sudziale)"
+             "(?i)(?<=z\\sudziałem)"
              "(?i)prokurator:"
              "(?i)prokuratora?\\s+prok"
              "[p|P]rokuratora?\\s+[A-Z]"
              "[p|P]rokuratur[^\\s]*\\s+[A-Z]"
              "[p|P]rokurator\\s–\\s"
 
-             "(?<=w\\s\\s?obecności)\\s\\s?oskarżyciela\\s\\s?publ"
-             "(?<=w\\s\\s?obecności)"
+             "(?<=w\\sobecności)\\soskarżyciela\\spubl"
+             "(?<=w\\sobecności)"
              "(?i)oskarżyciela?\\s+publ"
              "(?i)oskarżyciela?\\s+prywatn"
 
-             "(?i)(?<=sprawy\\s\\s?z\\s\\s?oskarżenia)"
-             "(?i)(?<=sprawy\\s\\s?karnej\\s\\s?z\\s\\s?oskarżenia)"
-             "(?i)(?<=sprawy\\s\\s?cywilnej\\s\\s?z\\s\\s?oskarżenia)"
-             "(?i)(?<=z\\s\\s?oskarżenia)"
+             "(?i)(?<=sprawy\\sz\\soskarżenia)"
+             "(?i)(?<=sprawy\\skarnej\\sz\\soskarżenia)"
+             "(?i)(?<=sprawy\\scywilnej\\sz\\soskarżenia)"
+             "(?i)(?<=z\\soskarżenia)"
              ]
             whatever sentence-preprocessed)
         match (second closest-match-with-position)
-;;         _ (prn match)
         prosecutor
           (if
             (or
@@ -280,6 +296,15 @@
         prosecutor) }
     {})))
 
+(defn appeal-case? [defendant match]
+  (let [
+        defendant-to-parantheses
+          (first (str/split defendant #"\(|\)"))
+        parts
+          (str/split match (re-pattern defendant-to-parantheses))
+        ]
+    (matches? (first parts) #"[\s\S]*odwoł[^\s]*$")))
+
 (defn extract-parties-osp-civil [s]
   (let [
         sentence (extract-sentence s)
@@ -288,33 +313,35 @@
           (second
            (get-closest-regex-match-case-ins
             [
-             "(?<=sprawy\\s\\s?z\\s\\s?odwołania)"
-             "(?<=sprawy\\s\\s?z\\s\\s?wniosk)"
-             "(?<=spraw\\s\\s?z\\s\\s?powództw)"
-             "(?<=sprawy\\s\\s?z\\s\\s?powództwa)"
-             "(?<=spraw\\s\\s?z\\s\\s?odwołań)"
+             "(?<=sprawy\\sz\\sodwołania)"
+
+             "(?<=sprawy\\sz\\swniosk)"
+             "(?<=spraw\\sz\\spowództw)"
+             "(?<=sprawy\\sz\\spowództwa)"
+             "(?<=spraw\\sz\\sodwołań)"
 
              "(?<=powodowi)"
              "(?<=powodom)"
              "(?<=powódce)"
              "(?<=powód(ztw)?)"
 
-             "(?<=z\\s\\s?powództwa)"
-             "(?<=z\\s\\s?powództw)"
-             "(?<=z\\s\\s?odwołania)"
-             "(?<=z\\s\\s?odwołań)"
-             "(?<=z\\s\\s?wniosku)"
-             "(?<=z\\s\\s?wniosków)"
-             "(?<=ze\\s\\s?skargi)"
-             "(?<=ze\\s\\s?skarg)"
+             "(?<=z\\spowództwa)"
+             "(?<=z\\spowództw)"
+             "(?<=z\\sodwołania)"
+             "(?<=odwołania)"
+             "(?<=z\\sodwołań)"
+             "(?<=z\\swniosku)"
+             "(?<=z\\swniosków)"
+             "(?<=ze\\sskargi)"
+             "(?<=ze\\sskarg)"
 
-             "(?<=\\>sprawy\\s\\s?z\\s\\s?wniosku)"
-             "(?<=w\\s\\s?sprawie\\s\\s?ze\\s\\s?skargi)"
-             "(?<=sprawy\\s\\s?ze\\s\\s?skargi)"
-             "(?<=po\\s\\s?rozpoznaniu\\s\\s?w\\s\\s?sprawie)"
+             "(?<=\\>sprawy\\sz\\swniosku)"
+             "(?<=w\\ssprawie\\sze\\sskargi)"
+             "(?<=sprawy\\sze\\sskargi)"
+             "(?<=po\\srozpoznaniu\\sw\\ssprawie)"
 
              "(?<=\\>sprawy)"
-             "(?<=w\\s\\s?sprawie)"
+             "(?<=w\\ssprawie)"
              "(?<=sprawy)"
              ]
             whatever sentence))
@@ -326,6 +353,7 @@
              #"^a:?\s" ""
              #"^a:?<" "<"
              #"^ztwa:?\s" ""
+             #"^\s*obwinion[^\s]*" ""
              #"^ztwa:?<" "<"))
         ]
     (if
@@ -336,13 +364,17 @@
       (let [
             plaintiff (extract-plaintiff match)
             defendant (extract-defendant match)
+
+            is-appeal-case
+              (if (nil? defendant)
+                false
+                (appeal-case? defendant match))
             ]
         (zipmap
          [:plaintiff :defendant]
-         (if
-           (nil? defendant)
-           ["" (cleanse-party (identify-defendant plaintiff))]
-           [(cleanse-party plaintiff) (cleanse-party defendant)]))))))
+           (if is-appeal-case
+             [(cleanse-party defendant) (cleanse-party plaintiff)]
+             [(cleanse-party plaintiff) (cleanse-party defendant)]))))))
 
 (defn extract-parties-from-judgments [judgments extract-parties-func]
   (remove nil?

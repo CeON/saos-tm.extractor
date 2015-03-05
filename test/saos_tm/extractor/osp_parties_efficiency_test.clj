@@ -154,5 +154,5 @@
     (is (= ((nth precisions-recalls 1) :recall)    1.0    ))
     (is (= ((nth precisions-recalls 2) :recall)    1.0  ))
     (is (> ((nth precisions-recalls 3) :recall)    0.956  ))
-    (is (> ((nth precisions-recalls 4) :recall)    0.917  ))
+    (is (> ((nth precisions-recalls 4) :recall)    0.958  ))
     (is (= ((nth precisions-recalls 5) :recall)    1.0  ))))

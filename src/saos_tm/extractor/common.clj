@@ -54,6 +54,8 @@
 ;; for debugging
 (defn print-if-contains [s element]
   (if (substring? element s) (prn s)))
+(defn print-that [s]
+  (doall (prn) (prn) ) (prn s))
 
 (defn extract-nmbs-and-ranges [ s ]
   (map #(str/trim %)
