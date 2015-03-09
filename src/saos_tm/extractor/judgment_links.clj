@@ -114,6 +114,9 @@
    (first
     (str/split
      (replace-several s
+
+                      #"^[0-9]+\." " "
+
                       #"\s[a-ż]+\s" " "
                       #"(?i)sąd[^\s]*" ""
                       #"(?i)okręg[^\s]*" " "
@@ -214,6 +217,13 @@
 (defn remove-partial-duplicates [signatures]
   (remove #(contains-other-substring? signatures %) signatures))
 
+(defn contains-partial-duplicates? [coll]
+  (some
+   #{true}
+   (map
+    #(contains-other-substring? coll %)
+    coll)))
+
 (defn extract-own-signature-line [s]
   (first
    (re-find
@@ -245,36 +255,89 @@
         ]
     without-own-signature-lines))
 
-(defn extract-all-signatures [s]
+(defn extract-cleansed-signatures [extract-fn s]
+  (map
+    #(cleanse-signature %)
+    (extract-fn s)))
+
+(defn extract-signatures [extract-fncs s]
+  (union
+   (flatten
+    (map
+     #(extract-cleansed-signatures % s)
+     extract-fncs))))
+
+(defn remove-double-spaces [s]
+  (str/replace s #"\s+" " "))
+
+(defn remove-certain-signatures [signatures-set s]
+  (let [
+        signatures-regex
+          (re-pattern (str/join "|" signatures-set))
+        ]
+    (if (or (nil? signatures-set) (empty? signatures-set))
+      s
+      (remove-double-spaces (str/replace s signatures-regex " ")))))
+
+(def not-substring? (complement substring?))
+
+(defn one-word-but-not-uzp-kio? [s]
+  (and
+   (not-substring? " " s)
+   (not-substring? "UZP" s)
+   (not-substring? "KIO" s)))
+
+(defn preprocess [s]
   (let [
         without-tags (remove-all-html-tags s)
-        without-newlines (remove-newlines without-tags)
-        all
+        without-hard-spaces (remove-hard-spaces without-tags)
+        without-newlines (remove-newlines without-hard-spaces)
+        without-double-spaces (remove-double-spaces without-newlines)
+        ]
+    without-double-spaces))
+
+(defn extract-all-signatures [s]
+  (let [
+        preprocessed (preprocess s)
+
+        signatures-universal
+          (extract-signatures
+           [extract-signatures-universal]
+           preprocessed)
+        signatures-universal-set (set signatures-universal)
+        without-universal-signatures
+          (remove-certain-signatures
+           signatures-universal-set preprocessed)
+
+        signatures-osp-kio-space
+          (extract-signatures
+           [extract-signatures-osp extract-signatures-kio-space]
+           without-universal-signatures)
+        signatures-osp-kio-space-set (set signatures-osp-kio-space)
+        without-universal-osp-kio-space-signatures
+          (remove-certain-signatures
+           signatures-osp-kio-space-set without-universal-signatures)
+
+        all-signatures
           (union
-           (extract-signatures-universal     without-newlines)
-           (extract-signatures-nsa           without-newlines)
-           (extract-signatures-nsa-1         without-newlines)
-           (extract-signatures-sn            without-newlines)
-           (extract-signatures-sn-1          without-newlines)
-           (extract-signatures-tk            without-newlines)
-           (extract-signatures-osp           without-newlines)
-           (extract-signatures-kio-uzp       without-newlines)
-           (extract-signatures-kio-space     without-newlines)
-           (extract-signatures-kio-no-space  without-newlines)
+           signatures-universal-set
+           signatures-osp-kio-space-set
+           (extract-signatures
+             [extract-signatures-nsa extract-signatures-nsa-1
+              extract-signatures-sn extract-signatures-sn-1
+              extract-signatures-tk
+              extract-signatures-kio-uzp extract-signatures-kio-no-space]
+             without-universal-osp-kio-space-signatures)
 ;;            (when (not-nil? own-signature) (set [own-signature]))
            )
-        clean (map #(cleanse-signature %) all)
+
         result
           (remove
            #(or
              (= "" %)
-             (and
-              ((complement substring?) " " %)
-              ((complement substring?) "UZP" %)
-              ((complement substring?) "KIO" %))
-;;              (= "KIO/UZP" %)
-             )
-           clean)
+             (one-word-but-not-uzp-kio? %)
+             (= "KIO/UZP" %))
+           all-signatures)
         result-set (set result)
         ]
     result-set))

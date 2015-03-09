@@ -202,9 +202,6 @@
             (extract-multiple match #"oskarżon" s)))
         (identify-defendant (first match))))))
 
-(defn remove-hard-spaces [s]
-  (str/replace s #"\u00A0" " "))
-
 (defn extract-sentence [s]
   (let [
         s (remove-hard-spaces s)
