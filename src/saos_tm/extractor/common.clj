@@ -291,6 +291,9 @@
 (defn remove-html-tags-other-than-span [s]
   (remove-html-tags-other-than "span" s))
 
+(defn remove-hard-spaces [s]
+  (str/replace s #"\u00A0" " "))
+
 (defn conv-html-to-text [ ^String s]
   (let [
           istream (IOUtils/toInputStream s "UTF-8");
