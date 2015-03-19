@@ -137,18 +137,20 @@
   (firsts
     (parse-csv file-data)))
 
-(defn read-files [ext ext-regex ext-files-paths]
+(defn list-file-paths [dir]
+  (.listFiles
+   (clojure.java.io/file dir)))
+
+(defn list-file-names [dir]
+  (.list
+   (clojure.java.io/file dir)))
+
+(defn get-files-from-dir [dir]
   (let [
-           ext-files (map #(slurp %) ext-files-paths)
-           txt-files-paths
-            (map
-              #(str/replace % ext-regex ".txt")
-              ext-files-paths)
-           txt-files (map #(slurp %) txt-files-paths)
-           ]
-           (zipmap
-             [:ext :txt]
-             [ext-files txt-files])))
+        sorted-paths (sort (list-file-paths dir))
+;;         _ (prn sorted-paths)
+        ]
+    (map #(slurp %) sorted-paths)))
 
 (defn get-precisions-recalls [coll1 coll2]
   (map
@@ -175,25 +177,23 @@
     (apply str
       (map-fn result-to-csv-fn data "signature"))))
 
-(defn list-file-paths [dir-path]
-  (.listFiles
-   (clojure.java.io/file dir-path)))
-
 (defn nils-to-zeros [coll]
   (map #(if (nil? %) 0 %) coll))
 
 (defn links-efficiency-test
-  [ext ext-regex benchmark-records-fn extracted-records-fn
+  [ext benchmark-records-fn extracted-records-fn
    precision-threshold recall-threshold result-to-csv-fn]
   (time
    (let [
-         file-paths (list-file-paths links-test-data-path)
-         ext-files-paths (filter-ending-with file-paths ext)
-         files (read-files ext ext-regex ext-files-paths)
-         ext-files (:ext files)
-         txt-files (:txt files)
-         log-files-paths (get-log-files-paths ext-files-paths)
-         _ (.mkdir (java.io.File. log-data-path))
+         ext-dir (str links-test-data-path ext)
+         ext-files (get-files-from-dir ext-dir)
+         txt-files (get-files-from-dir (str links-test-data-path "txt/"))
+         ext-files-names (list-file-names ext-dir)
+         log-files-paths
+           (map
+            #(str log-data-path ext "/" %)
+            ext-files-names)
+         _ (.mkdir (java.io.File. (str log-data-path ext)))
          benchmark-items (benchmark-records-fn ext-files)
          extracted-items (extracted-records-fn txt-files)
          precisions-recalls
@@ -206,13 +206,13 @@
          average-recall (get-average recalls)
          min-precision (apply min precisions)
          min-recall (apply min recalls)
-         ext-files-paths-str (map #(str %) ext-files-paths)
+
          names-precs-recalls
            (sort
             #(compare (second %1) (second %2))
                  (map
                   vector
-                  ext-files-paths-str precisions recalls))
+                  ext-files-names precisions recalls))
          _ (doseq [i names-precs-recalls] (println i))
          _ (println (str \newline "av. precision: " average-precision
                          " av. recall: " average-recall))

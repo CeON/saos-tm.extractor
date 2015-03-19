@@ -347,6 +347,7 @@
             (replace-several
              match
              #"^\s*z\s*(wniosku|powództwa|odwołania)" ""
+             #"^\s*ze\s*skarg[^\s]*" ""
              #"^a:?\s" ""
              #"^a:?<" "<"
              #"^ztwa:?\s" ""
