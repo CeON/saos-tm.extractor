@@ -26,9 +26,9 @@
     #(extract-all-signatures %)
     txt-files))
 
-(defn signature-to-csv [signature signature-string]
+(defn signature-to-csv [signature not-used]
   (apply str "\"" signature "\"" system-newline))
 
 (deftest judgment-links-efficiency-test
   (links-efficiency-test "jdg" get-benchmark-signatures
-    judgment-links-extract 0.936 0.985 signature-to-csv))
+    judgment-links-extract 0.936 0.983 signature-to-csv))

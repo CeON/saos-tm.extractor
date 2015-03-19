@@ -36,6 +36,17 @@
       #(into #{} (:extracted-links (extract-law-links % dictionary)))
       txt-files)))
 
+(defn get-csv-for-extracted-link [link signature]
+  (let [
+        art (:art link)
+        act (:act link)
+        ]
+    (apply str (get-art-coords-csv art)
+           "\"" signature "\"" csv-delimiter
+           "\"" (:year act) "\"" csv-delimiter
+           "\"" (:nr act) "\"" csv-delimiter
+           "\"" (:poz act) "\"" system-newline)))
+
 (deftest law-links-efficiency-test
   (links-efficiency-test "law" get-benchmark-records
     law-links-extract 0.59155 0.5245 get-csv-for-extracted-link))

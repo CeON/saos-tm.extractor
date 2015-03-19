@@ -34,17 +34,6 @@
            "\"" zd-nr "\"" csv-delimiter
            "\"" lit-nr "\"" csv-delimiter)))
 
-(defn get-csv-for-extracted-link [link signature]
-  (let [
-        art (:art link)
-        act (:act link)
-        ]
-    (apply str (get-art-coords-csv art)
-           "\"" signature "\"" csv-delimiter
-           "\"" (:year act) "\"" csv-delimiter
-           "\"" (:nr act) "\"" csv-delimiter
-           "\"" (:poz act) "\"" system-newline)))
-
 (defn split-to-tokens [s]
   (lg-split-tokens-bi "pl" s))
 

@@ -197,7 +197,7 @@
          benchmark-items (benchmark-records-fn ext-files)
          extracted-items (extracted-records-fn txt-files)
          precisions-recalls
-         (get-precisions-recalls extracted-items benchmark-items)
+           (get-precisions-recalls extracted-items benchmark-items)
          precisions
            (nils-to-zeros (get-elements :precision precisions-recalls))
          recalls
