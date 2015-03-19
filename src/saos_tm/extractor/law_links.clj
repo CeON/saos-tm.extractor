@@ -1,9 +1,8 @@
 (ns saos-tm.extractor.law-links
   (:require
    [saos-tm.extractor.common :refer :all]
-   [ clojure.string :as str ]
-   [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]
-   )
+   [clojure.string :as str ]
+   [langlab.core.parsers :refer [lg-split-tokens-bi]])
   (:import java.io.File)
   (:gen-class))
 
@@ -77,48 +76,51 @@
 
 (def dictionary-for-acts
   [
-   [#"(?i)^Konstytucji" {:nr "78" :poz "483", :year "1997"}]
-   [#"(?i)^k\.?c" {:nr "16" :poz "93", :year "1964"}]
-   [#"(?i)^k\.?h" {:nr "57" :poz "502", :year "1934"}]
-   [#"(?i)^k\.?k\.?s" {:nr "83" :poz "930", :year "1999"}]
-   [#"(?i)^k\.?k\.?w" {:nr "90" :poz "557", :year "1997"}]
-   [#"(?i)^k\.?k" {:nr "88" :poz "553", :year "1997"}]
-   [#"(?i)^k\.?m" {:nr "138" :poz "1545", :year "2001"}]
-   [#"(?i)^k\.?p\.?a" {:nr "30" :poz "168", :year "1960"}]
-   [#"(?i)^k\.?p\.?c" {:nr "43" :poz "296", :year "1964"}]
-   [#"(?i)^k\.?p\.?k" {:nr "89" :poz "555", :year "1997"}]
-   [#"(?i)^k\.?p\.?w" {:nr "106" :poz "1148", :year ""}]
-   [#"(?i)^k\.?p" {:nr "24" :poz "141", :year "1974"}]
-   [#"(?i)^k\.?r\.?o" {:nr "9" :poz "59", :year "2001"}]
-   [#"(?i)^k\.?s\.?h" {:nr "94" :poz "1037", :year "2000"}]
-   [#"(?i)^k\.?w" {:nr "12" :poz "114", :year "1971"}]
-   [#"(?i)^k\.?z" {:nr "82" :poz "598", :year "1933"}]
-   [#"(?i)^u\.?s\.?p" {:nr "98" :poz "1070", :year "2001"}]
-   [#"(?i)^ustawy o TK" {:nr "102" :poz "643", :year "1997"}]
+   [#"(?i)^Konstytucji" {:journalNo "78" :entry "483", :year "1997"}]
+   [#"(?i)^k\.?c" {:journalNo "16" :entry "93", :year "1964"}]
+   [#"(?i)^k\.?h" {:journalNo "57" :entry "502", :year "1934"}]
+   [#"(?i)^k\.?k\.?s" {:journalNo "83" :entry "930", :year "1999"}]
+   [#"(?i)^k\.?k\.?w" {:journalNo "90" :entry "557", :year "1997"}]
+   [#"(?i)^k\.?k" {:journalNo "88" :entry "553", :year "1997"}]
+   [#"(?i)^k\.?m" {:journalNo "138" :entry "1545", :year "2001"}]
+   [#"(?i)^k\.?p\.?a" {:journalNo "30" :entry "168", :year "1960"}]
+   [#"(?i)^k\.?p\.?c" {:journalNo "43" :entry "296", :year "1964"}]
+   [#"(?i)^k\.?p\.?k" {:journalNo "89" :entry "555", :year "1997"}]
+   [#"(?i)^k\.?p\.?w" {:journalNo "106" :entry "1148", :year ""}]
+   [#"(?i)^k\.?p" {:journalNo "24" :entry "141", :year "1974"}]
+   [#"(?i)^k\.?r\.?o" {:journalNo "9" :entry "59", :year "2001"}]
+   [#"(?i)^k\.?s\.?h" {:journalNo "94" :entry "1037", :year "2000"}]
+   [#"(?i)^k\.?w" {:journalNo "12" :entry "114", :year "1971"}]
+   [#"(?i)^k\.?z" {:journalNo "82" :entry "598", :year "1933"}]
+   [#"(?i)^u\.?s\.?p" {:journalNo "98" :entry "1070", :year "2001"}]
+   [#"(?i)^ustawy o TK" {:journalNo "102" :entry "643", :year "1997"}]
    [#"(?i)^ustawy o Trybunale Konstytucyjnym"
-    {:nr "102" :poz "643", :year "1997"}]
-   [#"(?i)^ustawy o komornikach" {:nr "133" :poz "882", :year "1997"}]
-   [#"(?i)^ustawy o ochronie konkurencji" {:nr "50" :poz "331", :year "2007"}]
-   [#"(?i)^prawa o adwokat" {:nr "16" :poz "124", :year "1982"}]
-   [#"(?i)^pzp" {:nr "19" :poz "177", :year "2004"}]
-   [#"(?i)^ustawy pzp" {:nr "19" :poz "177", :year "2004"}]
+    {:journalNo "102" :entry "643", :year "1997"}]
+   [#"(?i)^ustawy o komornikach" {:journalNo "133" :entry "882", :year "1997"}]
+   [#"(?i)^ustawy o ochronie konkurencji"
+    {:journalNo "50" :entry "331", :year "2007"}]
+   [#"(?i)^prawa o adwokat" {:journalNo "16" :entry "124", :year "1982"}]
+   [#"(?i)^pzp" {:journalNo "19" :entry "177", :year "2004"}]
+   [#"(?i)^ustawy pzp" {:journalNo "19" :entry "177", :year "2004"}]
    [#"(?i)^ustawy prawo zamówień publicznych"
-    {:nr "19" :poz "177", :year "2004"}]
-   [#"(?i)^Prawo zamówień publicznych" {:nr "19" :poz "177", :year "2004"}]
-   [#"(?i)^prawa zamówień publicznych" {:nr "19" :poz "177", :year "2004"}]
+    {:journalNo "19" :entry "177", :year "2004"}]
+   [#"(?i)^Prawo zamówień publicznych"
+    {:journalNo "19" :entry "177", :year "2004"}]
+   [#"(?i)^prawa zamówień publicznych"
+    {:journalNo "19" :entry "177", :year "2004"}]
    ])
 
 (defn tokens-to-string [tokens]
   (let [
         txt (str/join " " tokens)
         without-unnecessary-spaces
-        (replace-several txt
-                         #" \." "."
-                         #" ," ","
-                         #" / " "/"
-                         #"\( " "("
-                         #" \)" ")"
-                         #" ;" ";")
+          (replace-several txt
+                           #" \." "."
+                           #" ," ","
+                           #" / " "/"
+                           #"\( " "("
+                           #" \)" ")"
+                           #" ;" ";")
         ]
     without-unnecessary-spaces))
 
@@ -163,56 +165,58 @@
       tokens
       dictionary-record)))
 
-(defn act-without-poz? [nr-part last-nmb-nr-part-index]
+(defn act-without-entry? [tokens index-of-last-nmb]
   (cond
-   (nil? last-nmb-nr-part-index)
+   (nil? index-of-last-nmb)
    true
-  :else
-    (and
-     (> (count nr-part)
-        (+ last-nmb-nr-part-index 2))
-     (= "r"
-        (nth nr-part (inc last-nmb-nr-part-index)))
-     (= "."
-        (nth nr-part
-             (+ last-nmb-nr-part-index 2))))))
+   :else
+   (and
+    (> (count tokens)
+       (+ index-of-last-nmb 2))
+    (= "r"
+       (nth tokens (inc index-of-last-nmb)))
+    (= "."
+       (nth tokens
+            (+ index-of-last-nmb 2))))))
 
-(defn extract-nr-poz-poz-present [parts]
+(defn extract-when-entry-present [parts]
   (let [
-        nr-part (nth parts 0)
-        poz-part (nth parts 2)
-        poz
+        journal-nmb-part (nth parts 0)
+        entry-part (nth parts 2)
+        entry
           (first
-           (filter #(matches? % #"\d+") poz-part))
-        last-nmb-nr-part-index
+           (filter #(matches? % #"\d+") entry-part))
+        index-of-last-nmb
           (last
            (indices
             #(matches? % #"\d+")
-            nr-part))
-        nr
+            journal-nmb-part))
+        journal-nmb
           (if
-            (act-without-poz? nr-part last-nmb-nr-part-index)
+            (act-without-entry? journal-nmb-part index-of-last-nmb)
             "0"
-            (nth nr-part last-nmb-nr-part-index))
+            (nth journal-nmb-part index-of-last-nmb))
         ]
-    (zipmap [:nr :poz] [nr poz])))
+    (zipmap [:journalNo :entry] [journal-nmb entry])))
 
-(defn extract-nr-poz [tokens]
+(defn extract-journal-nmb-and-entry [tokens]
   (let [
         parts (partition-by #(= "poz" %) tokens)
         ]
     (if (= 1 (count parts))
-      (zipmap [:nr :poz] ["0" "0"])
-      (extract-nr-poz-poz-present parts))))
+      (zipmap [:journalNo :entry] ["0" "0"])
+      (extract-when-entry-present parts))))
 
-(defn extract-year-nr-poz [tokens]
+(defn extract-year-journal-nmb-and-entry [tokens]
   (let [
         year (get-year-of-law-act (tokens-to-string tokens))
-        nr-poz (extract-nr-poz tokens)
+        journal-nmb-and-entry (extract-journal-nmb-and-entry tokens)
         ]
     (zipmap
-     [:year :nr :poz]
-     [year (:nr nr-poz) (:poz nr-poz)])))
+     [:year :journalNo :entry]
+     [year
+      (:journalNo journal-nmb-and-entry)
+      (:entry journal-nmb-and-entry)])))
 
 (defn convert-year-to-full [year]
   (if (= (count year) 4)
@@ -225,36 +229,36 @@
       (str "19" year)
       (str "20" year))))
 
-(defn extract-nr-poz-dots [token]
+(defn extract-journal-nmb-and-entry-dots [token]
   (let [
         numbers (drop 1 (str/split token #"\."))
         year (convert-year-to-full (first numbers))
         ]
     (cond
      (= (count numbers) 3)
-    (zipmap
-     [:year :nr :poz]
-     [year (nth numbers 1) (nth numbers 2)])
-    (= (count numbers) 2)
      (zipmap
-     [:year :nr :poz]
-     [year 0 (nth numbers 1)])
+      [:year :journalNo :entry]
+      [year (nth numbers 1) (nth numbers 2)])
+     (= (count numbers) 2)
+     (zipmap
+      [:year :journalNo :entry]
+      [year 0 (nth numbers 1)])
      :else
      (zipmap
-     [:year :nr :poz]
-     [year 0 0]))))
+      [:year :journalNo :entry]
+      [year 0 0]))))
 
-(defn extract-nr-poz-case [tokens dictionary]
+(defn extract-law-journal-case [tokens dictionary]
   (if (some #{"Dz.U"} tokens)
     (let [
-          indexOfDzU (.indexOf tokens "Dz.U")
-          tokenAfterDzU (nth tokens (inc indexOfDzU))
+          index-of-journal-nmb-token (.indexOf tokens "Dz.U")
+          token-after-journal-nmb (nth tokens (inc index-of-journal-nmb-token))
           ]
-      (if (matches? tokenAfterDzU #"(\.\d+)+")
-        (extract-nr-poz-dots tokenAfterDzU)
-        (extract-year-nr-poz tokens)))
+      (if (matches? token-after-journal-nmb #"(\.\d+)+")
+        (extract-journal-nmb-and-entry-dots token-after-journal-nmb)
+        (extract-year-journal-nmb-and-entry tokens)))
     (if (some #{"Dz"} tokens)
-      (extract-year-nr-poz tokens)
+      (extract-year-journal-nmb-and-entry tokens)
       (extract-dictionary-case tokens dictionary))))
 
 (defn coord-to-text [token]
@@ -271,10 +275,11 @@
    "- " "-"))
 
 (defn get-interfering-art-coords-ranges [tokens]
-  (map #(find-coords-ranges % tokens)
-       (indices
-        #(or (= % "art") (= % "Art") (= % "§"))
-        tokens)))
+  (map
+   #(find-coords-ranges % tokens)
+   (indices
+    #(or (= % "art") (= % "Art") (= % "§"))
+    tokens)))
 
 (defn get-inter-coords-ranges [tokens]
   (let [
@@ -367,7 +372,7 @@
                                #"\(" "\\("
                                #"\)" "\\)"))
              (zipmap
-              [:year :nr :poz]
+              [:year :journalNo :entry]
               [(nth % 1) (nth % 2) (nth % 3)]))
            records)
         ]
@@ -386,10 +391,10 @@
         ]
     (zipmap
      [:act :art]
-     [(zipmap [:year :nr :poz]
+     [(zipmap [:year :journalNo :entry]
               [(cleanse (:year act))
-               (cleanse (:nr act))
-               (cleanse (:poz act))])
+               (cleanse (:journalNo act))
+               (cleanse (:entry act))])
       (zipmap art-coords-names
               [(cleanse (:art art))
                (cleanse (:par art))
@@ -424,7 +429,7 @@
            (map #(build-coords-text % tokens) correct-art-coords-ranges))
         act-coords
           (handle-w-zwiazku-z
-           (map #(extract-nr-poz-case % merged-dictionary)
+           (map #(extract-law-journal-case % merged-dictionary)
                 (map
                  #(get-range tokens (first %) (second %))
                  inter-coords-ranges)))
@@ -447,4 +452,4 @@
      [:extracted-links :orphaned-links]
      [ (into [] extracted-links)
        (into []
-         (mapcat get-data-for-orphaned-link orphaned-links))])))
+             (mapcat get-data-for-orphaned-link orphaned-links))])))
