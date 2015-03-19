@@ -294,3 +294,14 @@
       (.set context Parser parser)
       (.parse parser istream handler metadata context)
       (.toString  handler)))
+
+(defn get-csv-for-extracted-link [link signature]
+  (let [
+        art (:art link)
+        act (:act link)
+        ]
+    (apply str (get-art-coords-csv art)
+           "\"" signature "\"" csv-delimiter
+           "\"" (:year act) "\"" csv-delimiter
+           "\"" (:nr act) "\"" csv-delimiter
+           "\"" (:poz act) "\"" system-newline)))
