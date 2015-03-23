@@ -270,14 +270,31 @@
 (defn remove-double-spaces [s]
   (str/replace s #"\s+" " "))
 
+(defn remove-signatures [signatures-vec s]
+  (loop
+    [i (count signatures-vec)
+     to-remove (nth signatures-vec (dec i))
+     curr-str s]
+    (if
+      (= i 1)
+      (clojure.string/replace curr-str to-remove " ")
+      (recur
+       (dec i)
+       (nth signatures-vec (- i 2))
+       (clojure.string/replace curr-str to-remove " ")))))
+
 (defn remove-certain-signatures [signatures-set s]
   (let [
-        signatures-regex
-          (re-pattern (str/join "|" signatures-set))
+        signatures-vec (into [] signatures-set)
+        res
+          (if
+            (or
+             (nil? signatures-set)
+             (empty? signatures-set))
+            s
+            (remove-double-spaces (remove-signatures signatures-vec s)))
         ]
-    (if (or (nil? signatures-set) (empty? signatures-set))
-      s
-      (remove-double-spaces (str/replace s signatures-regex " ")))))
+    res))
 
 (def not-substring? (complement substring?))
 
