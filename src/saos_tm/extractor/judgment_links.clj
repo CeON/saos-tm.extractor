@@ -202,15 +202,6 @@
           having-slash-token-candidates)))
       nil)))
 
-(defn remove-newlines [s]
-  (let [
-        without-double-slash-newlines (str/replace s #"\\n" " ")
-        without-newlines
-          (str/replace without-double-slash-newlines
-                       (re-pattern system-newline) " ")
-        ]
-    without-newlines))
-
 (defn contains-other-substring? [coll substring]
   (> (count (filter #(substring? substring %) coll)) 1))
 
@@ -267,9 +258,6 @@
      #(extract-cleansed-signatures % s)
      extract-fncs))))
 
-(defn remove-double-spaces [s]
-  (str/replace s #"\s+" " "))
-
 (defn remove-signatures [signatures-vec s]
   (loop
     [left-signatures signatures-vec
@@ -298,15 +286,6 @@
    (not-substring? " " s)
    (not-substring? "UZP" s)
    (not-substring? "KIO" s)))
-
-(defn preprocess [s]
-  (let [
-        without-tags (remove-all-html-tags s)
-        without-hard-spaces (remove-hard-spaces without-tags)
-        without-newlines (remove-newlines without-hard-spaces)
-        without-double-spaces (remove-double-spaces without-newlines)
-        ]
-    without-double-spaces))
 
 (defn extract-all-signatures [s]
   (let [
