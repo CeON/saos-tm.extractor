@@ -204,17 +204,35 @@
       #(.endsWith (str %) s)
       ss)))
 
+(defn get-regexes [re s func]
+  (loop [match (re-matcher re s)
+         result {}]
+    (if (.find match)
+      (recur match
+             (func match result))
+      result)))
+
+(defn start-func [match result]
+  (assoc result (.start match) (.group match)))
+
 (defn regexes-with-starts [re s]
-  (loop [m (re-matcher re s) res {}]
-    (if (.find m)
-      (recur m (assoc res (.start m) (.group m)))
-      res)))
+  (get-regexes re s start-func))
+
+(defn start-end-func [match result]
+  (assoc result [(.start match) (.end match)] (.group match)))
 
 (defn regexes-with-starts-ends [re s]
-  (loop [m (re-matcher re s) res {}]
-    (if (.find m)
-      (recur m (assoc res [(.start m) (.end m)] (.group m)))
-      res)))
+  (get-regexes re s start-end-func))
+
+(defn start-end-map-func [match result]
+  (concat
+   result
+   [(zipmap
+     [:start :end :regex]
+     [(.start match) (.end match) (.group match)])]))
+
+(defn regexes-with-starts-ends-maps [re s]
+  (get-regexes re s start-end-map-func))
 
 (defn regexes-sorted [func re s]
   (let [
@@ -280,9 +298,6 @@
 (defn remove-html-tags-other-than-span [s]
   (remove-html-tags-other-than "span" s))
 
-(defn remove-hard-spaces [s]
-  (str/replace s #"\u00A0" " "))
-
 (defn conv-html-to-text [ ^String s]
   (let [
           istream (IOUtils/toInputStream s "UTF-8");
@@ -305,3 +320,27 @@
            "\"" (:year act) "\"" csv-delimiter
            "\"" (:nr act) "\"" csv-delimiter
            "\"" (:poz act) "\"" system-newline)))
+
+(defn remove-hard-spaces [s]
+  (str/replace s #"\u00A0" " "))
+
+(defn remove-double-spaces [s]
+  (str/replace s #"\s+" " "))
+
+(defn remove-newlines [s]
+  (let [
+        without-double-slash-newlines (str/replace s #"\\n" " ")
+        without-newlines
+          (str/replace without-double-slash-newlines
+                       (re-pattern system-newline) " ")
+        ]
+    without-newlines))
+
+(defn preprocess [s]
+  (let [
+        without-tags (remove-all-html-tags s)
+        without-hard-spaces (remove-hard-spaces without-tags)
+        without-newlines (remove-newlines without-hard-spaces)
+        without-double-spaces (remove-double-spaces without-newlines)
+        ]
+    without-double-spaces))
