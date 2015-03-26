@@ -285,10 +285,7 @@
   (let [
         signatures-vec (into [] signatures-set)
         res
-          (if
-            (or
-             (nil? signatures-set)
-             (empty? signatures-set))
+          (if (empty? signatures-set)
             s
             (remove-double-spaces (remove-signatures signatures-vec s)))
         ]
