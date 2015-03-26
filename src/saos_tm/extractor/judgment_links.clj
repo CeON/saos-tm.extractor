@@ -272,16 +272,14 @@
 
 (defn remove-signatures [signatures-vec s]
   (loop
-    [i (count signatures-vec)
-     to-remove (nth signatures-vec (dec i))
+    [left-signatures signatures-vec
      curr-str s]
     (if
-      (= i 1)
-      (clojure.string/replace curr-str to-remove " ")
+      (empty? left-signatures)
+      curr-str
       (recur
-       (dec i)
-       (nth signatures-vec (- i 2))
-       (clojure.string/replace curr-str to-remove " ")))))
+       (rest left-signatures)
+       (clojure.string/replace curr-str (first left-signatures) " ")))))
 
 (defn remove-certain-signatures [signatures-set s]
   (let [
