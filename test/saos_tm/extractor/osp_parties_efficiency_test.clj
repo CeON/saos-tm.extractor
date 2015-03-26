@@ -10,6 +10,12 @@
   (:import java.io.File)
   (:gen-class))
 
+(defn extract-parties-from-judgments [judgments extract-parties-func]
+  (remove nil?
+          (map
+           #(extract-parties-func %)
+           judgments)))
+
 (defn split-csv [s]
   (str/split
    s
