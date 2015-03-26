@@ -166,7 +166,7 @@
 (defn has-slash? [s]
   (substring? "/" s))
 
-(def signature-regex #"(?i)(sygn\.|sygnatur[^\s]*)\s+(akt)?:?")
+(def signature-regex #"(?i)(sygn\.*|sygnatur[^\s]*)\s*(akt)?:?")
 
 (defn remove-empty [coll]
   (remove #(= "" %) coll))
