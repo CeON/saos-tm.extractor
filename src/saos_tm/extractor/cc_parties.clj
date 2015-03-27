@@ -1,7 +1,7 @@
-(ns saos-tm.extractor.osp-parties
+(ns saos-tm.extractor.cc-parties
   (:require
    [ clojure.string :as str ]
-   [saos-tm.extractor.common :refer :all]
+   [ saos-tm.extractor.common :refer :all]
    [ langlab.core.parsers :refer :all ])
   (:import java.io.File)
   (:gen-class))
@@ -248,7 +248,7 @@
                    (re-pattern system-newline) " "
                    #"\s+" " "))
 
-(defn extract-parties-osp-criminal [s]
+(defn extract-parties-cc-criminal [s]
   (let [
         sentence (extract-sentence s)
         sentence-preprocessed (pre-process sentence)
@@ -306,7 +306,7 @@
           ]
       (matches? (first parts) #"[\s\S]*odwoł[^\s]*$"))))
 
-(def ^:private parties-osp-civil-regexs
+(def ^:private parties-cc-civil-regexs
    [ "(?<=sprawy\\sz\\sodwołania)"
 
      "(?<=sprawy\\sz\\swniosk)"
@@ -338,14 +338,14 @@
       "(?<=w\\ssprawie)"
       "(?<=sprawy)"])
 
-(defn extract-parties-osp-civil [s]
+(defn extract-parties-cc-civil [s]
   (let [
         sentence (extract-sentence s)
         whatever "[\\s\\S]*"
         match
           (second
             (get-closest-regex-match-case-ins
-              parties-osp-civil-regexs
+              parties-cc-civil-regexs
               whatever sentence))
         match-cleaned
           (when match

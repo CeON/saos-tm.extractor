@@ -1,4 +1,4 @@
-(ns saos-tm.extractor.osp-parties-efficiency-test
+(ns saos-tm.extractor.cc-parties-efficiency-test
   (:require
     [clojure.test :refer :all]
     [clojure.string :as str]
@@ -6,7 +6,7 @@
     [langlab.core.parsers :refer :all]
     [saos-tm.extractor.common :refer :all]
     [saos-tm.extractor.common-test :refer :all]
-    [saos-tm.extractor.osp-parties :refer :all])
+    [saos-tm.extractor.cc-parties :refer :all])
   (:import java.io.File)
   (:gen-class))
 
@@ -27,14 +27,14 @@
               (:defendant %) system-newline)
        coll))
 
-(def osp-parties-test-data-path "test-data/osp-parties/")
+(def cc-parties-test-data-path "test-data/cc-parties/")
 
 (defn remove-opening-closing-quots [coll]
   (map
    #(subs % 1 (dec (count %)))
    coll))
 
-(defn create-osp-parties-map [answers is-civil]
+(defn create-cc-parties-map [answers is-civil]
   (into #{}
         (map
          #(if is-civil
@@ -71,9 +71,9 @@
         _ (spit-many paths results-strs)
         ]))
 
-(defn osp-parties-paths [file-names]
+(defn cc-parties-paths [file-names]
   (map
-   #(str osp-parties-test-data-path %)
+   #(str cc-parties-test-data-path %)
    file-names))
 
 (defn join-with-ids [extracted-parties ids]
@@ -100,19 +100,19 @@
                        "log/errors-2-civil.txt" "log/errors-2-criminal.txt"
                        "log/errors-3-civil.txt" "log/errors-3-criminal.txt"]
            :extract-parties-funcs
-             [extract-parties-osp-civil extract-parties-osp-criminal
-              extract-parties-osp-civil extract-parties-osp-criminal
-              extract-parties-osp-civil extract-parties-osp-criminal]
+             [extract-parties-cc-civil extract-parties-cc-criminal
+              extract-parties-cc-civil extract-parties-cc-criminal
+              extract-parties-cc-civil extract-parties-cc-criminal]
            }
 
         judgments
           (map
-            #(get-file-contents (str osp-parties-test-data-path %) #"[\s\S]*")
+            #(get-file-contents (str cc-parties-test-data-path %) #"[\s\S]*")
              (files-funcs :test-sets))
 
         ids
           (map
-            #(get-file-names (str osp-parties-test-data-path %) #"[\s\S]*")
+            #(get-file-names (str cc-parties-test-data-path %) #"[\s\S]*")
              (files-funcs :test-sets))
 
         extracted-parties
@@ -125,13 +125,13 @@
           (map #(into #{} %) extracted-parties-with-ids)
 
         answers-txts
-         (map #(slurp %) (osp-parties-paths (files-funcs :answers)))
+         (map #(slurp %) (cc-parties-paths (files-funcs :answers)))
         answers-lines (map #(split-lines %) answers-txts)
         answers-without-quots
           (map #(remove-opening-closing-quots %) answers-lines)
         is-civil [true false true false true false]
         answers
-          (map #(create-osp-parties-map %1 %2)
+          (map #(create-cc-parties-map %1 %2)
                answers-without-quots
                is-civil)
 
