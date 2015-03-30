@@ -30,16 +30,18 @@
     (map #(slurp %) sorted-paths)))
 
 (defn get-precision-recall [extracted-set benchmark-set]
-  (let [
+  (if (and (empty? extracted-set) (empty? benchmark-set))
+    (zipmap [:precision :recall] [1.0 1.0])
+    (let [
           true-positives-count
             (count
-              (intersection extracted-set benchmark-set))
+             (intersection extracted-set benchmark-set))
           extracted-count (count extracted-set)
           benchmark-count (count benchmark-set)
           precision (get-measure true-positives-count extracted-count)
           recall (get-measure true-positives-count benchmark-count)
-    ]
-    (zipmap [:precision :recall] [precision recall])))
+          ]
+      (zipmap [:precision :recall] [precision recall]))))
 
 (deftest article-coords-test
   (is(=
@@ -113,9 +115,14 @@
 
 (deftest precision-recall-measure-test
   (is
+   (=
+    {:precision 0.5 :recall 0.25}
+    (get-precision-recall #{1 2} #{2 3 4 5}))
+   (is
     (=
-      {:precision 0.5 :recall 0.25}
-      (get-precision-recall #{1 2} #{2 3 4 5}))))
+     {:precision 1.0 :recall 1.0}
+     (get-precision-recall #{} #{}))
+    )))
 
 (defn split-coll [coll]
   (map
@@ -138,19 +145,20 @@
     (parse-csv file-data)))
 
 (defn list-file-paths [dir]
-  (.listFiles
-   (clojure.java.io/file dir)))
+  (sort
+    (.listFiles
+     (clojure.java.io/file dir))))
 
 (defn list-file-names [dir]
-  (.list
-   (clojure.java.io/file dir)))
+  (sort
+    (.list
+     (clojure.java.io/file dir))))
 
 (defn get-files-from-dir [dir]
   (let [
-        sorted-paths (sort (list-file-paths dir))
-;;         _ (prn sorted-paths)
+        paths (list-file-paths dir)
         ]
-    (map #(slurp %) sorted-paths)))
+    (map #(slurp %) paths)))
 
 (defn get-precisions-recalls [coll1 coll2]
   (map
@@ -175,24 +183,29 @@
 (defn spit-all-csv [result-to-csv-fn path data]
   (spit path
     (apply str
-      (map-fn result-to-csv-fn data "signature"))))
+      (sort
+       (map-fn result-to-csv-fn data "signature")))))
 
 (defn nils-to-zeros [coll]
   (map #(if (nil? %) 0 %) coll))
 
 (defn links-efficiency-test
-  [ext benchmark-records-fn extracted-records-fn
+  [ext benchmark-records-fn extracted-records-fn txt-files-conv-fn
    precision-threshold recall-threshold result-to-csv-fn]
   (time
    (let [
          ext-dir (str links-test-data-path ext)
          ext-files (get-files-from-dir ext-dir)
-         txt-files (get-files-from-dir (str links-test-data-path "txt/"))
+         txt-files
+           (txt-files-conv-fn
+            (get-files-from-dir
+             (str links-test-data-path "txt/")))
          ext-files-names (list-file-names ext-dir)
          log-files-paths
-           (map
-            #(str log-data-path ext "/" %)
-            ext-files-names)
+           (sort
+             (map
+              #(str log-data-path ext "/" %)
+              ext-files-names))
          _ (.mkdir (java.io.File. (str log-data-path ext)))
          benchmark-items (benchmark-records-fn ext-files)
          extracted-items (extracted-records-fn txt-files)

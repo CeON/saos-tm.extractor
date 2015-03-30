@@ -215,37 +215,6 @@
     #(contains-other-substring? coll %)
     coll)))
 
-(defn extract-own-signature-line [s]
-  (first
-   (re-find
-    (re-pattern
-     (str "(?i)(sygn\\.|sygnatur)[^" system-newline "]*"))
-    s)))
-
-(defn extract-own-signature [s]
-  (let [
-        own-signature-line (extract-own-signature-line s)
-        own-signature
-          (when (not-nil? own-signature-line)
-            (cleanse-signature
-             (second
-              (str/split own-signature-line #"(?i)sygn[^\s]*\s*(akt:?)?"))))
-        ]
-    own-signature))
-
-(defn remove-signature-headlines
-  "Some law acts have a signature in headline of every page. This makes it
-  difficult to extract some signatures when they appear on two pages."
-  [s]
-  (let [
-        own-signature-line (extract-own-signature-line s)
-        without-own-signature-lines
-          (if (nil? own-signature-line)
-            s
-            (str/replace s (str/trim own-signature-line) " "))
-        ]
-    without-own-signature-lines))
-
 (defn extract-cleansed-signatures [extract-fn s]
   (map
     #(cleanse-signature %)
