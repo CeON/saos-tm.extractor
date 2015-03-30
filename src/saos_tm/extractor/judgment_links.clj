@@ -168,9 +168,6 @@
 
 (def signature-regex #"(?i)(sygn\.*|sygnatur[^\s]*)\s*(akt)?:?")
 
-(defn remove-empty [coll]
-  (remove #(= "" %) coll))
-
 (defn extract-signatures-universal
   "Function splits text by signature indicators. It takes 5 first tokens
   in each candidate string. Looks for token with slash char. If candidate
@@ -238,16 +235,6 @@
        (rest left-signatures)
        (clojure.string/replace curr-str (first left-signatures) " ")))))
 
-(defn remove-certain-signatures [signatures-set s]
-  (let [
-        signatures-vec (into [] signatures-set)
-        res
-          (if (empty? signatures-set)
-            s
-            (remove-double-spaces (remove-signatures signatures-vec s)))
-        ]
-    res))
-
 (def not-substring? (complement substring?))
 
 (defn one-word-but-not-uzp-kio? [s]
@@ -266,7 +253,7 @@
            preprocessed)
         signatures-universal-set (set signatures-universal)
         without-universal-signatures
-          (remove-certain-signatures
+          (remove-signatures
            signatures-universal-set preprocessed)
 
         signatures-osp-kio-space
@@ -275,7 +262,7 @@
            without-universal-signatures)
         signatures-osp-kio-space-set (set signatures-osp-kio-space)
         without-universal-osp-kio-space-signatures
-          (remove-certain-signatures
+          (remove-signatures
            signatures-osp-kio-space-set without-universal-signatures)
 
         all-signatures

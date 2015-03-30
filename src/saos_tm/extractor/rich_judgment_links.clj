@@ -127,11 +127,12 @@
         "\\sw[^\\s]*\\s[A-Z][^\\s]*(\\s[A-Z][^\\s]*)?"
         )))
 
-(def polish-letters-str "ĄąĆćĘęŁłŃńÓóŚśŻżŹź")
+(def polish-diacritics-str "ĄąĆćĘęŁłŃńÓóŚśŻżŹź")
 
 (def starting-or-ending-with-non-letter
   (re-pattern
-   (str "[^a-zA-Z" polish-letters-str "]$|^[^a-zA-Z" polish-letters-str "]")))
+   (str
+    "[^a-zA-Z" polish-diacritics-str "]$|^[^a-zA-Z" polish-diacritics-str "]")))
 
 (defn postprocess-court [s]
   (when

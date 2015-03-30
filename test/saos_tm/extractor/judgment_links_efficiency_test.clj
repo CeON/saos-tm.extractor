@@ -16,7 +16,7 @@
            ext-files)
         benchmark-signatures
           (map
-           #(set (remove empty? (split-coll %)))
+           #(set (remove empty? (map str/trim %)))
            jdg-signatures)
         ]
     benchmark-signatures))

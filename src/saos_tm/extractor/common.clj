@@ -198,12 +198,6 @@
 (defn find-first [f coll]
   (first (filter f coll)))
 
-(defn filter-ending-with [ss s]
-  (sort
-    (filter
-      #(.endsWith (str %) s)
-      ss)))
-
 (defn get-regex-matches [re s func]
   (loop [match (re-matcher re s)
          result {}]

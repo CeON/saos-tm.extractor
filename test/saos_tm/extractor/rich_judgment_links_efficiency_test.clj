@@ -104,7 +104,7 @@
          extracted-items
            (extracted-records-fn txt-files-without-own-signatures)
          precisions-recalls
-           (get-precisions-recalls extracted-items benchmark-items)
+           (map get-precision-recall extracted-items benchmark-items)
          precisions
            (nils-to-zeros (get-elements :precision precisions-recalls))
          recalls

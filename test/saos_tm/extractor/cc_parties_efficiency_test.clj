@@ -53,9 +53,7 @@
          coll)))
 
 (defn get-elements-sorted-by-id [elements]
-  (sort-by
-   #(:id %)
-   elements))
+  (sort-by #(:id %) elements))
 
 (defn spit-many [paths coll]
   (doall
@@ -145,7 +143,7 @@
         _ (handle-results errors (files-funcs :errors))
 
         precisions-recalls
-          (get-precisions-recalls extracted-parties-with-ids-sets answers)
+          (map get-precision-recall extracted-parties-with-ids-sets answers)
         efficiencies (map #(:recall %) precisions-recalls)
 
         _

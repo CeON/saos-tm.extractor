@@ -236,12 +236,6 @@
         ]
     (if (nil? match) s match)))
 
-(defn no-plaintiff? [match]
-  (or
-   (nil? match)
-   (matches? match #"(?i)^prokurat[^\s]*\s+rejonow[^\s]*[\S\s]*")
-   (matches? match #"(?i)^prokurat[^\s]*\s+generaln[^\s]*[\S\s]*")))
-
 (defn pre-process [s]
   (replace-several s
                    #"<p>|</p>" " "
