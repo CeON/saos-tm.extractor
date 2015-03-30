@@ -142,4 +142,4 @@
   (links-efficiency-test
    "rich-jdg" get-benchmark-rich-judgment-links
    rich-judgment-links-extract map-remove-own-signatures
-   0.7 0.74 conv-coll-to-csv-line))
+   0.58 0.61 conv-coll-to-csv-line))

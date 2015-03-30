@@ -283,8 +283,8 @@
              log-files-paths
              extracted-items))
          ]
-     (is (> average-precision precision-threshold))
-     (is (> average-recall recall-threshold)))))
+     (is (> (:precision overall-precision-recall) precision-threshold))
+     (is (> (:recall overall-precision-recall) recall-threshold)))))
 
 (deftest dexmlise-test
   (is

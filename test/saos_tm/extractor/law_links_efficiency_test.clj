@@ -10,18 +10,18 @@
 
 (defn read-law-links-to-maps [file-data]
   (let [
-          data (parse-csv file-data)
-    ]
+        data (parse-csv file-data)
+        ]
     (into #{} (map
-      #(zipmap
-        [:art :act]
-        [(zipmap
-          [:art :par :ust :pkt :zd :lit]
-          (take 6 %))
-         (zipmap
-          [:year :journalNo :entry]
-          (take-last 3 %))])
-      data))))
+               #(zipmap
+                 [:art :act]
+                 [(zipmap
+                   [:art :par :ust :pkt :zd :lit]
+                   (take 6 %))
+                  (zipmap
+                   [:year :journalNo :entry]
+                   (take-last 3 %))])
+               data))))
 
 (defn get-benchmark-records [files]
   (map
@@ -38,5 +38,5 @@
 
 (deftest law-links-efficiency-test
   (links-efficiency-test "law" get-benchmark-records
-    law-links-extract identity
-    0.59155 0.5245 get-csv-for-extracted-link))
+                         law-links-extract identity
+                         0.57 0.47 get-csv-for-extracted-link))
