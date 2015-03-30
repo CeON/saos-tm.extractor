@@ -120,7 +120,7 @@
            (map
             #(first
               (find-from-to-first-case-ins
-               s regexes-with-starts-ends-sorted % osp-regex))
+               s get-regex-matches-with-starts-ends-sorted % osp-regex))
              ["(?<=skutek)\\s+apelacji" "(?<=z powodu)\\s+apelacji"
               "(?<=skutek)\\s+zażalenia"
               "(?<=z powodu)\\s+zażalenia" "zażalenia\\s+wniesionego"
@@ -155,28 +155,29 @@
             (second (str/split date-str #"\s" 2)))
         appeal-type (re-find #"skar[^\s]*" part)
         parts (drop 1 (str/split part #" że | na | w sprawie"))
-        parts
+        smaller-parts
           (if (= (count parts) 2)
             [(str/split (first parts) #"\s(?=[A-Z])" 2)
              (first (str/split (second parts) #"o? sygn"))])
         court
-          (when (not-nil? parts)
-            (if (= (count (first parts)) 2)
-              (second (first parts))
-              (second parts)))
+          (when (not-nil? smaller-parts)
+            (if (= (count (first smaller-parts)) 2)
+              (second (first smaller-parts))
+              (second smaller-parts)))
         reason
-          (when (not-nil? parts)
-            (first (first parts)))
+          (when (not-nil? smaller-parts)
+            (first (first smaller-parts)))
         appellant (first (str/split part #"[^\s]* skar"))
-        appellant (str/replace appellant #"UZASADNIENIE" "")
-        appellant
-          (if (substring? "r." appellant)
-            (second (str/split appellant #"r\."))
-            appellant)
+        appellant-cleansed (str/replace appellant #"UZASADNIENIE" "")
+        appellant-ultimate
+          (if (substring? "r." appellant-cleansed)
+            (second (str/split appellant-cleansed #"r\."))
+            appellant-cleansed)
         ]
      (zipmap [:appeal-type :appellant :judgment-type :court :date :signature]
-             (map #(when (not-nil? %) (str/trim %))
-                  [appeal-type appellant reason court date signature]))))
+             (map
+              #(when (not-nil? %) (str/trim %))
+              [appeal-type appellant-ultimate reason court date signature]))))
 
 (defn extract-complaint [s]
   (let [

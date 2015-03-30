@@ -204,7 +204,7 @@
       #(.endsWith (str %) s)
       ss)))
 
-(defn get-regexes [re s func]
+(defn get-regex-matches [re s func]
   (loop [match (re-matcher re s)
          result {}]
     (if (.find match)
@@ -215,14 +215,14 @@
 (defn start-func [match result]
   (assoc result (.start match) (.group match)))
 
-(defn regexes-with-starts [re s]
-  (get-regexes re s start-func))
+(defn get-regex-matches-with-starts [re s]
+  (get-regex-matches re s start-func))
 
 (defn start-end-func [match result]
   (assoc result [(.start match) (.end match)] (.group match)))
 
-(defn regexes-with-starts-ends [re s]
-  (get-regexes re s start-end-func))
+(defn get-regex-matches-with-starts-ends [re s]
+  (get-regex-matches re s start-end-func))
 
 (defn start-end-map-func [match result]
   (concat
@@ -231,21 +231,21 @@
      [:start :end :regex]
      [(.start match) (.end match) (.group match)])]))
 
-(defn regexes-with-starts-ends-maps [re s]
-  (get-regexes re s start-end-map-func))
+(defn get-regex-matches-with-starts-ends-maps [re s]
+  (get-regex-matches re s start-end-map-func))
 
-(defn regexes-sorted [func re s]
+(defn get-sorted [func re s]
   (let [
         regexes (func re s)
         sorted (sort regexes)
         ]
     sorted))
 
-(defn regexes-with-starts-ends-sorted [re s]
-  (regexes-sorted regexes-with-starts-ends re s))
+(defn get-regex-matches-with-starts-ends-sorted [re s]
+  (get-sorted get-regex-matches-with-starts-ends re s))
 
 (defn get-regex-match [func regex following-text-regex s]
-  (regexes-sorted func
+  (get-sorted func
    (re-pattern
     (str regex following-text-regex))
    s))
@@ -263,14 +263,15 @@
 
 (defn get-closest-regex-match [regexes following-text-regex s]
   (let [
-        matches-positions
-          (get-matches regexes-with-starts-ends regexes following-text-regex s)
-        matches-positions
-          (sort #(compare (first %1) (first %2)) matches-positions)
-        match-pos (find-first-not-empty matches-positions)
-        match-pos (get-first-if-groups match-pos)
+        matches-with-positions
+          (get-matches
+           get-regex-matches-with-starts-ends regexes following-text-regex s)
+        matches-with-positions-sorted
+          (sort #(compare (first %1) (first %2)) matches-with-positions)
+        first-match (find-first-not-empty matches-with-positions-sorted)
+        first-match-str (get-first-if-groups first-match)
         ]
-    match-pos))
+    first-match-str))
 
 (defn get-regex-match-case-ins [func regexes following-text-regex s]
   (func
@@ -336,8 +337,12 @@
         ]
     without-newlines))
 
+(defn unsplit-word-across-lines [s]
+  (str/replace s #"-$" ""))
+
 (defn preprocess [s]
   (let [
+        without-split-words (unsplit-word-across-lines s)
         without-tags (remove-all-html-tags s)
         without-hard-spaces (remove-hard-spaces without-tags)
         without-newlines (remove-newlines without-hard-spaces)
