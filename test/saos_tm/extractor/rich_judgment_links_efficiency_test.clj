@@ -6,20 +6,14 @@
    [saos-tm.extractor.common :refer :all]
    [saos-tm.extractor.common-test :refer :all]
    [clojure.string :as str]
-   [clojure-csv.core :refer :all]
-   ))
-
-(defn get-rich-judgment-links-data [file-data]
-  (parse-csv file-data))
+   [clojure-csv.core :refer :all]))
 
 (defn get-benchmark-rich-judgment-links [ext-files]
   (let [
         rich-judgments-links
-          (map
-           #(get-rich-judgment-links-data %)
-           ext-files)
+          (map parse-csv ext-files)
         rich-judgments-links-sets
-          (map #(set %) rich-judgments-links)
+          (map set rich-judgments-links)
         ]
     rich-judgments-links-sets))
 
@@ -28,12 +22,9 @@
          (str/join (str "\"" csv-delimiter "\"") coll)
          "\"" system-newline))
 
-(defn get-vals [coll]
-  (map #(vals %) coll))
-
 (defn rich-judgment-links-extract [txt-files]
   (map
-    #(set (get-vals (extract-ref-judgments %)))
+    #(set (map vals (extract-ref-judgments %)))
     txt-files))
 
 (defn extract-own-signature-line [s]
@@ -83,57 +74,6 @@
           (re-pattern (str/replace first-case-nmb #"\s" "."))
         ]
     (str/replace s first-case-nmb-regex " ")))
-
-(defn get-rich-judgment-links-efficiency
-  [ext benchmark-records-fn extracted-records-fn
-   precision-threshold recall-threshold result-to-csv-fn]
-  (time
-   (let [
-         ext-dir (str links-test-data-path ext)
-         ext-files (get-files-from-dir ext-dir)
-         txt-files (get-files-from-dir (str links-test-data-path "txt/"))
-         txt-files-without-own-signatures
-           (map #(remove-own-signature %) txt-files)
-         ext-files-names (list-file-names ext-dir)
-         log-files-paths
-           (map
-            #(str log-data-path ext "/" %)
-            ext-files-names)
-         _ (.mkdir (java.io.File. (str log-data-path ext)))
-         benchmark-items (benchmark-records-fn ext-files)
-         extracted-items
-           (extracted-records-fn txt-files-without-own-signatures)
-         precisions-recalls
-           (map get-precision-recall extracted-items benchmark-items)
-         precisions
-           (nils-to-zeros (get-elements :precision precisions-recalls))
-         recalls
-           (nils-to-zeros (get-elements :recall precisions-recalls))
-         average-precision (get-average precisions)
-         average-recall (get-average recalls)
-         min-precision (apply min precisions)
-         min-recall (apply min recalls)
-
-         names-precs-recalls
-           (sort
-            #(compare (second %1) (second %2))
-                 (map
-                  vector
-                  ext-files-names precisions recalls))
-         _ (doseq [i names-precs-recalls] (println i))
-         _ (println (str \newline "av. precision: " average-precision
-                         " av. recall: " average-recall))
-         _ (println (str "min precision: " min-precision
-                         " min recall: " min-recall \newline))
-         _
-           (doall
-            (map
-             #(spit-all-csv result-to-csv-fn %1 %2)
-             log-files-paths
-             extracted-items))
-         ]
-     (is (> average-precision precision-threshold))
-     (is (> average-recall recall-threshold)))))
 
 (defn map-remove-own-signatures [coll]
   (map remove-own-signature coll))
