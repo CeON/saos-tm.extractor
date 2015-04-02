@@ -1,8 +1,8 @@
 (ns saos-tm.extractor.common
   (:require
-    [ clojure.string :as str ]
-    [ clojure.set :refer :all ]
-    [ langlab.core.parsers :refer :all ])
+    [clojure.string :as str]
+    [clojure.set :refer :all]
+    [langlab.core.parsers :refer :all])
   (:import [java.io File]
            [org.apache.commons.io IOUtils]
            [org.apache.tika.parser Parser ParseContext]
@@ -313,8 +313,8 @@
     (apply str (get-art-coords-csv art)
            "\"" signature "\"" csv-delimiter
            "\"" (:year act) "\"" csv-delimiter
-           "\"" (:nr act) "\"" csv-delimiter
-           "\"" (:poz act) "\"" system-newline)))
+           "\"" (:journalNo act) "\"" csv-delimiter
+           "\"" (:entry act) "\"" system-newline)))
 
 (defn remove-hard-spaces [s]
   (str/replace s #"\u00A0" " "))
@@ -331,13 +331,13 @@
         ]
     without-newlines))
 
-(defn unsplit-word-across-lines [s]
-  (str/replace s #"-$" ""))
+(defn unsplit-words-across-lines [s]
+  (str/replace s (str "-" system-newline) ""))
 
 (defn preprocess [s]
   (let [
-        without-split-words (unsplit-word-across-lines s)
-        without-tags (remove-all-html-tags s)
+        without-split-words (unsplit-words-across-lines s)
+        without-tags (remove-all-html-tags without-split-words)
         without-hard-spaces (remove-hard-spaces without-tags)
         without-newlines (remove-newlines without-hard-spaces)
         without-double-spaces (remove-double-spaces without-newlines)

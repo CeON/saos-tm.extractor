@@ -1,9 +1,9 @@
 (ns saos-tm.extractor.common-test
   (:require
     [clojure.test :refer :all]
-    [ clojure.string :as str ]
+    [clojure.string :as str]
     [clojure.set :refer :all]
-    [ clojure-csv.core :refer :all ]
+    [clojure-csv.core :refer :all]
     [saos-tm.extractor.common :refer :all]))
 
 (defn get-file-paths [dir re]
@@ -137,6 +137,12 @@
      {:precision 1.0 :recall 1.0}
      (get-precision-recall #{} #{}))))
 
+(deftest unsplit-words-across-lines-test
+  (is (= (unsplit-words-across-lines "postę-\npowania") "postępowania")))
+
+(deftest preprocess-test
+  (is (= (preprocess "postę-\npowania") "postępowania")))
+
 (defn get-file-paths [dir re]
   (let [
         file-paths
@@ -195,7 +201,7 @@
 (defn spit-all-csv [result-to-csv-fn path data]
   (spit path
         (apply str
-               (map-fn result-to-csv-fn data "signature"))))
+               (sort (map-fn result-to-csv-fn data "signature")))))
 
 (defn nils-to-zeros [coll]
   (map #(if (nil? %) 0 %) coll))
@@ -253,15 +259,17 @@
          min-precision (apply min precisions)
          min-recall (apply min recalls)
          overall-precision-recall
-         (get-precision-recall
-          extracted-items-with-file-names benchmark-items-with-file-names)
+           (get-precision-recall
+            extracted-items-with-file-names benchmark-items-with-file-names)
+
+         counts (map #(* (count %1) (- 1.0 %2)) benchmark-items recalls)
 
          names-precs-recalls
            (sort
-            #(compare (second %1) (second %2))
+            #(compare (nth %1 3) (nth %2 3))
             (map
              vector
-             ext-files-names precisions recalls))
+             ext-files-names precisions recalls counts))
          _ (doseq [i names-precs-recalls] (println i))
          _ (println (str \newline "av. precision: " average-precision
                          " av. recall: " average-recall))

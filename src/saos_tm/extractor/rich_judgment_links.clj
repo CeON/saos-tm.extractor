@@ -1,22 +1,47 @@
 (ns saos-tm.extractor.rich-judgment-links
   (:require
-   [ clojure.string :as str ]
-   [ saos-tm.extractor.judgment-links :refer :all ]
-   [ saos-tm.extractor.common :refer :all ])
+   [clojure.string :as str]
+   [saos-tm.extractor.judgment-links :refer :all]
+   [saos-tm.extractor.common :refer :all])
   (:import java.io.File)
   (:gen-class))
-
-(defn conv-str-to-regex [s]
-  (re-pattern
-   (str "\\Q" s "\\E")))
 
 (defn sort-regexes [coll end-indicator]
   (sort
    #(compare (end-indicator %1) (end-indicator %2))
    coll))
 
-(defn extract-regexes-not-empty
-  [from-before from-after count-before]
+(defn national-appeals-chamber? [case-nmb]
+  (or
+   (substring? "UZP/" case-nmb)
+   (substring? "/UZP" case-nmb)
+   (substring? "KIO" case-nmb)))
+
+(defn split-and-take-first [s regex-str]
+  (when (not-nil? s)
+    (first
+     (str/split
+      s
+      (re-pattern regex-str)))))
+
+(defn extract-no-empties-only-before [before regex]
+  (let [
+        from-before
+          (sort-regexes
+           (get-regex-matches-with-starts-ends-maps regex before)
+           :end)
+        extracted-element (:regex (last from-before))
+        ]
+    extracted-element))
+
+(defn extract-only-from-before [before regex]
+  (cond
+   (empty? before)
+   nil
+   :else
+   (extract-no-empties-only-before before regex)))
+
+(defn extract-regexes-not-empty [from-before from-after count-before]
   (let [
         before-end-position (:end (last from-before))
         after-start-position (:start (first from-after))
@@ -49,16 +74,6 @@
         ]
     extracted-element))
 
-(defn extract-no-empties-only-before [before regex]
-  (let [
-        from-before
-          (sort-regexes
-           (get-regex-matches-with-starts-ends-maps regex before)
-           :end)
-        extracted-element (:regex (last from-before))
-        ]
-    extracted-element))
-
 (defn extract-from-before-and-after [before after regex]
   (cond
    (and (empty? before) (empty? after))
@@ -78,97 +93,146 @@
    :else
    (extract-no-empties before after regex)))
 
-(defn extract-only-before [before regex]
-  (cond
-   (and (empty? before))
-   nil
-   :else
-   (extract-no-empties-only-before before regex)))
+(defn conv-str-to-regex [s]
+  (re-pattern
+   (str "\\Q" s "\\E")))
 
 (def date-regex
-  (re-pattern (str "\\d+\\s("
-                     "styczeń|stycznia|"
-                     "luty|lutego|"
-                     "marzec|marca|"
-                     "kwiecień|kwietnia|"
-                     "maj|maja|"
-                     "czerwiec|czerwca|"
-                     "lipiec|lipca|"
-                     "sierpień|sierpnia|"
-                     "wrzesień|września|"
-                     "październik|października|"
-                     "listopad|listopada|"
-                     "grudzień|grudnia)"
-                     "\\s\\d+(\\s?r\\.?)?")))
+  (re-pattern
+   (str "\\d+\\s("
+        "styczeń|stycznia|"
+        "luty|lutego|"
+        "marzec|marca|"
+        "kwiecień|kwietnia|"
+        "maj|maja|"
+        "czerwiec|czerwca|"
+        "lipiec|lipca|"
+        "sierpień|sierpnia|"
+        "wrzesień|września|"
+        "październik|października|"
+        "listopad|listopada|"
+        "grudzień|grudnia)"
+        "\\s\\d+(\\s?r\\.?)?")))
+
+(def to-word-end "[^\\s]*")
+
+(def judgment-type-regex-str
+  (str "(W|w)yrok" to-word-end "|"
+       "(P|p)ostanowien" to-word-end "|"
+       "(O|o)rzecze" to-word-end "|"
+       "(Z|z)arządzen" to-word-end "|"
+       "(U|u)chwal" to-word-end "|"
+       "(U|u)chwał" to-word-end "|"
+       "(U|u)zasadn" to-word-end "\\suchwał" to-word-end "|"
+       "(U|u)zasadn" to-word-end "\\swyrok" to-word-end "|"
+       "(U|u)zasadn" to-word-end "\\sdo\\suchwał" to-word-end "|"
+       "(U|u)zasadn" to-word-end "\\sdo\\swyrok" to-word-end "|"
+       "(U|u)zasadn" to-word-end "|"
+       "(P|p)ostępowan" to-word-end "|"
+       "(S|s)karg" to-word-end "|"
+       "(S|s)kardz" to-word-end "|"
+       "(P|p)i(s|ś)m" to-word-end ""))
 
 (def judgment-type-regex
-  (re-pattern (str "(W|w)yrok[^\\s]*|(P|p)ostanowien[^\\s]*|"
-                   "(O|o)rzecze[^\\s]*|(Z|z)arządzen[^\\s]*|"
-                   "(U|u)chwal[^\\s]*|(U|u)chwał[^\\s]*|"
-                   "(U|u)zasadn[^\\s]*\\suchwał[^\\s]*|"
-                   "(U|u)zasadn[^\\s]*\\swyrok[^\\s]*|"
-                   "(U|u)zasadn[^\\s]*\\sdo\\suchwał[^\\s]*|"
-                   "(U|u)zasadn[^\\s]*\\sdo\\swyrok[^\\s]*"
-                   )))
+  (re-pattern judgment-type-regex-str))
+
+(def nac-regex-str
+  (str "KIO|ZA|Zespół\\sArbitrów|Zespołu\\sArbitrów|Izba|Izby|"
+       "Krajow" to-word-end "\\sIzb" to-word-end "\\sOdwoławcz" to-word-end))
+
+(def pl-big-diacritics "ĄĆĘŁŃÓŚŻŹ")
+(def pl-diacritics (str "ąćęłńóśżź" pl-big-diacritics))
+
+(def latin-big-without-roman-digits "A-HJ-UWYZ")
+
+(def cities-names
+  (str
+   "(\\s[" latin-big-without-roman-digits pl-big-diacritics "]"
+   to-word-end ")+"))
+
+(def non-nac-regex-str
+  (str
+   "OTK|"
+   "NSA|"
+   "SN|"
+   "Sąd" to-word-end "\\sNajwyższ" to-word-end "|"
+   "Trybunał" to-word-end "\\sKonstyt" to-word-end "|"
+   "Prezes" to-word-end "\\sTrybunał" to-word-end "\\sKonstyt" to-word-end "|"
+   "Naczeln" to-word-end "\\sSąd" to-word-end "\\sAdm" to-word-end "|"
+   "Sąd" to-word-end "\\sApel" to-word-end "\\swe?" cities-names "|"
+   "Sąd" to-word-end "\\sOkręg" to-word-end "\\swe?" cities-names "|"
+   "SO\\swe?" cities-names "|"
+   "Sąd" to-word-end "\\sRejonow" to-word-end "\\swe?" cities-names "|"
+   "SR\\swe?" cities-names "|"
+
+   "Wojewódzk" to-word-end "\\sSąd" to-word-end
+   "\\sAdministrac" to-word-end "\\swe?" cities-names "|"
+
+   "WSA\\swe?" cities-names "|"
+   "(P|p)rokurator" to-word-end "\\s(G|g)eneraln" to-word-end ""))
+
+(def court-regex-str
+  (str nac-regex-str "|" non-nac-regex-str))
 
 (def court-regex
-  (re-pattern
-   (str "OTK|NSA|SN|"
-        "KIO|ZA|Zespół Arbitrów|Zespołu Arbitrów|Izba|Izby|"
-        "Krajow[^\\s]*\\sIzb[^\\s]*\\sOdwoławcz[^\\s]*|"
-        "Sąd[^\\s]*\\sNajwyższ[^\\s]*|"
-        "Trybunał[^\\s]*\\sKonstyt[^\\s]*|"
-        "Prezes[^\\s]*\\sTrybunał[^\\s]*\\sKonstyt[^\\s]*|"
-        "Naczeln[^\\s]*\\sSąd[^\\s]*\\sAdm[^\\s]*|"
-        "Sąd[^\\s]*\\sApel[^\\s]*\\sw\\s[A-Z][^\\s]*(\\s[A-Z][^\\s]*)?|"
-        "Sąd[^\\s]*\\sOkręg[^\\s]*\\sw\\s[A-Z][^\\s]*(\\s[A-Z][^\\s]*)?|"
-        "Sąd[^\\s]*\\sRejonow[^\\s]*\\sw\\s[A-Z][^\\s]*(\\s[A-Z][^\\s]*)?|"
-        "Wojewódzk[^\\s]*\\sSąd[^\\s]*\\sAdministrac[^\\s]*"
-        "\\sw[^\\s]*\\s[A-Z][^\\s]*(\\s[A-Z][^\\s]*)?"
-        )))
+  (re-pattern court-regex-str))
 
-(def polish-diacritics-str "ĄąĆćĘęŁłŃńÓóŚśŻżŹź")
+(defn extract-court [parts regex-str]
+  (let [
+        split-second-part
+          (split-and-take-first
+           (second parts)
+           (str judgment-type-regex-str
+                "|\\)\\.\\s(?=[A-Z" pl-big-diacritics "])"))
+        ]
+    (extract-from-before-and-after
+     (first parts)
+     split-second-part
+     (re-pattern regex-str))))
 
 (def starting-or-ending-with-non-letter
   (re-pattern
-   (str
-    "[^a-zA-Z" polish-diacritics-str "]$|^[^a-zA-Z" polish-diacritics-str "]")))
+   (str "[^a-zA-Z" pl-diacritics "]$|^[^a-zA-Z" pl-diacritics "]")))
 
-(defn postprocess-court [s]
+(defn trim-non-letters [s]
+  (str/replace s starting-or-ending-with-non-letter ""))
+
+(defn postprocess [s]
   (when
     (not-nil? s)
     (let [
           before-dot-or-comma
             (first (str/split s #"\.|,"))
           trimmed-non-letters
-            (str/replace
-             before-dot-or-comma
-             starting-or-ending-with-non-letter
-             "")
+            (trim-non-letters before-dot-or-comma)
           ]
       trimmed-non-letters)))
 
 (defn extract-other-data [case-nmb s]
   (let [
-        parts (str/split s (re-pattern (conv-str-to-regex case-nmb)))
+        parts
+          (str/split s
+                     (re-pattern (conv-str-to-regex case-nmb)))
         date
           (extract-from-before-and-after
-           (first parts) (second parts) date-regex)
+           (first parts)
+           (split-and-take-first (second parts) (str court-regex-str "|,"))
+           date-regex)
         court
-          (extract-from-before-and-after
-           (first parts) (second parts) court-regex)
-        judgment-type (extract-only-before (first parts) judgment-type-regex)
+          (if (national-appeals-chamber? case-nmb)
+            (extract-court parts nac-regex-str)
+            (extract-court parts non-nac-regex-str))
+        judgment-type
+          (extract-only-from-before (first parts) judgment-type-regex)
         ]
     (zipmap
      [:judgmentDate :court :judgmentType]
-     [date
-      (postprocess-court court)
-      judgment-type])))
+     [date (postprocess court) (postprocess judgment-type)])))
 
 (defn extract-ref-judgments [s]
   (let [
         preprocessed (preprocess s)
-        case-nmbs (extract-all-signatures preprocessed)
+        case-nmbs (extract-all-signatures s)
         other-judgment-links-data
           (map #(extract-other-data % preprocessed) case-nmbs)
         ]

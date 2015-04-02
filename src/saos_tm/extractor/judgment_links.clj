@@ -1,21 +1,17 @@
 (ns saos-tm.extractor.judgment-links
   (:require
-   [ saos-tm.extractor.common :refer :all ]
-   [ clojure.string :as str ]
-   [ langlab.core.parsers :refer [ lg-split-tokens-bi ] ]
-   [ clojure.set :refer :all])
+   [saos-tm.extractor.common :refer :all]
+   [clojure.string :as str]
+   [langlab.core.parsers :refer [lg-split-tokens-bi]]
+   [clojure.set :refer :all])
   (:import java.io.File)
   (:gen-class))
 
 (defn extract [re s fnc]
-  (let [
-        signatures
-          (set
-           (map
-            #(str/replace (fnc %) system-newline " ")
-            (re-seq re s)))
-        ]
-    signatures))
+  (set
+   (map
+    #(str/replace (fnc %) system-newline " ")
+    (re-seq re s))))
 
 (def osp-regex
   #"[IVXLCDM]+[\s\.]+[0-9]*[\s\.]*[a-zA-Z]*-?[a-zA-Z]*[\s\.]+\d+/\d+")

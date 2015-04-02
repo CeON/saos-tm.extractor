@@ -31,4 +31,4 @@
 
 (deftest judgment-links-efficiency-test
   (links-efficiency-test "jdg" get-benchmark-signatures
-    judgment-links-extract identity 0.944 0.979 signature-to-csv))
+    judgment-links-extract identity 0.948 0.981 signature-to-csv))

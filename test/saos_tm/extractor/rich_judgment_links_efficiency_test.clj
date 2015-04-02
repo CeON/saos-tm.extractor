@@ -71,15 +71,28 @@
            :start)
         first-case-nmb (:regex (first matches-with-starts-ends))
         first-case-nmb-regex
-          (re-pattern (str/replace first-case-nmb #"\s" "."))
+          (re-pattern
+           (replace-several first-case-nmb
+                            #"\s" "."
+                            #"/" "."))
         ]
     (str/replace s first-case-nmb-regex " ")))
 
-(defn map-remove-own-signatures [coll]
-  (map remove-own-signature coll))
+(defn remove-page-nmbs [s]
+  (str/replace s
+               (re-pattern
+                (str system-newline "\\d+" system-newline))
+               "\n"))
+
+(defn rich-links-preprocess [coll]
+  (let [
+        without-own-signatures (map remove-own-signature coll)
+        without-page-nmbs (map remove-page-nmbs without-own-signatures)
+        ]
+  without-page-nmbs))
 
 (deftest rich-judgment-links-efficiency-test
   (links-efficiency-test
    "rich-jdg" get-benchmark-rich-judgment-links
-   rich-judgment-links-extract map-remove-own-signatures
-   0.58 0.61 conv-coll-to-csv-line))
+   rich-judgment-links-extract rich-links-preprocess
+   0.91 0.934 conv-coll-to-csv-line))
