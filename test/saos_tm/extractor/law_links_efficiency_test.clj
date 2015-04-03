@@ -19,7 +19,7 @@
                    [:art :par :ust :pkt :zd :lit]
                    (take 6 %))
                   (zipmap
-                   [:year :journalNo :entry]
+                   [:journalYear :journalNo :journalEntry]
                    (take-last 3 %))])
                data))))
 

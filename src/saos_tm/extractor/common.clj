@@ -312,9 +312,9 @@
         ]
     (apply str (get-art-coords-csv art)
            "\"" signature "\"" csv-delimiter
-           "\"" (:year act) "\"" csv-delimiter
+           "\"" (:journalYear act) "\"" csv-delimiter
            "\"" (:journalNo act) "\"" csv-delimiter
-           "\"" (:entry act) "\"" system-newline)))
+           "\"" (:journalEntry act) "\"" system-newline)))
 
 (defn remove-hard-spaces [s]
   (str/replace s #"\u00A0" " "))

@@ -76,38 +76,38 @@
 
 (def dictionary-for-acts
   [
-   [#"(?i)^Konstytucji" {:journalNo "78" :entry "483", :year "1997"}]
-   [#"(?i)^k\.?c" {:journalNo "16" :entry "93", :year "1964"}]
-   [#"(?i)^k\.?h" {:journalNo "57" :entry "502", :year "1934"}]
-   [#"(?i)^k\.?k\.?s" {:journalNo "83" :entry "930", :year "1999"}]
-   [#"(?i)^k\.?k\.?w" {:journalNo "90" :entry "557", :year "1997"}]
-   [#"(?i)^k\.?k" {:journalNo "88" :entry "553", :year "1997"}]
-   [#"(?i)^k\.?m" {:journalNo "138" :entry "1545", :year "2001"}]
-   [#"(?i)^k\.?p\.?a" {:journalNo "30" :entry "168", :year "1960"}]
-   [#"(?i)^k\.?p\.?c" {:journalNo "43" :entry "296", :year "1964"}]
-   [#"(?i)^k\.?p\.?k" {:journalNo "89" :entry "555", :year "1997"}]
-   [#"(?i)^k\.?p\.?w" {:journalNo "106" :entry "1148", :year ""}]
-   [#"(?i)^k\.?p" {:journalNo "24" :entry "141", :year "1974"}]
-   [#"(?i)^k\.?r\.?o" {:journalNo "9" :entry "59", :year "2001"}]
-   [#"(?i)^k\.?s\.?h" {:journalNo "94" :entry "1037", :year "2000"}]
-   [#"(?i)^k\.?w" {:journalNo "12" :entry "114", :year "1971"}]
-   [#"(?i)^k\.?z" {:journalNo "82" :entry "598", :year "1933"}]
-   [#"(?i)^u\.?s\.?p" {:journalNo "98" :entry "1070", :year "2001"}]
-   [#"(?i)^ustawy o TK" {:journalNo "102" :entry "643", :year "1997"}]
+   [#"(?i)^Konstytucji" {:journalNo "78" :journalEntry "483", :journalYear "1997"}]
+   [#"(?i)^k\.?c" {:journalNo "16" :journalEntry "93", :journalYear "1964"}]
+   [#"(?i)^k\.?h" {:journalNo "57" :journalEntry "502", :journalYear "1934"}]
+   [#"(?i)^k\.?k\.?s" {:journalNo "83" :journalEntry "930", :journalYear "1999"}]
+   [#"(?i)^k\.?k\.?w" {:journalNo "90" :journalEntry "557", :journalYear "1997"}]
+   [#"(?i)^k\.?k" {:journalNo "88" :journalEntry "553", :journalYear "1997"}]
+   [#"(?i)^k\.?m" {:journalNo "138" :journalEntry "1545", :journalYear "2001"}]
+   [#"(?i)^k\.?p\.?a" {:journalNo "30" :journalEntry "168", :journalYear "1960"}]
+   [#"(?i)^k\.?p\.?c" {:journalNo "43" :journalEntry "296", :journalYear "1964"}]
+   [#"(?i)^k\.?p\.?k" {:journalNo "89" :journalEntry "555", :journalYear "1997"}]
+   [#"(?i)^k\.?p\.?w" {:journalNo "106" :journalEntry "1148", :journalYear ""}]
+   [#"(?i)^k\.?p" {:journalNo "24" :journalEntry "141", :journalYear "1974"}]
+   [#"(?i)^k\.?r\.?o" {:journalNo "9" :journalEntry "59", :journalYear "2001"}]
+   [#"(?i)^k\.?s\.?h" {:journalNo "94" :journalEntry "1037", :journalYear "2000"}]
+   [#"(?i)^k\.?w" {:journalNo "12" :journalEntry "114", :journalYear "1971"}]
+   [#"(?i)^k\.?z" {:journalNo "82" :journalEntry "598", :journalYear "1933"}]
+   [#"(?i)^u\.?s\.?p" {:journalNo "98" :journalEntry "1070", :journalYear "2001"}]
+   [#"(?i)^ustawy o TK" {:journalNo "102" :journalEntry "643", :journalYear "1997"}]
    [#"(?i)^ustawy o Trybunale Konstytucyjnym"
-    {:journalNo "102" :entry "643", :year "1997"}]
-   [#"(?i)^ustawy o komornikach" {:journalNo "133" :entry "882", :year "1997"}]
+    {:journalNo "102" :journalEntry "643", :journalYear "1997"}]
+   [#"(?i)^ustawy o komornikach" {:journalNo "133" :journalEntry "882", :journalYear "1997"}]
    [#"(?i)^ustawy o ochronie konkurencji"
-    {:journalNo "50" :entry "331", :year "2007"}]
-   [#"(?i)^prawa o adwokat" {:journalNo "16" :entry "124", :year "1982"}]
-   [#"(?i)^pzp" {:journalNo "19" :entry "177", :year "2004"}]
-   [#"(?i)^ustawy pzp" {:journalNo "19" :entry "177", :year "2004"}]
+    {:journalNo "50" :journalEntry "331", :journalYear "2007"}]
+   [#"(?i)^prawa o adwokat" {:journalNo "16" :journalEntry "124", :journalYear "1982"}]
+   [#"(?i)^pzp" {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
+   [#"(?i)^ustawy pzp" {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
    [#"(?i)^ustawy prawo zamówień publicznych"
-    {:journalNo "19" :entry "177", :year "2004"}]
+    {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
    [#"(?i)^Prawo zamówień publicznych"
-    {:journalNo "19" :entry "177", :year "2004"}]
+    {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
    [#"(?i)^prawa zamówień publicznych"
-    {:journalNo "19" :entry "177", :year "2004"}]
+    {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
    ])
 
 (defn tokens-to-string [tokens]
@@ -197,14 +197,14 @@
             "0"
             (nth journal-nmb-part index-of-last-nmb))
         ]
-    (zipmap [:journalNo :entry] [journal-nmb entry])))
+    (zipmap [:journalNo :journalEntry] [journal-nmb entry])))
 
 (defn extract-journal-nmb-and-entry [tokens]
   (let [
         parts (partition-by #(= "poz" %) tokens)
         ]
     (if (= 1 (count parts))
-      (zipmap [:journalNo :entry] ["0" "0"])
+      (zipmap [:journalNo :journalEntry] ["0" "0"])
       (extract-when-entry-present parts))))
 
 (defn extract-year-journal-nmb-and-entry [tokens]
@@ -213,10 +213,10 @@
         journal-nmb-and-entry (extract-journal-nmb-and-entry tokens)
         ]
     (zipmap
-     [:year :journalNo :entry]
+     [:journalYear :journalNo :journalEntry]
      [year
       (:journalNo journal-nmb-and-entry)
-      (:entry journal-nmb-and-entry)])))
+      (:journalEntry journal-nmb-and-entry)])))
 
 (defn convert-year-to-full [year]
   (if (= (count year) 4)
@@ -237,15 +237,15 @@
     (cond
      (= (count numbers) 3)
      (zipmap
-      [:year :journalNo :entry]
+      [:journalYear :journalNo :journalEntry]
       [year (nth numbers 1) (nth numbers 2)])
      (= (count numbers) 2)
      (zipmap
-      [:year :journalNo :entry]
+      [:journalYear :journalNo :journalEntry]
       [year 0 (nth numbers 1)])
      :else
      (zipmap
-      [:year :journalNo :entry]
+      [:journalYear :journalNo :journalEntry]
       [year 0 0]))))
 
 (defn extract-law-journal-case [tokens dictionary]
@@ -372,7 +372,7 @@
                                #"\(" "\\("
                                #"\)" "\\)"))
              (zipmap
-              [:year :journalNo :entry]
+              [:journalYear :journalNo :journalEntry]
               [(nth % 1) (nth % 2) (nth % 3)]))
            records)
         ]
@@ -391,10 +391,10 @@
         ]
     (zipmap
      [:act :art]
-     [(zipmap [:year :journalNo :entry]
-              [(cleanse (:year act))
+     [(zipmap [:journalYear :journalNo :journalEntry]
+              [(cleanse (:journalYear act))
                (cleanse (:journalNo act))
-               (cleanse (:entry act))])
+               (cleanse (:journalEntry act))])
       (zipmap art-coords-names
               [(cleanse (:art art))
                (cleanse (:par art))
