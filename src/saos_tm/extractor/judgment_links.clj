@@ -22,29 +22,35 @@
 (defn extract-signatures-osp [s]
   (extract osp-regex s identity))
 
-(def kio-no-space-regex #"KIO\s*/\s*UZP\s*/\s*\d+\s*/\s*\d+")
+(def kio-regex #"KIO\s*\d+\s*/\s*\d+")
 
-(defn extract-signatures-kio-no-space [s]
-  (extract kio-no-space-regex s identity))
+(defn extract-signatures-kio [s]
+  (extract kio-regex s identity))
 
-(def kio-space-regex #"KIO\s*/\s*UZP\s+\d+\s*(/\s*\d+)?")
-
-(defn extract-signatures-kio-space [s]
-  (extract kio-space-regex s first))
-
-(def kio-uzp-regex #"UZP\s*/\s*ZO\s*/\s*\d+-\d+\s*/\s*\d+")
+(def kio-uzp-regex #"KIO\s*/\s*UZP\s+\d+\s*(/\s*\d+)?")
 
 (defn extract-signatures-kio-uzp [s]
-  (extract kio-uzp-regex s identity))
+  (extract kio-uzp-regex s #(if (string? %) % (first %))))
+
+(def kio-uzp-no-space-regex #"KIO\s*/\s*UZP\s*/\s*\d+\s*/\s*\d+")
+
+(defn extract-signatures-kio-uzp-zo-no-space [s]
+  (extract kio-uzp-no-space-regex s identity))
+
+(def kio-uzp-zo-regex #"UZP\s*/\s*ZO\s*/\s*\d+-\d+\s*/\s*\d+")
+
+(defn extract-signatures-kio-uzp-zo [s]
+  (extract kio-uzp-zo-regex s identity))
 
 (defn is-kio-signature? [s]
   (or
-   (matches? s kio-no-space-regex)
-   (matches? s kio-space-regex)
-   (matches? s kio-uzp-regex)))
+   (matches? s kio-regex)
+   (matches? s kio-uzp-regex)
+   (matches? s kio-uzp-no-space-regex)
+   (matches? s kio-uzp-zo-regex)))
 
 (def tk-regex-str
-  "(Co|K|Kp|U|P|SK|Kpt|Pp|M|S|Tp|Ts|Tw|Twn|Kw|Uw|W)\\s+\\d+/\\d+")
+  "(Co|K|Kp|U|P|SK|Kpt|Pp|M|S|Tp|Ts|Tw|Twn|Kw|Uw|W)\\.?\\s+\\d+/\\d+")
 (def tk-extraction-regex
   (re-pattern (str "[^a-zA-Z0-9]" tk-regex-str)))
 (def tk-check-regex
@@ -74,36 +80,30 @@
     #(str/replace % system-newline " ")
     (extract-tk s))))
 
-(def sn-regex #"[a-zA-Z]+\s+[IVXLCDM]+-\d+-\d+/\d+")
-(def sn-regex-1 #"[^IVXLCDM]\s[A-Z]+\s+\d+/\d+")
+(def sn-regex
+  #"[a-zA-Z]+\s+[IVXLCDM]+-\d+-\d+/\d+|SNO\s+\d+/\d+")
 
 (defn is-sn-signature? [s]
   (matches? s sn-regex))
+
+(defn extract-signatures-sn [s]
+  (extract sn-regex s identity))
 
 (defn is-sn-or-osp-signature? [s]
   (or
    (matches? s sn-regex)
    (matches? s osp-regex)))
 
-(defn extract-signatures-sn [s]
-  (extract sn-regex s identity))
-
-(defn extract-signatures-sn-1 [s]
-  (map
-   #(apply str (drop 1 %))
-   (extract sn-regex-1 s identity)))
-
-(def nsa-regex #"[IVXLCDM]+\s+[a-zA-Z]+/[a-zA-Z]+\s+\d+/\d+")
-(def nsa-regex-1 #"[a-zA-Z]+/[a-zA-Z]+\s+\d+/\d+")
+(def nsa-regex
+  (re-pattern (str "[IVXLCDM]+\\s+[a-zA-Z]+/[a-zA-Z]+\\s+\\d+/\\d+|"
+                   "[a-zA-Z]+/[a-zA-Z]+\\s+\\d+/\\d+|"
+                   "OPS+\\s+\\d+/\\d+")))
 
 (defn is-nsa-signature? [s]
-  (or (matches? s nsa-regex) (matches? s nsa-regex-1)))
+  (matches? s nsa-regex))
 
 (defn extract-signatures-nsa [s]
   (extract nsa-regex s identity))
-
-(defn extract-signatures-nsa-1 [s]
-  (extract nsa-regex-1 s identity))
 
 (defn cleanse-signature [s]
   (str/trim
@@ -254,7 +254,9 @@
 
         signatures-osp-kio-space
           (extract-signatures
-           [extract-signatures-osp extract-signatures-kio-space]
+           [extract-signatures-osp
+            extract-signatures-kio
+            extract-signatures-kio-uzp]
            without-universal-signatures)
         signatures-osp-kio-space-set (set signatures-osp-kio-space)
         without-universal-osp-kio-space-signatures
@@ -266,10 +268,11 @@
            signatures-universal-set
            signatures-osp-kio-space-set
            (extract-signatures
-             [extract-signatures-nsa extract-signatures-nsa-1
-              extract-signatures-sn extract-signatures-sn-1
+             [extract-signatures-nsa
+              extract-signatures-sn
               extract-signatures-tk
-              extract-signatures-kio-uzp extract-signatures-kio-no-space]
+              extract-signatures-kio-uzp-zo
+              extract-signatures-kio-uzp-zo-no-space]
              without-universal-osp-kio-space-signatures)
 ;;            (when (not-nil? own-signature) (set [own-signature]))
            )

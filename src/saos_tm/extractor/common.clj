@@ -332,7 +332,13 @@
     without-newlines))
 
 (defn unsplit-words-across-lines [s]
-  (str/replace s (str "-" system-newline) ""))
+  (let [
+        without-split-numbers
+          (str/replace s
+                       (re-pattern (str "(?<=\\d-)" system-newline "(?=\\d)"))
+                       "")
+        ]
+  (str/replace without-split-numbers (str "-" system-newline) "")))
 
 (defn preprocess [s]
   (let [
