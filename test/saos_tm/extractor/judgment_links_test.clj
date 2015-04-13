@@ -25,22 +25,22 @@
         "2004r. sygn. akt II K.184/04 obejmującego wyrok"
         "łącznym o sygn. akt II K 350/04 z dnia 22 marca 2005 r. "))
       #{"II K.350/04" "II K.184/04" "II K 350/04"}))
-  (is (= (extract-signatures-kio-no-space
+  (is (= (extract-signatures-kio-uzp-zo-no-space
         "KIO/UZP/1/07 KIO/UZP/102/08")
       #{"KIO/UZP/1/07" "KIO/UZP/102/08"}))
-  (is (= (extract-signatures-kio-no-space
+  (is (= (extract-signatures-kio-uzp-zo-no-space
         (str "  sygn. akt: KIO/UZP/42/07 oraz Wyrok KIO z dnia 22.02.2008 r.,"
         " sygn. akt: KIO/UZP/99/08) istnienie"))
       #{"KIO/UZP/42/07" "KIO/UZP/99/08"}))
-  (is (= (extract-signatures-kio-space
+  (is (= (extract-signatures-kio-uzp
         "KIO/UZP 141/08 KIO/UZP 102/08")
       #{"KIO/UZP 141/08" "KIO/UZP 102/08"}))
-  (is (= (extract-signatures-kio-space
+  (is (= (extract-signatures-kio-uzp
         (str "31.01.2008 r., sygn. akt: KIO/UZP 119/07 – przedłożony"
           "31.01.2008 r., sygn. akt: KIO/UZP\n119/08.\n"
           "Sygn. akt KIO/UZP 961/08\nWYROK\nz dnia 24 września 2008 r."))
       #{"KIO/UZP 119/07" "KIO/UZP 119/08" "KIO/UZP 961/08"}))
-  (is (= (extract-signatures-kio-uzp
+  (is (= (extract-signatures-kio-uzp-zo
         "UZP/ZO/0-1094/99, UZP/ZO/0-725/05")
       #{"UZP/ZO/0-1094/99" "UZP/ZO/0-725/05"}))
   (is (= (extract-signatures-sn

@@ -43,6 +43,12 @@
           ]
       (zipmap [:precision :recall] [precision recall]))))
 
+(defn remove-page-nmbs [s]
+  (str/replace s
+               (re-pattern
+                (str system-newline "\\d+" system-newline))
+               "\n"))
+
 (deftest article-coords-test
   (is(=
       [["4" "0" "0" "2" "0" "0"]]

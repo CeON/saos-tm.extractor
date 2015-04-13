@@ -78,12 +78,6 @@
         ]
     (str/replace s first-case-nmb-regex " ")))
 
-(defn remove-page-nmbs [s]
-  (str/replace s
-               (re-pattern
-                (str system-newline "\\d+" system-newline))
-               "\n"))
-
 (defn rich-links-preprocess [coll]
   (let [
         without-own-signatures (map remove-own-signature coll)
@@ -95,4 +89,4 @@
   (links-efficiency-test
    "rich-jdg" get-benchmark-rich-judgment-links
    rich-judgment-links-extract rich-links-preprocess
-   0.91 0.934 conv-coll-to-csv-line))
+   0.929 0.931 conv-coll-to-csv-line))
