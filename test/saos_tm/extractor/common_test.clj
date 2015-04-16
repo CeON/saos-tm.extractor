@@ -1,10 +1,12 @@
 (ns saos-tm.extractor.common-test
   (:require
-    [clojure.test :refer :all]
-    [clojure.string :as str]
-    [clojure.set :refer :all]
-    [clojure-csv.core :refer :all]
-    [saos-tm.extractor.common :refer :all]))
+   [clojure.java.io :as io]
+   [clojure.test :refer :all]
+   [clojure.string :as str]
+   [clojure.set :refer :all]
+   [clojure-csv.core :refer :all]
+   [saos-tm.extractor.law-links :refer :all]
+   [saos-tm.extractor.common :refer :all]))
 
 (defn get-file-paths [dir re]
   (let [
@@ -43,80 +45,109 @@
           ]
       (zipmap [:precision :recall] [precision recall]))))
 
-(defn remove-page-nmbs [s]
-  (str/replace s
-               (re-pattern
-                (str system-newline "\\d+" system-newline))
-               "\n"))
+(defn read-law-links-to-maps [file-data]
+  (let [
+        data (parse-csv file-data)
+        ]
+    (into #{} (map
+               #(zipmap
+                 [:art :act]
+                 [(zipmap
+                   [:art :par :ust :pkt :zd :lit]
+                   (take 6 %))
+                  (zipmap
+                   [:journalYear :journalNo :journalEntry]
+                   (take-last 3 %))])
+               data))))
+
+(defn get-benchmark-records [files]
+  (map
+    read-law-links-to-maps
+    files))
+
+(defn law-links-extract [txt-files extract-law-links-fn]
+  (let [
+        dictionary (load-dictionary (io/resource "act_dictionary.txt"))
+        ]
+    (map
+      #(into #{} (:extracted-links (extract-law-links-fn % dictionary)))
+      txt-files)))
+
+(defn law-links-extract-greedy [txt-files]
+  (law-links-extract txt-files extract-law-links-greedy))
+
+(defn law-links-extract-strict [txt-files]
+  (law-links-extract txt-files extract-law-links-strict))
 
 (deftest article-coords-test
   (is(=
       [["4" "0" "0" "2" "0" "0"]]
-      (extract-coords "art. 4 pkt 2")))
+      (extract-art-coords "art. 4 pkt 2")))
   (is(=
       [["14a" "0" "0" "0" "0" "0"]]
-      (extract-coords "art. 14a ")))
+      (extract-art-coords "art. 14a ")))
   (is(=
       [["50" "0" "1" "1" "0" "0"]]
-      (extract-coords "art. 50 ust. 1 pkt 1 ")))
+      (extract-art-coords "art. 50 ust. 1 pkt 1 ")))
   (is(=
       [["3" "0" "2-3" "0" "0" "0"]]
-      (extract-coords "art. 3 ust. 2-3 ")))
+      (extract-art-coords "art. 3 ust. 2-3 ")))
   (is(=
       [["103-105" "0" "0" "0" "0" "0"]]
-      (extract-coords "art. 103-105 ")))
+      (extract-art-coords "art. 103-105 ")))
   (is(=
       [["47" "0" "1" "2" "0" "0"] ["47" "0" "1" "3" "0" "0"]]
-      (extract-coords "art. 47 ust. 1 pkt 2 i 3 ")))
+      (extract-art-coords "art. 47 ust. 1 pkt 2 i 3 ")))
   (is(=
       [["0" "44" "1" "1" "0" "0"]]
-      (extract-coords "§ 44 ust. 1 pkt 1 ")))
+      (extract-art-coords "§ 44 ust. 1 pkt 1 ")))
   (is(=
       [["0" "25" "3" "0" "0" "0"]]
-      (extract-coords "§ 25 ust. 3 ")))
+      (extract-art-coords "§ 25 ust. 3 ")))
   (is(=
       [["0" "68a" "1" "0" "0" "0"]]
-      (extract-coords "§ 68a ust. 1 ")))
+      (extract-art-coords "§ 68a ust. 1 ")))
   (is(=
       [["0" "79" "0" "0" "0" "0"]]
-      (extract-coords "§ 79 ")))
+      (extract-art-coords "§ 79 ")))
   (is(=
       [["0" "34" "3" "2" "0" "0"]]
-      (extract-coords "§ 34 ust. 3 pkt 2 ")))
+      (extract-art-coords "§ 34 ust. 3 pkt 2 ")))
   (is(=
       [["37" "4a" "0" "0" "0" "0"] ["37" "4b" "0" "0" "0" "0"]]
-      (extract-coords "art. 37 § 4a, 4b ")))
+      (extract-art-coords "art. 37 § 4a, 4b ")))
   (is(=
       [["56" "1-3" "0" "0" "0" "0"]]
-      (extract-coords "art. 56 § 1-3 ")))
+      (extract-art-coords "art. 56 § 1-3 ")))
   (is(=
       [["77" "1" "0" "0" "0" "0"] ["77" "2" "0" "0" "0" "0"]
        ["77" "2a" "0" "0" "0" "0"] ["77" "3" "0" "0" "0" "0"]
        ["77" "3a" "0" "0" "0" "0"] ["77" "6" "0" "0" "0" "0"]
        ["77" "7a" "0" "0" "0" "0"] ["77" "7b" "0" "0" "0" "0"]]
-      (extract-coords "art. 77 § 1, 2, 2a, 3, 3a, 6, 7a i 7b ")))
+      (extract-art-coords "art. 77 § 1, 2, 2a, 3, 3a, 6, 7a i 7b ")))
   (is(=
       [["46" "1" "0" "0" "1" "0"]]
-      (extract-coords "art. 46 § 1 zd. 1 ")))
+      (extract-art-coords "art. 46 § 1 zd. 1 ")))
   (is(=
       [["178" "0" "1" "0" "0" "0"] ["91" "0" "1" "0" "0" "0"]]
-      (extract-coords "art. 178 ust. 1 i art. 91 ust. 1")))
+      (extract-art-coords "art. 178 ust. 1 i art. 91 ust. 1")))
   (is(=
       [["84" "0" "0" "0" "0" "0"] ["92" "0" "1" "0" "0" "0"]
        ["31" "0" "3" "0" "0" "0"]]
-      (extract-coords "art. 84, art. 92 ust. 1 i art. 31 ust. 3")))
+      (extract-art-coords "art. 84, art. 92 ust. 1 i art. 31 ust. 3")))
   (is(=
       [["2" "0" "0" "0" "0" "0"] ["84" "0" "0" "0" "0" "0"]
        ["91" "0" "1" "0" "0" "0"] ["178" "0" "1" "0" "0" "0"]]
-      (extract-coords "art. 2, art. 84, z art. 91 ust. 1, art. 178 ust. 1")))
+      (extract-art-coords
+       "art. 2, art. 84, z art. 91 ust. 1, art. 178 ust. 1")))
   (is(=
       '(("64" "0" "2" "0" "0" "0") ("64" "0" "3" "0" "0" "0")
         ("84" "0" "0" "0" "0" "0"))
-      (extract-coords "art. 64 ust. 2 i 3 oraz art. 84")))
+      (extract-art-coords "art. 64 ust. 2 i 3 oraz art. 84")))
   (is(=
       '(("64" "0" "2" "0" "0" "a"))
-      (extract-coords "art. 64 ust. 2 lit. a")))
-  ; (is(= [[]] (extract-coords "")))
+      (extract-art-coords "art. 64 ust. 2 lit. a")))
+  ; (is(= [[]] (extract-art-coords "")))
   )
 
 (defn get-precision-recall [extracted-set benchmark-set]
@@ -207,7 +238,8 @@
 (defn spit-all-csv [result-to-csv-fn path data]
   (spit path
         (apply str
-               (sort (map-fn result-to-csv-fn data "signature")))))
+               (sort
+                (map-fn result-to-csv-fn data "signature")))))
 
 (defn nils-to-zeros [coll]
   (map #(if (nil? %) 0 %) coll))
@@ -229,9 +261,46 @@
 (def links-test-data-path "test-data/links/")
 (def log-data-path "log/")
 
+(defn spit-all-csv-with-signatures [result-to-csv-fn path data signature]
+  (spit path
+        (apply str
+               (sort
+                (map-fn result-to-csv-fn data signature)))))
+
+(defn split-csv-line [s]
+  (str/split s (re-pattern (str #"\"" csv-delimiter "\""))))
+
+(defn extract-signatures-from-csv [txts]
+  (map
+   #(nth (split-csv-line %) 6)
+   txts))
+
+(defn log-results-with-signatures
+  [result-to-csv-fn log-files-paths extracted-items ext-files]
+  (doall
+   (map
+    #(spit-all-csv-with-signatures result-to-csv-fn %1 %2 %3)
+    log-files-paths
+    extracted-items
+    (extract-signatures-from-csv ext-files))))
+
+(defn log-results-without-signatures
+  [result-to-csv-fn log-files-paths extracted-items ext-files]
+  (doall
+   (map
+    #(spit-all-csv result-to-csv-fn %1 %2)
+    log-files-paths
+    extracted-items)))
+
+(defn remove-page-nmbs [s]
+  (str/replace s
+               (re-pattern
+                (str system-newline "\\d+" system-newline))
+               "\n"))
+
 (defn links-efficiency-test
   [ext benchmark-records-fn extracted-records-fn txt-files-conv-fn
-   precision-threshold recall-threshold result-to-csv-fn]
+   precision-threshold recall-threshold result-to-csv-fn log-results-fn]
   (time
    (let [
          ext-dir (str links-test-data-path ext)
@@ -267,8 +336,7 @@
          overall-precision-recall
            (get-precision-recall
             extracted-items-with-file-names benchmark-items-with-file-names)
-
-         counts (map #(* (count %1) (- 1.0 %2)) benchmark-items recalls)
+         counts (map #(* (count %1) (- 1.0 %2)) extracted-items precisions)
 
          names-precs-recalls
            (sort
@@ -290,15 +358,14 @@
                          (:recall overall-precision-recall)
                          \newline))
          _ (println (str separator \newline))
+
          _
-           (doall
-            (map
-             #(spit-all-csv result-to-csv-fn %1 %2)
-             log-files-paths
-             extracted-items))
+           (log-results-fn
+            result-to-csv-fn log-files-paths extracted-items ext-files)
          ]
      (is (> (:precision overall-precision-recall) precision-threshold))
      (is (> (:recall overall-precision-recall) recall-threshold)))))
+
 
 (deftest dexmlise-test
   (is

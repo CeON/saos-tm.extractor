@@ -1,8 +1,7 @@
 (ns saos-tm.extractor.csv-helpers
   (:require
    [clojure.string :as str]
-   [saos-tm.extractor.common :refer :all]
-)
+   [saos-tm.extractor.common :refer :all])
   (:gen-class))
 
 (defn get-nth-args [csv-string]

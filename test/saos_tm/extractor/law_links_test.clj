@@ -5,8 +5,8 @@
             [clojure-csv.core :refer :all ]
             [saos-tm.extractor.common :refer :all]
             [saos-tm.extractor.law-links :refer :all]
-            [saos-tm.extractor.common-test :refer :all ]
-            [langlab.core.parsers :refer [ lg-split-tokens-bi ] ]))
+            [saos-tm.extractor.common-test :refer :all]
+            [langlab.core.parsers :refer [lg-split-tokens-bi]]))
 
 (def ^:private act-dictionary
   (load-dictionary (io/resource "act_dictionary.txt")))
@@ -25,23 +25,6 @@
               [[3 49][51 58]]
               (get-correct-art-coords-ranges tokens)))))
 
-(deftest signature-extraction-test []
-  (is (=
-    "K. 1/00"
-    (extract-signature "Sygn. K. 1/00 ")))
-  (is (=
-    "W. 17/92"
-    (extract-signature "Sygn. akt (W. 17/92)")))
-  (is (=
-    "SK 22/06"
-    (extract-signature "Sygn. akt SK 22/06*")))
-  (is (=
-    "Tw 51/12"
-    (extract-signature "Sygn. akt Tw 51/12")))
-  (is (=
-    "W. 17/92"
-    (extract-signature "Sygn. akt (W. 17/92)"))))
-
 (deftest get-line-with-signature-test []
   (is (=
     "(K. 1/91)"
@@ -50,7 +33,6 @@
         "z dnia 28 maja 1991 r.\n"
         "(K. 1/91)\n\n"
         "Trybunał Konstytucyjny w składzie:"))))
-
   (is (=
     "(K. 1/92)"
     (get-line-with-signature
@@ -76,7 +58,7 @@
     :art {:lit "0", :zd "0", :pkt "6", :ust "0", :par "0", :art "4"}}
     {:act {:journalEntry "1656", :journalNo "237", :journalYear "2008"},
     :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "57"}})
-  (:extracted-links (extract-law-links
+  (:extracted-links (extract-law-links-greedy
     (str "art. 3 ust. 1-6, art. 4 pkt 5 i 6, art. 57 ustawy z dnia 19 grudnia"
          " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
     act-dictionary))))
@@ -89,7 +71,7 @@
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "2"}}
       {:act {:journalEntry "483", :journalNo "78", :journalYear "1997"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "1", :par "0", :art "32"}}))
-  (:extracted-links (extract-law-links
+  (:extracted-links (extract-law-links-greedy
     (str "art. 3 ust. 4-6 i art. 4 pkt 6 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656) "
          "z art. 2 i art. 32 ust. 1 Konstytucji")
@@ -99,14 +81,14 @@
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}
       {:act {:journalEntry "1656", :journalNo "237", :journalYear "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "5"}}))
-  (:extracted-links (extract-law-links
+  (:extracted-links (extract-law-links-greedy
     (str "art. 3 w związku z art. 5 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
     act-dictionary)))
   (is(=
     '({:act {:journalNo "16" :journalEntry "93", :journalYear "1964"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}))
-  (:extracted-links (extract-law-links
+  (:extracted-links (extract-law-links-greedy
     (str "art. 3 kc według ustawy o trybunale oprócz kodeksu wykroczeń ")
     act-dictionary)))
   )
@@ -150,7 +132,7 @@
 
 (defn extract-law-journal-case-one [s answer]
   (is (=
-    (extract-law-journal-case
+    (extract-act-coords-greedy
       (split-to-tokens s)
       act-dictionary)
     answer)))
@@ -181,3 +163,64 @@
       " architektów, inżynierów budownictwa oraz urbanistów Dz.U.01.5.42"
       " ze zm. od 8 lutego 2001r. okręgowe izby inżynierów budownictwa")
     {:journalYear "2001" :journalNo "5" :journalEntry "42"}))
+
+(deftest handle-superscript-test []
+  (is (=
+       (handle-superscript "5051")
+       "505(1)"))
+  (is (=
+       (handle-superscript "5051-5052")
+       "505(1)-505(2)")))
+
+(deftest extract-coords-test []
+  (is (= (extract-coords " Art. 52 ust. 3") '(("52" "0" "3" "0" "0" "0")))))
+
+(deftest extract-law-links-strict-test []
+  (is (=
+       (set
+       (:extracted-links
+        (extract-law-links-strict
+         "art. 8, 45, 91 ust. 1 Konstytucji"
+         act-dictionary)))
+       #{{:art
+         {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "8"},
+         :act
+         {:journalEntry "483", :journalNo "78", :journalYear "1997"}}
+        {:art
+         {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "45"},
+         :act
+         {:journalEntry "483", :journalNo "78", :journalYear "1997"}}
+        {:art
+         {:lit "0", :zd "0", :pkt "0", :ust "1", :par "0", :art "91"},
+         :act
+         {:journalEntry "483", :journalNo "78", :journalYear "1997"}}}))
+  (is (=
+       (set
+        (:extracted-links
+        (extract-law-links-strict
+         "art. 2 § 2, art. 4, 5 § 2, art. 92 i 410 oraz art. 7 k.p.k."
+         act-dictionary)))
+       #{{:art
+         {:lit "0", :zd "0", :pkt "0", :ust "0", :par "2", :art "2"},
+         :act
+         {:journalEntry "555", :journalNo "89", :journalYear "1997"}}
+        {:art
+         {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "4"},
+         :act
+         {:journalEntry "555", :journalNo "89", :journalYear "1997"}}
+        {:art
+         {:lit "0", :zd "0", :pkt "0", :ust "0", :par "2", :art "5"},
+         :act
+         {:journalEntry "555", :journalNo "89", :journalYear "1997"}}
+        {:art
+         {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "92"},
+         :act
+         {:journalEntry "555", :journalNo "89", :journalYear "1997"}}
+        {:art
+         {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "410"},
+         :act
+         {:journalEntry "555", :journalNo "89", :journalYear "1997"}}
+        {:art
+         {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "7"},
+         :act
+         {:journalEntry "555", :journalNo "89", :journalYear "1997"}}})))

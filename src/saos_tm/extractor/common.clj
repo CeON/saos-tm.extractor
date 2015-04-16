@@ -1,8 +1,9 @@
 (ns saos-tm.extractor.common
   (:require
-    [clojure.string :as str]
-    [clojure.set :refer :all]
-    [langlab.core.parsers :refer :all])
+   [clojure.string :as str]
+   [clojure.set :refer :all]
+   [langlab.core.parsers :refer :all]
+   [langlab.core.characters :refer :all])
   (:import [java.io File]
            [org.apache.commons.io IOUtils]
            [org.apache.tika.parser Parser ParseContext]
@@ -14,6 +15,15 @@
 
 (def csv-delimiter ",")
 
+(def not-nil? (complement nil?))
+
+(def not-empty? (complement empty?))
+
+(defn matches? [s re]
+  (not-nil? (re-matches re s)))
+
+(def not-matches? (complement matches?))
+
 (def ^String system-newline
   (System/getProperty "line.separator"))
 
@@ -23,7 +33,7 @@
         par-nr (:par art-coords)
         ust-nr (:ust art-coords)
         pkt-nr (:pkt art-coords)
-        zd-nr (:zd art-coords)
+        zd-nr  (:zd art-coords)
         lit-nr (:lit art-coords)
         ]
     (apply str
@@ -46,9 +56,40 @@
 (defn print-that [s]
   (doall (prn) (prn)) (prn s) (doall (prn) (prn)))
 
-(defn extract-nmbs-and-ranges [ s ]
-  (map #(str/trim %)
-    (str/split s #",| i |(oraz)")))
+(defn insert-at-index [s ch index]
+  (str (apply str (take index s)) ch (apply str (drop index s))))
+
+(defn handle-superscript-no-range [s]
+  (let [
+        length (count s)
+        ]
+    (if (and (> length 3) (contains-digits-only? s))
+      (str (insert-at-index s "(" 3) ")")
+      s)))
+
+(defn handle-superscript-range [s]
+  (let [
+        numbers
+          (map handle-superscript-no-range
+               (str/split s #"-"))
+        ]
+    (str/join "-" numbers)))
+
+(defn handle-superscript [s]
+  (if (substring? "-" s)
+    (handle-superscript-range s)
+    (handle-superscript-no-range s)))
+
+(defn extract-nmbs-and-ranges [s]
+  (let [
+        without-superscript
+          (map
+           #(str/trim %)
+           (str/split s #",|\si\s|oraz"))
+        with-superscript
+          (map handle-superscript without-superscript)
+        ]
+    with-superscript))
 
 (defn get-coords-names [is-art is-par is-ust is-pkt is-zd is-lit]
   (filter #(not= "" %)
@@ -59,21 +100,15 @@
      (if is-zd "zd." "")
      (if is-lit "lit." "")]))
 
-(defn convert-ranges-to-single-records [record]
-  [(flatten (record "art"))
-  (flatten (record "par"))
-  (flatten (record "ust"))
-  (flatten (record "pkt"))
-  (flatten (record "zd."))
-  (flatten (record "lit."))])
-
-(defn change-empty [value]
-  (if (empty? value)
+(defn zero-if-empty [item]
+  (if (empty? item)
     ["0"]
-    value))
+    item))
 
-(defn convert-empties [art-coords]
-  (map #(change-empty %) art-coords))
+(defn convert-ranges-to-single-records [record]
+  (map
+   #(zero-if-empty (record %))
+   ["art" "par" "ust" "pkt" "zd." "lit."]))
 
 (defn cartesian-product [colls]
   (if (empty? colls)
@@ -83,59 +118,88 @@
       (cons x more))))
 
 (defn remove-trailing-conjunction [s]
-  (let [
-          tokens (split-to-tokens s)
-          last-token (last tokens)
-          ]
-          (if (or (= last-token "i") (= last-token "z") (= last-token "oraz"))
-            (str/trim
-              (apply str
-                (drop-last (count last-token) s)))
-            (str/trim s))))
-
-(defn extract-coords-for-single-art [s]
-  (cartesian-product
-    (convert-empties
-      (convert-ranges-to-single-records
-        (zipmap
-          (get-coords-names
-            (substring? "art." s)
-            (substring? "§" s)
-            (substring? "ust" s)
-            (substring? "pkt" s)
-            (substring? "zd" s)
-            (substring? "lit" s))
-          (map extract-nmbs-and-ranges
-            (drop 1
-              (str/split s #"art\.|§|ust\.|ust|pkt|zd\.|zd|lit\.|lit"))))))))
-
-(defn replace-several [content & replacements]
-  (let [replacement-list (partition 2 replacements)]
-    (reduce #(apply str/replace %1 %2) content replacement-list)))
+  (str/replace s #"\si$|\sz$|\soraz$" ""))
 
 (defn extract-coords [s]
   (let [
-          trimmed (str/trim s)
-          separate-art-coords
-            (if (substring? "art." trimmed)
-              (map
-                #(apply str "art." %)
-                (drop 1 (str/split trimmed #"art\.")))
-              [trimmed])
-          separate-art-coords-trimmed
+        numbers
+          (map extract-nmbs-and-ranges
+               (drop 1
+                     (str/split
+                      s
+                      #"Art\.|art\.|§|ust\.|ust|pkt|zd\.|zd|lit\.|lit")))
+        coords-names
+          (get-coords-names
+           (or (substring? "art." s) (substring? "Art." s))
+           (substring? "§" s)
+           (substring? "ust" s)
+           (substring? "pkt" s)
+           (substring? "zd" s)
+           (substring? "lit" s))
+        full-coords
+           (convert-ranges-to-single-records
+            (zipmap coords-names numbers))
+        ]
+    (cartesian-product full-coords)))
+
+(defn append-art [s]
+  (if (matches? s #"^(A|a)rt[\S\s]*")
+    s
+    (str "art. " s)))
+
+(defn extract-art-coords-with-multiple-art-numbers [art-part other-part]
+  (let [
+        art-parts (str/split art-part #",|\si\s")
+        last-part (str/join "" [(last art-parts) other-part])
+        to-extract-coll (conj (drop-last art-parts) last-part)
+        to-extract-with-art-coll (map append-art to-extract-coll)
+        ]
+    (mapcat extract-coords to-extract-with-art-coll)))
+
+(defn extract-coords-for-single-art [s]
+  (let [
+        parts
+          (split*
+           (str/replace s #",$" "")
+           #"§|ust\.|ust|pkt|zd\.|zd|lit\.|lit")
+        art-part (first parts)
+        other-part (str/join "" (rest parts))
+        result
+          (if (or (substring? "," art-part) (substring? " i " art-part))
+            (extract-art-coords-with-multiple-art-numbers art-part other-part)
+            (extract-coords (str/join s)))
+        ]
+    result))
+
+(defn replace-several [content & replacements]
+  (let [
+        replacement-list (partition 2 replacements)
+        ]
+    (reduce
+     #(apply str/replace %1 %2)
+     content
+     replacement-list)))
+
+(defn extract-art-coords [s]
+  (let [
+        trimmed (str/trim s)
+        separate-art-coords
+          (if (substring? "art." trimmed)
             (map
-              #(str/trim %)
-              separate-art-coords)
-          without-conjunctions
-            (map
-              #(remove-trailing-conjunction %)
-              separate-art-coords-trimmed)
-          ]
-          (mapcat extract-coords-for-single-art without-conjunctions)))
+             #(apply str "art." %)
+             (drop 1
+                   (str/split trimmed #"art\.")))
+            [trimmed])
+        separate-art-coords-trimmed
+          (map str/trim separate-art-coords)
+        without-conjunctions
+          (map remove-trailing-conjunction separate-art-coords-trimmed)
+        ]
+    (mapcat extract-coords-for-single-art without-conjunctions)))
 
 (defn get-year-from-act-name [s]
   (let [
-        pattern (last (re-seq #"\d+\s+r" s))
+        pattern (last (re-seq #"\d+\s*r" s))
         ]
         (when
           (not-empty pattern)
@@ -144,7 +208,7 @@
 
 (defn get-year-of-law-act [s]
   (let [
-          pattern (re-find #"Dz\.\s+U\.\s+z?\s+\d+\s+r" s)
+          pattern (re-find #"Dz\.\s*U\.\s*z?\s*\d+\s*r" s)
           year
             (if
               (not-empty pattern)
@@ -173,10 +237,6 @@
             ]
             with-newline-at-the-end))
 
-(def not-nil? (complement nil?))
-
-(def not-empty? (complement empty?))
-
 (defn get-measure [true-positives-count elements-count]
   (if
     (= elements-count 0)
@@ -185,11 +245,6 @@
 
 (defn parse-int [s]
    (Integer. (re-find  #"\d+" s )))
-
-(defn matches? [s re]
-  (not-nil? (re-matches re s)))
-
-(def not-matches? (complement matches?))
 
 (defn dexmlise [s]
   (when (not-nil? s)
@@ -221,9 +276,7 @@
 (defn start-end-map-func [match result]
   (concat
    result
-   [(zipmap
-     [:start :end :regex]
-     [(.start match) (.end match) (.group match)])]))
+   [{:start (.start match) :end (.end match) :regex (.group match)}]))
 
 (defn get-regex-matches-with-starts-ends-maps [re s]
   (get-regex-matches re s start-end-map-func))
