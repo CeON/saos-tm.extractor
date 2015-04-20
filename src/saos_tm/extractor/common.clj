@@ -149,7 +149,7 @@
 
 (defn extract-art-coords-with-multiple-art-numbers [art-part other-part]
   (let [
-        art-parts (str/split art-part #",|\si\s")
+        art-parts (str/split art-part #",|\si\s|\soraz\s|\slub\s")
         last-part (str/join "" [(last art-parts) other-part])
         to-extract-coll (conj (drop-last art-parts) last-part)
         to-extract-with-art-coll (map append-art to-extract-coll)
@@ -165,7 +165,11 @@
         art-part (first parts)
         other-part (str/join "" (rest parts))
         result
-          (if (or (substring? "," art-part) (substring? " i " art-part))
+          (if (or
+               (substring? "," art-part)
+               (substring? " i " art-part)
+               (substring? " oraz " art-part)
+               (substring? " lub " art-part))
             (extract-art-coords-with-multiple-art-numbers art-part other-part)
             (extract-coords (str/join s)))
         ]
@@ -204,21 +208,31 @@
         (when
           (not-empty pattern)
           (apply str
-            (re-seq #"[\d]+" pattern)))))
+            (re-seq #"\d+" pattern)))))
 
 (defn get-year-of-law-act [s]
   (let [
-          pattern (re-find #"Dz\.\s*U\.\s*z?\s*\d+\s*r" s)
-          year
-            (if
-              (not-empty pattern)
-              (apply str
-                (re-seq #"[\d]+" pattern))
-              (get-year-from-act-name
-                (first
-                  (str/split s #"Dz\."))))
-            ]
-            year))
+        to-first-closing-parenthesis
+          (re-find #"[^\(]*\([^\)]*\)" s)
+;;           (first (re-find #"((?!\()[\s\S])*\(((?!\))[\s\S])*\)" s))
+        txt
+          (if (nil? to-first-closing-parenthesis)
+            s
+            to-first-closing-parenthesis)
+        pattern
+          (re-find
+           #"Dz\.\s*U\.\s*z?\s*\d+\s*r|Dz\.\s*U\.\s*\d{4}"
+           txt)
+        year
+          (if
+            (not-empty pattern)
+            (apply str
+                   (re-seq #"[\d]+" pattern))
+            (get-year-from-act-name
+             (first
+              (str/split txt #"Dz\."))))
+        ]
+    year))
 
 (defn indices [pred coll]
    (keep-indexed #(when (pred %2) %1) coll))

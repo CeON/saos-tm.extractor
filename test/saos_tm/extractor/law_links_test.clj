@@ -128,7 +128,14 @@
     (get-year-of-law-act
       (str
         " ustawy z dnia 28 grudnia 1989 r. – Prawo celne"
-        " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)")))))
+        " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)"))))
+  (is (=
+    "1991"
+    (get-year-of-law-act
+      (str
+        "ustawy z dnia 30 sierpnia 1991 r. o zakładach opieki zdrowotnej"
+       " (Dz.U. Nr 91, poz. 408 ze zm.) kjhkjh "
+       "(Dz.U. z 2001 r. Nr 65, poz. 659)")))))
 
 (defn extract-law-journal-case-one [s answer]
   (is (=

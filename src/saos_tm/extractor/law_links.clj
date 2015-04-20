@@ -104,9 +104,7 @@
    [#"(?i)^ustawy o komornikach"
     {:journalNo "133" :journalEntry "882", :journalYear "1997"}]
    [#"(?i)^ustawy o ochronie konkurencji"
-    {:journalNo "50" :journalEntry "331", :journalYear "2007"}]
-   [#"(?i)^prawa o adwokat"
-    {:journalNo "16" :journalEntry "124", :journalYear "1982"}]])
+    {:journalNo "50" :journalEntry "331", :journalYear "2007"}]])
 
 (def dictionary-for-acts-greedy
   (concat dictionary-for-acts-strict
@@ -118,7 +116,9 @@
    [#"(?i)^Prawo zamówień publicznych"
     {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
    [#"(?i)^prawa zamówień publicznych"
-    {:journalNo "19" :journalEntry "177", :journalYear "2004"}]]))
+    {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
+   [#"(?i)^prawa o adwokat"
+    {:journalNo "16" :journalEntry "124", :journalYear "1982"}]]))
 
 (defn tokens-to-string [tokens]
   (let [
@@ -449,8 +449,9 @@
 
 (defn extract-law-links [s dictionary extract-act-coords-fn]
   (let [
+        preprocessed (preprocess s)
         merged-dictionary (concat dictionary dictionary-for-acts-greedy)
-        txt (replace-several s
+        txt (replace-several preprocessed
                              #"art\." " art. "
                              #"ust\." " ust. "
                              #"§" " § "

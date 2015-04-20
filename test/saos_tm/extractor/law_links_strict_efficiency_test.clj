@@ -6,5 +6,5 @@
 (deftest law-links-strict-efficiency-test
   (links-efficiency-test
    "law" get-benchmark-records law-links-extract-strict
-   identity 0.891 0.483
+   identity 0.898 0.485
    get-csv-for-extracted-link log-results-with-signatures))

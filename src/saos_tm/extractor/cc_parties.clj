@@ -236,7 +236,7 @@
         ]
     (if (nil? match) s match)))
 
-(defn pre-process [s]
+(defn preprocess-cc-parties [s]
   (replace-several s
                    #"<p>|</p>" " "
                    (re-pattern system-newline) " "
@@ -245,7 +245,7 @@
 (defn extract-parties-cc-criminal [s]
   (let [
         sentence (extract-sentence s)
-        sentence-preprocessed (pre-process sentence)
+        sentence-preprocessed (preprocess-cc-parties sentence)
         whatever "[\\s\\S]*"
         closest-match-with-position
           (get-closest-regex-match-case-sen
@@ -354,9 +354,12 @@
              #"^ztwa:?<" "<"))
         [plaintiff defendant]
           (if match
-            [ (extract-plaintiff match-cleaned) (extract-defendant match-cleaned) ]
+            [ (extract-plaintiff match-cleaned)
+              (extract-defendant match-cleaned) ]
             [ nil nil ])
        ]
        (if (is-appeal-case? defendant match-cleaned)
-          { :plaintiff (cleanse-party defendant) :defendant (cleanse-party plaintiff)}
-          { :plaintiff (cleanse-party plaintiff) :defendant (cleanse-party defendant)})))
+          { :plaintiff (cleanse-party defendant)
+            :defendant (cleanse-party plaintiff)}
+          { :plaintiff (cleanse-party plaintiff)
+            :defendant (cleanse-party defendant)})))
