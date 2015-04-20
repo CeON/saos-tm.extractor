@@ -298,6 +298,65 @@
                 (str system-newline "\\d+" system-newline))
                "\n"))
 
+(defn get-and-print-efficiencies
+  [benchmark-items extracted-items
+   ext-files ext-files-names log-files-paths
+   log-results-fn result-to-csv-fn
+   description]
+  (let [
+        file-names (map #(first (str/split % #"\.")) ext-files-names)
+        benchmark-items-with-file-names
+          (get-items-with-file-names file-names benchmark-items)
+        extracted-items-with-file-names
+          (get-items-with-file-names file-names extracted-items)
+
+        precisions-recalls
+          (map get-precision-recall extracted-items benchmark-items)
+        precisions
+          (nils-to-zeros (get-elements :precision precisions-recalls))
+        recalls
+          (nils-to-zeros (get-elements :recall precisions-recalls))
+        average-precision (get-average precisions)
+        average-recall (get-average recalls)
+        min-precision (apply min precisions)
+        min-recall (apply min recalls)
+        overall-precision-recall
+          (get-precision-recall
+           extracted-items-with-file-names benchmark-items-with-file-names)
+        counts (map #(* (count %1) (- 1.0 %2)) extracted-items precisions)
+
+        names-precs-recalls
+          (sort
+           #(compare (nth %1 3) (nth %2 3))
+           (map
+            vector
+            ext-files-names precisions recalls counts))
+
+        _ (prn)
+        _ (prn description)
+        _ (prn)
+
+        _ (doseq [i names-precs-recalls] (println i))
+        _ (println (str \newline "av. precision: " average-precision
+                        " av. recall: " average-recall))
+        _ (println (str "min precision: " min-precision
+                        " min recall: " min-recall \newline))
+
+        separator (str/join "" (take 70 (repeat "-")))
+        _ (println (str separator \newline))
+        _ (println (str "OVERALL PRECISION: "
+                        (:precision overall-precision-recall)
+                        " RECALL: "
+                        (:recall overall-precision-recall)
+                        \newline))
+        _ (println (str separator \newline))
+
+        _
+          (log-results-fn
+           result-to-csv-fn log-files-paths extracted-items ext-files)
+        ]
+    overall-precision-recall))
+
 (defn links-efficiency-test
   [ext benchmark-records-fn extracted-records-fn txt-files-conv-fn
    precision-threshold recall-threshold result-to-csv-fn log-results-fn]
@@ -316,56 +375,82 @@
               #(str log-data-path ext "/" %)
               ext-files-names))
          _ (.mkdir (java.io.File. (str log-data-path ext)))
+
          benchmark-items (benchmark-records-fn ext-files)
          extracted-items (extracted-records-fn txt-files)
-         file-names (map #(first (str/split % #"\.")) ext-files-names)
-         benchmark-items-with-file-names
-           (get-items-with-file-names file-names benchmark-items)
-         extracted-items-with-file-names
-           (get-items-with-file-names file-names extracted-items)
-         precisions-recalls
-           (map get-precision-recall extracted-items benchmark-items)
-         precisions
-           (nils-to-zeros (get-elements :precision precisions-recalls))
-         recalls
-           (nils-to-zeros (get-elements :recall precisions-recalls))
-         average-precision (get-average precisions)
-         average-recall (get-average recalls)
-         min-precision (apply min precisions)
-         min-recall (apply min recalls)
+
          overall-precision-recall
-           (get-precision-recall
-            extracted-items-with-file-names benchmark-items-with-file-names)
-         counts (map #(* (count %1) (- 1.0 %2)) extracted-items precisions)
-
-         names-precs-recalls
-           (sort
-            #(compare (nth %1 3) (nth %2 3))
-            (map
-             vector
-             ext-files-names precisions recalls counts))
-         _ (doseq [i names-precs-recalls] (println i))
-         _ (println (str \newline "av. precision: " average-precision
-                         " av. recall: " average-recall))
-         _ (println (str "min precision: " min-precision
-                         " min recall: " min-recall \newline))
-
-         separator (str/join "" (take 70 (repeat "=")))
-         _ (println (str separator \newline))
-         _ (println (str "OVERALL PRECISION: "
-                         (:precision overall-precision-recall)
-                         " RECALL: "
-                         (:recall overall-precision-recall)
-                         \newline))
-         _ (println (str separator \newline))
-
-         _
-           (log-results-fn
-            result-to-csv-fn log-files-paths extracted-items ext-files)
+           (get-and-print-efficiencies
+            benchmark-items extracted-items
+            ext-files ext-files-names log-files-paths
+            log-results-fn result-to-csv-fn
+            "OVERALL")
          ]
      (is (> (:precision overall-precision-recall) precision-threshold))
      (is (> (:recall overall-precision-recall) recall-threshold)))))
 
+(defn extract-elems [key-name coll]
+  (set
+   (map #(key-name %) coll)))
+
+(defn law-links-efficiency-test
+  [ext benchmark-records-fn extracted-records-fn txt-files-conv-fn
+   acts-precision-threshold acts-recall-threshold
+   arts-precision-threshold arts-recall-threshold
+   overall-precision-threshold overall-recall-threshold
+   result-to-csv-fn log-results-fn]
+  (time
+   (let [
+         ext-dir (str links-test-data-path ext)
+         ext-files (get-files-from-dir ext-dir)
+         txt-files
+           (txt-files-conv-fn
+            (get-files-from-dir
+             (str links-test-data-path "txt/")))
+         ext-files-names (list-file-names ext-dir)
+         log-files-paths
+           (sort
+             (map
+              #(str log-data-path ext "/" %)
+              ext-files-names))
+         _ (.mkdir (java.io.File. (str log-data-path ext)))
+
+         benchmark-items (benchmark-records-fn ext-files)
+         benchmark-acts (map #(extract-elems :act %) benchmark-items)
+         benchmark-arts (map #(extract-elems :art %) benchmark-items)
+
+         extracted-items (extracted-records-fn txt-files)
+         extracted-acts (map #(extract-elems :act %) extracted-items)
+         extracted-arts (map #(extract-elems :art %) extracted-items)
+
+         acts-precision-recall
+           (get-and-print-efficiencies
+            benchmark-acts extracted-acts
+            ext-files ext-files-names log-files-paths
+            log-results-fn result-to-csv-fn
+            "ACTS")
+
+         arts-precision-recall
+           (get-and-print-efficiencies
+            benchmark-arts extracted-arts
+            ext-files ext-files-names log-files-paths
+            log-results-fn result-to-csv-fn
+            "ARTS")
+
+         overall-precision-recall
+           (get-and-print-efficiencies
+            benchmark-items extracted-items
+            ext-files ext-files-names log-files-paths
+            log-results-fn result-to-csv-fn
+            "ACTS+ARTS")
+         ]
+     (is (> (:precision overall-precision-recall) overall-precision-threshold))
+     (is (> (:recall overall-precision-recall) overall-recall-threshold))
+     (is (> (:precision acts-precision-recall) acts-precision-threshold))
+     (is (> (:recall acts-precision-recall) acts-recall-threshold))
+     (is (> (:precision arts-precision-recall) arts-precision-threshold))
+     (is (> (:recall arts-precision-recall) arts-recall-threshold))
+     )))
 
 (deftest dexmlise-test
   (is
