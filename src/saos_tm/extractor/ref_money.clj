@@ -171,8 +171,8 @@
                 "ERROR")
 
          ]
-      (if (= "ERROR" res)
-        [ "ERROR" []]
+      (if (= gr-amount "ERROR")
+        [ "ERROR" [] ]
         [ (+ res (bigdec (/ gr-amount 100))) [] ]))
     [res tokens]))
 
