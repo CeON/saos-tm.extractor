@@ -29,11 +29,9 @@
 (defn signature-to-csv [signature not-used]
   (apply str "\"" signature "\"" system-newline))
 
-(defn links-preprocess [coll]
-  (map remove-page-nmbs coll))
-
 (deftest judgment-links-efficiency-test
   (links-efficiency-test
    "jdg" get-benchmark-signatures judgment-links-extract
-   links-preprocess 0.991 0.993
+   links-preprocess
+   0.991 0.993
    signature-to-csv log-results-without-signatures))

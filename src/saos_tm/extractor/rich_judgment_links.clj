@@ -140,9 +140,6 @@
   (str "KIO|ZA|Zespół\\sArbitrów|Zespołu\\sArbitrów|Izba|Izby|"
        "Krajow" to-word-end "\\sIzb" to-word-end "\\sOdwoławcz" to-word-end))
 
-(def pl-big-diacritics "ĄĆĘŁŃÓŚŻŹ")
-(def pl-diacritics (str "ąćęłńóśżź" pl-big-diacritics))
-
 (def latin-big-without-roman-digits "A-HJ-UWYZ")
 
 (def cities-names

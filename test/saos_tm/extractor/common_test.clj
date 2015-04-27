@@ -298,6 +298,9 @@
                 (str system-newline "\\d+" system-newline))
                "\n"))
 
+(defn links-preprocess [coll]
+  (map remove-page-nmbs coll))
+
 (defn get-and-print-efficiencies
   [benchmark-items extracted-items
    ext-files ext-files-names log-files-paths

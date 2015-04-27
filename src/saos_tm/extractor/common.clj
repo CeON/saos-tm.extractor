@@ -214,7 +214,6 @@
   (let [
         to-first-closing-parenthesis
           (re-find #"[^\(]*\([^\)]*\)" s)
-;;           (first (re-find #"((?!\()[\s\S])*\(((?!\))[\s\S])*\)" s))
         txt
           (if (nil? to-first-closing-parenthesis)
             s
@@ -416,3 +415,6 @@
         without-double-spaces (remove-double-spaces without-newlines)
         ]
     without-double-spaces))
+
+(def pl-big-diacritics "ĄĆĘŁŃÓŚŻŹ")
+(def pl-diacritics (str "ąćęłńóśżź" pl-big-diacritics))

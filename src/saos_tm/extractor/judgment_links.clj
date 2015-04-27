@@ -195,19 +195,6 @@
           having-slash-token-candidates)))
       nil)))
 
-(defn contains-other-substring? [coll substring]
-  (> (count (filter #(substring? substring %) coll)) 1))
-
-(defn remove-partial-duplicates [signatures]
-  (remove #(contains-other-substring? signatures %) signatures))
-
-(defn contains-partial-duplicates? [coll]
-  (some
-   #{true}
-   (map
-    #(contains-other-substring? coll %)
-    coll)))
-
 (defn extract-cleansed-signatures [extract-fn s]
   (map
     #(cleanse-signature %)
@@ -287,57 +274,3 @@
         result-set (set result)
         ]
     result-set))
-
-(defn extract-signatures-from-file
-  [input-file-path output-file-path]
-  (time
-   (let [
-         input-txt (slurp input-file-path)
-         signatures (extract-all-signatures input-txt)
-         file-name
-           (last
-            (str/split
-             input-file-path
-             (re-pattern (str File/separatorChar))))
-         osp-or-sn-signatures-count
-           (count
-            (filter
-             #(is-sn-or-osp-signature? %)
-             signatures))
-         kio-signatures-count
-           (count
-            (filter
-             #(is-kio-signature? %)
-             signatures))
-         tk-signatures-count
-           (count
-            (filter
-             #(is-tk-signature? %)
-             signatures))
-         nsa-signatures-count
-           (count
-            (filter
-             #(is-nsa-signature? %)
-             signatures))
-         unknown-signatures-count
-           (count
-            (remove
-             #(or
-               (is-sn-or-osp-signature? %)
-               (is-kio-signature? %)
-               (is-tk-signature? %)
-               (is-nsa-signature? %))
-             signatures))
-         to-write
-           (concat
-            [file-name]
-            [(count signatures)]
-            [osp-or-sn-signatures-count]
-            [kio-signatures-count]
-            [tk-signatures-count]
-            [nsa-signatures-count]
-            [unknown-signatures-count]
-            signatures)
-         csv (seq-to-csv to-write)
-         ]
-     (spit output-file-path csv))))

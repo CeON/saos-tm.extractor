@@ -139,9 +139,7 @@
 
 (defn extract-law-journal-case-one [s answer]
   (is (=
-    (extract-act-coords-greedy
-      (split-to-tokens s)
-      act-dictionary)
+    (extract-act-coords-greedy (split-to-tokens s) act-dictionary [])
     answer)))
 
 (deftest extract-law-journal-case-test []
@@ -231,3 +229,11 @@
          {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "7"},
          :act
          {:journalEntry "555", :journalNo "89", :journalYear "1997"}}})))
+
+(deftest stems-match?-test
+  (is (= (stems-match? ["a" "b" "c"] ["b" "d"]) true))
+  (is (= (stems-match? ["a" "c"] ["b" "d"]) false)))
+
+(deftest tokens-match?-test
+  (is (= (tokens-match? ["prawo" "cywilne"] ["prawa" "cywilnego"]) true))
+  (is (= (tokens-match? ["prawo" "karne"] ["prawa" "cywilnego"]) false)))
