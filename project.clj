@@ -10,4 +10,5 @@
                  [commons-io/commons-io "2.4"]
                  [clojure-csv/clojure-csv "2.0.1"]
                  [cheshire "5.3.1"]
-                 [langlab "1.2.0"]])
+                 [langlab "1.2.0"]
+                 [automat "0.1.3"]])
