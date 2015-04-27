@@ -58,12 +58,15 @@
       (str/replace decimal-sep ".")
       conv-to-num))
 
+(defn is-not-blank-token? [ ^String token]
+  (not (chars/contains-whitespace-only? token)))
+
 (defn is-not-blank-token-map? [ token-map ]
   (let [
       token (:token token-map)
     ]
   (if (string? token)
-    (not (chars/contains-whitespace-only? token))
+    (is-not-blank-token? token)
     true)))
 
 (defn keywordize-numbers-in-token-map [ token-map ]
@@ -90,7 +93,7 @@
     #(hash-map :token  %1 :index %2)
     tokens (range)))
 
-(defn conv-tokens-to-maps [ tokens ]
+(defn conv-tokens-to-cleaned-maps [ tokens ]
   (->> tokens
     conv-tokens-to-plain-maps
     (map keywordize-line-breaks-in-token-map)
@@ -114,9 +117,12 @@
 
 (def a-money
   [ (a/+ :num )
+    (a/? :br)
     (a/? (apply a/or money-suffix-multiply))
+    (a/? :br)
     (apply a/or money-suffix-currency-zl)
-    (a/? [ :num (apply a/or money-suffix-currency-gr) ])])
+    (a/? :br)
+    (a/? [ :num (a/? :br) (apply a/or money-suffix-currency-gr) ])])
 
 (def a-money-c
   (a/compile
@@ -221,8 +227,11 @@
 
 (defn normalize-raw-money-refs [tokens [i j value-tokens]]
   {
-    :amount (conv-tokens-to-value value-tokens)
-    :text (conv-tokens-range-to-str tokens i j)
+    :amount
+      (conv-tokens-to-value
+        (filter is-not-blank-token? value-tokens))
+    :text
+      (conv-tokens-range-to-str tokens i j)
   })
 
 (defn extract-money-refs [s]
@@ -230,12 +239,24 @@
          tokens
            (parse-to-tokens s)
          money-refs-raw
-           (extract-raw-money-refs-from-token-maps [] (conv-tokens-to-maps tokens))
+           (extract-raw-money-refs-from-token-maps
+             []
+             (conv-tokens-to-cleaned-maps tokens))
        ]
     (into []
       (map
         (partial normalize-raw-money-refs tokens)
         money-refs-raw))))
 
+(defn ^:private select-max-money-ref [ money-refs ]
+  (let [
+        amounts
+          (filter number? (map :amount money-refs))
+        max-amount
+          (when-not (empty? amounts) (apply max amounts))
+        ]
+    (when max-amount
+      (some #(when (= max-amount (:amount %)) %) money-refs))))
 
-
+(defn extract-max-money-ref [s]
+  (select-max-money-ref (extract-money-refs s)))
