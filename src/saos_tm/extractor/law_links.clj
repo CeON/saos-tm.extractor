@@ -108,20 +108,6 @@
    [#"(?i)^ustawy o ochronie konkurencji"
     {:journalNo "50" :journalEntry "331", :journalYear "2007"}]])
 
-(def dictionary-for-acts-greedy
-  (concat dictionary-for-acts-strict
-  [[#"(?i)^pzp" {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
-   [#"(?i)^ustawy pzp"
-    {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
-   [#"(?i)^ustawy prawo zamówień publicznych"
-    {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
-   [#"(?i)^Prawo zamówień publicznych"
-    {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
-   [#"(?i)^prawa zamówień publicznych"
-    {:journalNo "19" :journalEntry "177", :journalYear "2004"}]
-   [#"(?i)^prawa o adwokat"
-    {:journalNo "16" :journalEntry "124", :journalYear "1982"}]]))
-
 (defn tokens-to-string [tokens]
   (let [
         txt (str/join " " tokens)
@@ -296,6 +282,35 @@
         ]
     ((complement empty?) matches)))
 
+(defn check-second-and-third-token
+  [first-match-index dictionary-stems dictionary-stems-count tokens]
+  (if (or
+       (= (inc first-match-index) dictionary-stems-count)
+       ((complement stems-match?)
+        (nth dictionary-stems (inc first-match-index))
+        (stem (second tokens))))
+    false
+    (or
+     (= (+ 2 first-match-index) dictionary-stems-count)
+     (stems-match?
+      (nth dictionary-stems (+ 2 first-match-index))
+      (stem (nth tokens 2))))))
+
+(defn local-implicit-dictionary-item-matches? [item tokens]
+  (let [
+        dictionary-stems (:act-name item)
+        first-match-index
+          (first
+           (indices
+            #(stems-match? % (stem (first tokens)))
+            dictionary-stems))
+        dictionary-stems-count (count dictionary-stems)
+        ]
+    (if (nil? first-match-index)
+      false
+      (check-second-and-third-token
+       first-match-index dictionary-stems dictionary-stems-count tokens))))
+
 (defn extract-with-local-explicit-dictionary [tokens dictionary]
   (let [
         tokens-lowercase (map str/lower-case tokens)
@@ -308,7 +323,25 @@
       tokens
       (:act-coords (first matches)))))
 
-(defn extract-act-coords-greedy [tokens dictionary local-dictionary]
+(defn extract-with-local-implicit-dictionary [tokens dictionary]
+  (let [
+        string (tokens-to-string tokens)
+        string-lowercase (str/lower-case string)
+        string-lowercase-cut
+          (str/replace string-lowercase #"^\s*ustaw[^\s]*\s+(o|z)?" "")
+        matches
+          (filter
+           #(local-implicit-dictionary-item-matches?
+             %
+             (split-to-tokens string-lowercase-cut))
+           dictionary)
+        ]
+    (if (nil? matches)
+      tokens
+      (:act-coords (first matches)))))
+
+(defn extract-act-coords-greedy
+  [tokens local-explicit-dictionary local-implicit-dictionary]
   (cond
    (some #{"Dz.U"} tokens)
    (extract-act-coords-journal-with-dot tokens)
@@ -317,19 +350,27 @@
    :else
    (let [
          extracted-with-local-explicit-dictionary
-           (extract-with-local-explicit-dictionary tokens local-dictionary)
+           (extract-with-local-explicit-dictionary
+            tokens local-explicit-dictionary)
          ]
      (if (map? extracted-with-local-explicit-dictionary)
        extracted-with-local-explicit-dictionary
-       (extract-dictionary-case tokens dictionary)))))
+       (let [
+             extracted-with-local-implicit-dictionary
+               (extract-with-local-implicit-dictionary
+                tokens local-implicit-dictionary)
+             ]
+         (if (map? extracted-with-local-implicit-dictionary)
+           extracted-with-local-implicit-dictionary
+           (extract-dictionary-case tokens dictionary-for-acts-strict)))))))
 
-(defn extract-act-coords-strict [tokens dictionary nothing]
+(defn extract-act-coords-strict [tokens nothing nothing]
   (let [
-        extracted-by-dictionary
+        extracted-with-dictionary
           (extract-dictionary-case tokens dictionary-for-acts-strict)
         ]
-    (if (map? extracted-by-dictionary)
-      extracted-by-dictionary
+    (if (map? extracted-with-dictionary)
+      extracted-with-dictionary
       (cond
        (some #{"Dz.U"} tokens)
        (extract-act-coords-journal-with-dot tokens)
@@ -538,8 +579,13 @@
     {:act-coords act-coords
      :act-abbreviation act-abbreviation-coll-tokens}))
 
+(def journal-regex #"[\S\s]*Dz\.\s*U[\S\s]*")
+
+(defn doesnt-contain-journal? [s]
+  ((complement matches?) s journal-regex))
+
 (defn get-local-explicit-dictionary-item [s]
-  (if (complement matches?) s #"[\S\s]*Dz\.\s*U[\S\s]*")
+  (if (doesnt-contain-journal? s)
   nil
   (let [
         parts
@@ -549,26 +595,36 @@
         ]
     (if (= (count parts) 1)
       nil
-      (extract-dictionary-item parts))))
+      (extract-dictionary-item parts)))))
 
-(defn get-local-explicit-dictionary [tokens inter-coords-ranges]
+(defn get-local-implicit-dictionary-item [s]
+  (if (doesnt-contain-journal? s)
+  nil
   (let [
-        act-coords-txts
-          (map
-           #(build-coords-text % tokens)
-           inter-coords-ranges)
-        local-explicit-dictionary-with-nils
-          (map get-local-explicit-dictionary-item act-coords-txts)
-        local-explicit-dictionary
-          (remove nil? local-explicit-dictionary-with-nils)
+        act-name
+          (map stem
+               (split-to-tokens
+                (first
+                 (str/split (str/lower-case s) #"\(|\["))))
+        act-coords
+          (extract-year-journal-nmb-and-entry (split-to-tokens s))
         ]
-    local-explicit-dictionary))
+    {:act-coords act-coords
+     :act-name   act-name})))
+
+(defn get-local-dictionary [act-coords-txts get-dictionary-item-fn]
+  (let [
+        local-dictionary-with-nils
+          (map get-dictionary-item-fn act-coords-txts)
+        local-dictionary
+          (remove nil? local-dictionary-with-nils)
+        ]
+    local-dictionary))
 
 (defn extract-law-links
   [s dictionary extract-act-coords-fn get-local-dictionary-fn]
   (let [
         preprocessed (preprocess s)
-        merged-dictionary (concat dictionary dictionary-for-acts-greedy)
         txt (replace-several preprocessed
                              #"art\." " art. "
                              #"ust\." " ust. "
@@ -587,14 +643,19 @@
           (map
            extract-art-coords
            (map #(build-coords-text % tokens) correct-art-coords-ranges))
-        local-explicit-dictionary
-          (get-local-explicit-dictionary tokens inter-coords-ranges)
+        act-coords-txts
+          (map
+           #(build-coords-text % tokens)
+           inter-coords-ranges)
         act-coords
           (handle-w-zwiazku-z
            (map
             #(extract-act-coords-fn
-              % merged-dictionary
-              (get-local-dictionary-fn tokens inter-coords-ranges))
+              %
+              (get-local-dictionary-fn
+               act-coords-txts get-local-explicit-dictionary-item)
+              (get-local-dictionary-fn
+               act-coords-txts get-local-implicit-dictionary-item))
             (map
              #(get-range tokens (first %) (second %))
              inter-coords-ranges)))
@@ -619,7 +680,7 @@
 
 (defn extract-law-links-greedy [s dictionary]
   (extract-law-links
-   s dictionary extract-act-coords-greedy get-local-explicit-dictionary))
+   s dictionary extract-act-coords-greedy get-local-dictionary))
 
 (defn return-nil [arg1 arg2])
 

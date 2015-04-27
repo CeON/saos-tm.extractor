@@ -7,7 +7,7 @@
   (law-links-efficiency-test
    "law" get-benchmark-records law-links-extract-strict
    links-preprocess
-   0.84 0.834
+   0.844 0.838
    0.962 0.513
    0.901 0.483
    get-csv-for-extracted-link log-results-with-signatures))
