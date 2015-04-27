@@ -59,27 +59,43 @@
       conv-to-num))
 
 (defn is-not-blank-token-map? [ token-map ]
-  (not (chars/contains-whitespace-only? (:token token-map))))
+  (let [
+      token (:token token-map)
+    ]
+  (if (string? token)
+    (not (chars/contains-whitespace-only? token))
+    true)))
 
-(defn keywordize-token-map [ token-map ]
+(defn keywordize-numbers-in-token-map [ token-map ]
   (let [
          token (:token token-map)
        ]
-    (if (is-number-token? token)
+    (if (and (string? token) (is-number-token? token))
       (assoc token-map :token :num :value token)
+      token-map)))
+
+(defn keywordize-line-breaks-in-token-map [ token-map ]
+  (let [
+        token ^String (:token token-map)
+        ]
+    (if (.contains token "\n")
+      (assoc token-map :token :br :value token)
       token-map)))
 
 (defn parse-to-tokens [s]
   (parsers/split* s #"(?m)\s+"))
 
+(defn conv-tokens-to-plain-maps [ tokens ]
+  (map
+    #(hash-map :token  %1 :index %2)
+    tokens (range)))
+
 (defn conv-tokens-to-maps [ tokens ]
-  (as->
-    tokens ---
-    (map
-      #(hash-map :token  %1 :index %2)
-      --- (range))
-    (filter is-not-blank-token-map? ---)
-    (map keywordize-token-map ---)))
+  (->> tokens
+    conv-tokens-to-plain-maps
+    (map keywordize-line-breaks-in-token-map)
+    (filter is-not-blank-token-map?)
+    (map keywordize-numbers-in-token-map)))
 
 (def money-suffix-multiply-kilo
   ["tys." "tys"])
