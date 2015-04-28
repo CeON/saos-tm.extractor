@@ -55,7 +55,10 @@
         (extract-money-refs
           "Zasądzono odszkodowanie 23 000 \ntys.\n zł\n 27 \n gr.")
         [{ :amount 23000000.27M :text "23 000 \ntys.\n zł\n 27 \n gr."}]))
-
+  (is (=
+         (extract-money-refs
+           "Zasądzono odszkodowanie 23 000 \ntys.\n zł,\n najwyższe w Polsce.")
+         [{ :amount 23000000.00M :text "23 000 \ntys.\n zł,"}]))
   ;; Linebreaks in numbers are not allowed.
   ;; Linebreak is treated as "hard" separator.
   (is (=

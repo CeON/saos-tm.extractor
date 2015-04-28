@@ -121,8 +121,7 @@
     (a/? (apply a/or money-suffix-multiply))
     (a/? :br)
     (apply a/or money-suffix-currency-zl)
-    (a/? :br)
-    (a/? [ :num (a/? :br) (apply a/or money-suffix-currency-gr) ])])
+    (a/? [ (a/? :br) :num (a/? :br) (apply a/or money-suffix-currency-gr) ])])
 
 (def a-money-c
   (a/compile
