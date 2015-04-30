@@ -66,15 +66,12 @@
     files))
 
 (defn law-links-extract [txt-files extract-law-links-fn]
-  (let [
-        dictionary (load-dictionary (io/resource "act_dictionary.txt"))
-        ]
-    (map
-      #(into #{} (:extracted-links (extract-law-links-fn % dictionary)))
-      txt-files)))
+  (map
+   #(into #{} (:extracted-links (extract-law-links-fn %)))
+   txt-files))
 
 (defn law-links-extract-greedy [txt-files]
-  (law-links-extract txt-files extract-law-links-greedy))
+  (law-links-extract txt-files #(extract-law-links-greedy % true true true)))
 
 (defn law-links-extract-strict [txt-files]
   (law-links-extract txt-files extract-law-links-strict))
@@ -452,8 +449,7 @@
      (is (> (:precision acts-precision-recall) acts-precision-threshold))
      (is (> (:recall acts-precision-recall) acts-recall-threshold))
      (is (> (:precision arts-precision-recall) arts-precision-threshold))
-     (is (> (:recall arts-precision-recall) arts-recall-threshold))
-     )))
+     (is (> (:recall arts-precision-recall) arts-recall-threshold)))))
 
 (deftest dexmlise-test
   (is
