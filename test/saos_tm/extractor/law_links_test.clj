@@ -8,9 +8,6 @@
             [saos-tm.extractor.common-test :refer :all]
             [langlab.core.parsers :refer [lg-split-tokens-bi]]))
 
-(def ^:private act-dictionary
-  (load-dictionary (io/resource "act_dictionary.txt")))
-
 (deftest article-ranges-test []
   (let [
         tokens
@@ -61,7 +58,7 @@
   (:extracted-links (extract-law-links-greedy
     (str "art. 3 ust. 1-6, art. 4 pkt 5 i 6, art. 57 ustawy z dnia 19 grudnia"
          " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
-    act-dictionary))))
+                     true true true))))
   (is(=
     '({:act {:journalEntry "1656", :journalNo "237", :journalYear "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "4-6", :par "0", :art "3"}}
@@ -75,7 +72,7 @@
     (str "art. 3 ust. 4-6 i art. 4 pkt 6 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656) "
          "z art. 2 i art. 32 ust. 1 Konstytucji")
-    act-dictionary)))
+                     true true true)))
   (is(=
     '({:act {:journalEntry "1656", :journalNo "237", :journalYear "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}
@@ -84,14 +81,13 @@
   (:extracted-links (extract-law-links-greedy
     (str "art. 3 w związku z art. 5 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
-    act-dictionary)))
+                     true true true)))
   (is(=
     '({:act {:journalNo "16" :journalEntry "93", :journalYear "1964"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}))
   (:extracted-links (extract-law-links-greedy
     (str "art. 3 kc według ustawy o trybunale oprócz kodeksu wykroczeń ")
-    act-dictionary)))
-  )
+                     true true true))))
 
 (deftest tokens-to-string-test []
   (let [
@@ -139,8 +135,9 @@
 
 (defn extract-law-journal-case-one [s answer]
   (is (=
-    (extract-act-coords-greedy (split-to-tokens s) act-dictionary [])
-    answer)))
+       (extract-act-coords-greedy
+        (split-to-tokens s) nil nil false false false)
+       answer)))
 
 (deftest extract-law-journal-case-test []
   (extract-law-journal-case-one
@@ -185,8 +182,7 @@
        (set
        (:extracted-links
         (extract-law-links-strict
-         "art. 8, 45, 91 ust. 1 Konstytucji"
-         act-dictionary)))
+         "art. 8, 45, 91 ust. 1 Konstytucji")))
        #{{:art
          {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "8"},
          :act
@@ -203,8 +199,7 @@
        (set
         (:extracted-links
         (extract-law-links-strict
-         "art. 2 § 2, art. 4, 5 § 2, art. 92 i 410 oraz art. 7 k.p.k."
-         act-dictionary)))
+         "art. 2 § 2, art. 4, 5 § 2, art. 92 i 410 oraz art. 7 k.p.k.")))
        #{{:art
          {:lit "0", :zd "0", :pkt "0", :ust "0", :par "2", :art "2"},
          :act
@@ -237,3 +232,13 @@
 (deftest tokens-match?-test
   (is (= (tokens-match? ["prawo" "cywilne"] ["prawa" "cywilnego"]) true))
   (is (= (tokens-match? ["prawo" "karne"] ["prawa" "cywilnego"]) false)))
+
+(deftest extract-year-journal-nmb-and-entry-test
+  (is (= (extract-year-journal-nmb-and-entry
+          (split-to-tokens
+           (str "ustawy z dnia 21 sierpnia 1997 r. o ograniczeniu"
+            " prowadzenia działalności gospodarczej przez osoby"
+            " pełniące funkcje publiczne (jednolity tekst: "
+            "Dz.U. z 2006 r. Nr 216, poz. 1584 ze zm.)")))
+         {:journalEntry "1584", :journalNo "216", :journalYear "2006"})))
+

@@ -133,35 +133,40 @@
     (if (.find m)
       (.start m))))
 
-(defn extract-dictionary-case [tokens dictionary]
-  (let [
-        txt (tokens-to-string tokens)
-        matched-indices
-          (indices
-           #(not-nil? (re-find % txt))
-           (map #(first %) dictionary))
-        positions
-          (if-not (= 1 (count matched-indices))
-            (map
-             #(regex-first-position (first (nth dictionary %)) txt)
-             matched-indices))
-        min-i
-          (if-not (= 1 (count matched-indices))
-            (if-not (empty? positions)
-              (min-index positions)))
-        first-index
-          (if-not (nil? min-i)
-            (nth matched-indices min-i)
-            (first matched-indices))
-        dictionary-record
-          (if (not-nil? first-index)
-            (second
-             (nth dictionary first-index))
-            nil)
-        ]
-    (if (nil? dictionary-record)
-      tokens
-      dictionary-record)))
+(defn are-coords? [item]
+  (map? item))
+
+(defn extract-with-global-dictionary [tokens-or-coords dictionary]
+  (if (are-coords? tokens-or-coords)
+    tokens-or-coords
+    (let [
+          txt (tokens-to-string tokens-or-coords)
+          matched-indices
+            (indices
+             #(not-nil? (re-find % txt))
+             (map #(first %) dictionary))
+          positions
+            (if-not (= 1 (count matched-indices))
+              (map
+               #(regex-first-position (first (nth dictionary %)) txt)
+               matched-indices))
+          min-i
+            (if-not (= 1 (count matched-indices))
+              (if-not (empty? positions)
+                (min-index positions)))
+          first-index
+            (if-not (nil? min-i)
+              (nth matched-indices min-i)
+              (first matched-indices))
+          dictionary-record
+            (if (not-nil? first-index)
+              (second
+               (nth dictionary first-index))
+              nil)
+          ]
+      (if (nil? dictionary-record)
+        tokens-or-coords
+        dictionary-record))))
 
 (defn act-without-entry? [tokens index-of-last-nmb]
   (cond
@@ -311,37 +316,43 @@
       (check-second-and-third-token
        first-match-index dictionary-stems dictionary-stems-count tokens))))
 
-(defn extract-with-local-explicit-dictionary [tokens dictionary]
-  (let [
-        tokens-lowercase (map str/lower-case tokens)
-        matches
-          (filter
-           #(local-explicit-dictionary-item-matches? % tokens-lowercase)
-           dictionary)
-        ]
-    (if (nil? matches)
-      tokens
-      (:act-coords (first matches)))))
+(defn extract-with-local-explicit-dictionary [tokens-or-coords dictionary]
+  (if (are-coords? tokens-or-coords)
+    tokens-or-coords
+    (let [
+          tokens-lowercase (map str/lower-case tokens-or-coords)
+          matches
+            (filter
+             #(local-explicit-dictionary-item-matches? % tokens-lowercase)
+             dictionary)
+          ]
+      (if (empty? matches)
+        tokens-or-coords
+        (:act-coords (first matches))))))
 
-(defn extract-with-local-implicit-dictionary [tokens dictionary]
-  (let [
-        string (tokens-to-string tokens)
-        string-lowercase (str/lower-case string)
-        string-lowercase-cut
-          (str/replace string-lowercase #"^\s*ustaw[^\s]*\s+(o|z)?" "")
-        matches
-          (filter
-           #(local-implicit-dictionary-item-matches?
-             %
-             (split-to-tokens string-lowercase-cut))
-           dictionary)
-        ]
-    (if (nil? matches)
-      tokens
-      (:act-coords (first matches)))))
+(defn extract-with-local-implicit-dictionary [tokens-or-coords dictionary]
+  (if (are-coords? tokens-or-coords)
+    tokens-or-coords
+    (let [
+          string (tokens-to-string tokens-or-coords)
+          string-lowercase (str/lower-case string)
+          string-lowercase-cut
+            (str/replace string-lowercase #"^\s*ustaw[^\s]*\s+(o|z)?" "")
+          matches
+            (filter
+             #(local-implicit-dictionary-item-matches?
+               %
+               (split-to-tokens string-lowercase-cut))
+             dictionary)
+          ]
+      (if (empty? matches)
+        tokens-or-coords
+        (:act-coords (first matches))))))
 
 (defn extract-act-coords-greedy
-  [tokens local-explicit-dictionary local-implicit-dictionary]
+  [tokens local-explicit-dictionary local-implicit-dictionary
+   use-local-explicit-dictionary use-local-implicit-dictionary
+   use-global-dictionary]
   (cond
    (some #{"Dz.U"} tokens)
    (extract-act-coords-journal-with-dot tokens)
@@ -349,25 +360,31 @@
    (extract-year-journal-nmb-and-entry tokens)
    :else
    (let [
-         extracted-with-local-explicit-dictionary
-           (extract-with-local-explicit-dictionary
-            tokens local-explicit-dictionary)
+         extract-with-local-explicit
+           (if use-local-explicit-dictionary
+             #(extract-with-local-explicit-dictionary
+               % local-explicit-dictionary)
+             identity)
+         extract-with-local-implicit
+           (if use-local-implicit-dictionary
+             #(extract-with-local-implicit-dictionary
+               % local-implicit-dictionary)
+             identity)
+         extract-with-global
+           (if use-global-dictionary
+             #(extract-with-global-dictionary
+               % dictionary-for-acts-strict)
+             identity)
          ]
-     (if (map? extracted-with-local-explicit-dictionary)
-       extracted-with-local-explicit-dictionary
-       (let [
-             extracted-with-local-implicit-dictionary
-               (extract-with-local-implicit-dictionary
-                tokens local-implicit-dictionary)
-             ]
-         (if (map? extracted-with-local-implicit-dictionary)
-           extracted-with-local-implicit-dictionary
-           (extract-dictionary-case tokens dictionary-for-acts-strict)))))))
+     (-> tokens
+         extract-with-local-explicit
+         extract-with-local-implicit
+         extract-with-global))))
 
-(defn extract-act-coords-strict [tokens nothing nothing]
+(defn extract-act-coords-strict [tokens _ _ _ _ _]
   (let [
         extracted-with-dictionary
-          (extract-dictionary-case tokens dictionary-for-acts-strict)
+          (extract-with-global-dictionary tokens dictionary-for-acts-strict)
         ]
     (if (map? extracted-with-dictionary)
       extracted-with-dictionary
@@ -598,7 +615,8 @@
       (extract-dictionary-item parts)))))
 
 (defn get-local-implicit-dictionary-item [s]
-  (if (doesnt-contain-journal? s)
+  (if (doesnt-contain-journal?
+       (first (str/split s #"w\s*zw\.\s*z|w\s*związku\s*z")))
   nil
   (let [
         act-name
@@ -621,9 +639,22 @@
         ]
     local-dictionary))
 
+(defn return-nil [arg1 arg2])
+
 (defn extract-law-links
-  [s dictionary extract-act-coords-fn get-local-dictionary-fn]
+  [s extract-act-coords-fn
+   use-local-explicit-dictionary use-local-implicit-dictionary
+   use-global-dictionary]
   (let [
+        extract-local-explicit-dicitionary-fn
+          (if use-local-explicit-dictionary
+            #(get-local-dictionary % get-local-explicit-dictionary-item)
+            #(return-nil % nil))
+        extract-local-implicit-dicitionary-fn
+          (if use-local-implicit-dictionary
+            #(get-local-dictionary % get-local-implicit-dictionary-item)
+            #(return-nil % nil))
+
         preprocessed (preprocess s)
         txt (replace-several preprocessed
                              #"art\." " art. "
@@ -652,10 +683,11 @@
            (map
             #(extract-act-coords-fn
               %
-              (get-local-dictionary-fn
-               act-coords-txts get-local-explicit-dictionary-item)
-              (get-local-dictionary-fn
-               act-coords-txts get-local-implicit-dictionary-item))
+              (extract-local-explicit-dicitionary-fn act-coords-txts)
+              (extract-local-implicit-dicitionary-fn act-coords-txts)
+              use-local-explicit-dictionary
+              use-local-implicit-dictionary
+              use-global-dictionary)
             (map
              #(get-range tokens (first %) (second %))
              inter-coords-ranges)))
@@ -678,12 +710,17 @@
        (into []
              (mapcat get-data-for-orphaned-link orphaned-links))])))
 
-(defn extract-law-links-greedy [s dictionary]
+(defn extract-law-links-greedy
+  [s
+   use-local-explicit-dictionary use-local-implicit-dictionary
+   use-global-dictionary]
   (extract-law-links
-   s dictionary extract-act-coords-greedy get-local-dictionary))
+   s extract-act-coords-greedy
+   use-local-explicit-dictionary
+   use-local-implicit-dictionary
+   use-global-dictionary))
 
-(defn return-nil [arg1 arg2])
-
-(defn extract-law-links-strict [s dictionary]
+(defn extract-law-links-strict [s]
   (extract-law-links
-   s dictionary extract-act-coords-strict return-nil))
+   s extract-act-coords-strict
+   false false false))
