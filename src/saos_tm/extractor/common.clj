@@ -142,7 +142,7 @@
         ]
     (cartesian-product full-coords)))
 
-(defn append-art [s]
+(defn insert-art [s]
   (if (matches? s #"^(A|a)rt[\S\s]*")
     s
     (str "art. " s)))
@@ -152,7 +152,7 @@
         art-parts (str/split art-part #",|\si\s|\soraz\s|\slub\s")
         last-part (str/join "" [(last art-parts) other-part])
         to-extract-coll (conj (drop-last art-parts) last-part)
-        to-extract-with-art-coll (map append-art to-extract-coll)
+        to-extract-with-art-coll (map insert-art to-extract-coll)
         ]
     (mapcat extract-coords to-extract-with-art-coll)))
 
@@ -171,7 +171,7 @@
                (substring? " oraz " art-part)
                (substring? " lub " art-part))
             (extract-art-coords-with-multiple-art-numbers art-part other-part)
-            (extract-coords (str/join s)))
+            (extract-coords (str/replace s #";$" "")))
         ]
     result))
 

@@ -133,11 +133,14 @@
        " (Dz.U. Nr 91, poz. 408 ze zm.) kjhkjh "
        "(Dz.U. z 2001 r. Nr 65, poz. 659)")))))
 
+;; (defn extract-law-journal-case-one [s answer]
+;;   (is (= (extract-law-links-greedy s true true true) answer)))
+
 (defn extract-law-journal-case-one [s answer]
   (is (=
-       (extract-act-coords-greedy
-        (split-to-tokens s) nil nil false false false)
-       answer)))
+    (extract-act-coords-greedy
+     (split-to-tokens s) [] [] dictionary-for-acts-strict)
+    answer)))
 
 (deftest extract-law-journal-case-test []
   (extract-law-journal-case-one

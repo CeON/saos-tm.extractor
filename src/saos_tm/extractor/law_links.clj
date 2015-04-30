@@ -4,6 +4,7 @@
    [clojure.string :as str]
    [clojure.set :refer :all]
    [langlab.core.parsers :refer [lg-split-tokens-bi]]
+   [langlab.core.parsers :refer :all]
    [langlab.core.multi-stemmers :refer :all])
   (:import java.io.File)
   (:gen-class))
@@ -12,7 +13,7 @@
   (some #(= elm %) seq))
 
 (def coords-tokens
-  ["." "," "Art" "art" "ust" "par" "§" "pkt" "zd" "i"
+  ["." "," ";" "Art" "art" "ust" "par" "§" "pkt" "zd" "i"
    "oraz" "lub" "z" "-" "a" "także" "lit"])
 
 (defn not-coords-nmb? [s]
@@ -73,39 +74,46 @@
         (nth tokens-and-coords i)))))
 
 (def dictionary-for-acts-strict
-  [[#"(?i)^Konstytucji"
+  [[#"(?i)^\s*Konstytucji"
     {:journalNo "78" :journalEntry "483", :journalYear "1997"}]
-   [#"(?i)^k\.?c" {:journalNo "16" :journalEntry "93", :journalYear "1964"}]
-   [#"(?i)^k\.?h" {:journalNo "57" :journalEntry "502", :journalYear "1934"}]
-   [#"(?i)^k\.?k\.?s"
+   [#"(?i)^\s*k\.?c" {:journalNo "16" :journalEntry "93", :journalYear "1964"}]
+   [#"(?i)^\s*k\.?h"
+    {:journalNo "57" :journalEntry "502", :journalYear "1934"}]
+   [#"(?i)^\s*k\.?k\.?s"
     {:journalNo "83" :journalEntry "930", :journalYear "1999"}]
-   [#"(?i)^k\.?k\.?w"
+   [#"(?i)^\s*k\.?k\.?w"
     {:journalNo "90" :journalEntry "557", :journalYear "1997"}]
-   [#"(?i)^k\.?k" {:journalNo "88" :journalEntry "553", :journalYear "1997"}]
-   [#"(?i)^k\.?m" {:journalNo "138" :journalEntry "1545", :journalYear "2001"}]
-   [#"(?i)^k\.?p\.?a"
+   [#"(?i)^\s*k\.?k"
+    {:journalNo "88" :journalEntry "553", :journalYear "1997"}]
+   [#"(?i)^\s*k\.?m"
+    {:journalNo "138" :journalEntry "1545", :journalYear "2001"}]
+   [#"(?i)^\s*k\.?p\.?a"
     {:journalNo "30" :journalEntry "168", :journalYear "1960"}]
-   [#"(?i)^k\.?p\.?c"
+   [#"(?i)^\s*k\.?p\.?c"
     {:journalNo "43" :journalEntry "296", :journalYear "1964"}]
-   [#"(?i)^k\.?p\.?k"
+   [#"(?i)^\s*k\.?p\.?k"
     {:journalNo "89" :journalEntry "555", :journalYear "1997"}]
-   [#"(?i)^k\.?p\.?w"
+   [#"(?i)^\s*k\.?p\.?w"
     {:journalNo "106" :journalEntry "1148", :journalYear "2001"}]
-   [#"(?i)^k\.?p" {:journalNo "24" :journalEntry "141", :journalYear "1974"}]
-   [#"(?i)^k\.?r\.?o" {:journalNo "9" :journalEntry "59", :journalYear "2001"}]
-   [#"(?i)^k\.?s\.?h"
+   [#"(?i)^\s*k\.?p"
+    {:journalNo "24" :journalEntry "141", :journalYear "1974"}]
+   [#"(?i)^\s*k\.?r\.?o"
+    {:journalNo "9" :journalEntry "59", :journalYear "2001"}]
+   [#"(?i)^\s*k\.?s\.?h"
     {:journalNo "94" :journalEntry "1037", :journalYear "2000"}]
-   [#"(?i)^k\.?w" {:journalNo "12" :journalEntry "114", :journalYear "1971"}]
-   [#"(?i)^k\.?z" {:journalNo "82" :journalEntry "598", :journalYear "1933"}]
-   [#"(?i)^u\.?s\.?p"
+   [#"(?i)^\s*k\.?w"
+    {:journalNo "12" :journalEntry "114", :journalYear "1971"}]
+   [#"(?i)^\s*k\.?z"
+    {:journalNo "82" :journalEntry "598", :journalYear "1933"}]
+   [#"(?i)^\s*u\.?s\.?p"
     {:journalNo "98" :journalEntry "1070", :journalYear "2001"}]
-   [#"(?i)^ustawy o TK"
+   [#"(?i)^\s*ustawy o TK"
     {:journalNo "102" :journalEntry "643", :journalYear "1997"}]
-   [#"(?i)^ustawy o Trybunale Konstytucyjnym"
+   [#"(?i)^\s*ustawy o Trybunale Konstytucyjnym"
     {:journalNo "102" :journalEntry "643", :journalYear "1997"}]
-   [#"(?i)^ustawy o komornikach"
+   [#"(?i)^\s*ustawy o komornikach"
     {:journalNo "133" :journalEntry "882", :journalYear "1997"}]
-   [#"(?i)^ustawy o ochronie konkurencji"
+   [#"(?i)^\s*ustawy o ochronie konkurencji"
     {:journalNo "50" :journalEntry "331", :journalYear "2007"}]])
 
 (defn tokens-to-string [tokens]
@@ -253,12 +261,12 @@
 
 (defn extract-act-coords-journal-with-dot [tokens]
   (let [
-         index-of-journal-nmb-token (.indexOf tokens "Dz.U")
-         token-after-journal-nmb (nth tokens (inc index-of-journal-nmb-token))
-         ]
-     (if (matches? token-after-journal-nmb #"(\.\d+)+")
-       (extract-journal-nmb-and-entry-dots token-after-journal-nmb)
-       (extract-year-journal-nmb-and-entry tokens))))
+        index-of-journal-nmb-token (.indexOf tokens "Dz.U")
+        token-after-journal-nmb (nth tokens (inc index-of-journal-nmb-token))
+        ]
+    (if (matches? token-after-journal-nmb #"(\.\d+)+")
+      (extract-journal-nmb-and-entry-dots token-after-journal-nmb)
+      (extract-year-journal-nmb-and-entry tokens))))
 
 (defn stem [s]
   (let [
@@ -289,17 +297,24 @@
 
 (defn check-second-and-third-token
   [first-match-index dictionary-stems dictionary-stems-count tokens]
-  (if (or
-       (= (inc first-match-index) dictionary-stems-count)
-       ((complement stems-match?)
-        (nth dictionary-stems (inc first-match-index))
-        (stem (second tokens))))
-    false
+  (cond
     (or
-     (= (+ 2 first-match-index) dictionary-stems-count)
+     (= (count tokens) 1)
+     (= (count tokens) 2)
+     (= (inc first-match-index) dictionary-stems-count))
+    false
+   :else
+    (if
+      (or
+     (stems-match?
+      (nth dictionary-stems (inc first-match-index))
+      (stem (second tokens))))
+     (or
+      (= (+ 2 first-match-index) dictionary-stems-count)
      (stems-match?
       (nth dictionary-stems (+ 2 first-match-index))
-      (stem (nth tokens 2))))))
+      (stem (nth tokens 2))))
+      false)))
 
 (defn local-implicit-dictionary-item-matches? [item tokens]
   (let [
@@ -349,39 +364,70 @@
         tokens-or-coords
         (:act-coords (first matches))))))
 
+(defn cut-tokens-for-act-coords [tokens]
+  (let [
+        string (tokens-to-string tokens)
+        string-cut
+          (first
+           (str/split
+            string
+            (re-pattern
+             (str "w\\s*zw\\.\\s*z|"
+                  "w\\s*związku\\s*z|"
+                  "[^e]\\s(U|u)staw|"
+                  "\\s(R|r)ozporządz|"
+                  "\\)"))))
+        tokens-cut (split-to-tokens string-cut)
+        ]
+    (if (empty? tokens-cut)
+      tokens
+      tokens-cut)))
+
+(defn extract-with-dictionaries
+  [local-explicit-dictionary local-implicit-dictionary global-dictionary
+   tokens-cut]
+  (let [
+        extract-with-local-explicit
+          (if ((complement empty?) local-explicit-dictionary)
+            #(extract-with-local-explicit-dictionary
+              % local-explicit-dictionary)
+            identity)
+        extract-with-local-implicit
+          (if ((complement empty?) local-implicit-dictionary)
+            #(extract-with-local-implicit-dictionary
+              % local-implicit-dictionary)
+            identity)
+        extract-with-global
+          (if ((complement empty?) global-dictionary)
+            #(extract-with-global-dictionary
+              % global-dictionary)
+            identity)
+        ]
+    (-> tokens-cut
+        extract-with-global
+        extract-with-local-explicit
+        extract-with-local-implicit)))
+
 (defn extract-act-coords-greedy
   [tokens local-explicit-dictionary local-implicit-dictionary
-   use-local-explicit-dictionary use-local-implicit-dictionary
-   use-global-dictionary]
-  (cond
-   (some #{"Dz.U"} tokens)
-   (extract-act-coords-journal-with-dot tokens)
-   (some #{"Dz"} tokens)
-   (extract-year-journal-nmb-and-entry tokens)
-   :else
-   (let [
-         extract-with-local-explicit
-           (if use-local-explicit-dictionary
-             #(extract-with-local-explicit-dictionary
-               % local-explicit-dictionary)
-             identity)
-         extract-with-local-implicit
-           (if use-local-implicit-dictionary
-             #(extract-with-local-implicit-dictionary
-               % local-implicit-dictionary)
-             identity)
-         extract-with-global
-           (if use-global-dictionary
-             #(extract-with-global-dictionary
-               % dictionary-for-acts-strict)
-             identity)
-         ]
-     (-> tokens
-         extract-with-local-explicit
-         extract-with-local-implicit
-         extract-with-global))))
+   global-dictionary]
+  (if
+    (w-zwiazku-z? tokens)
+    tokens
+    (let [
+          tokens-cut (cut-tokens-for-act-coords tokens)
+          ]
+      (cond
+       (some #{"Dz.U"} tokens-cut)
+       (extract-act-coords-journal-with-dot tokens)
+       (and (some #{"Dz"} tokens-cut) (some #{"U"} tokens-cut))
+       (extract-year-journal-nmb-and-entry tokens)
+       :else
+       (extract-with-dictionaries
+        local-explicit-dictionary local-implicit-dictionary global-dictionary
+        tokens-cut)))))
 
-(defn extract-act-coords-strict [tokens _ _ _ _ _]
+(defn extract-act-coords-strict [tokens & _]
   (let [
         extracted-with-dictionary
           (extract-with-global-dictionary tokens dictionary-for-acts-strict)
@@ -391,7 +437,7 @@
       (cond
        (some #{"Dz.U"} tokens)
        (extract-act-coords-journal-with-dot tokens)
-       (some #{"Dz"} tokens)
+       (and (some #{"Dz"} tokens) (some #{"U"} tokens))
        (extract-year-journal-nmb-and-entry tokens)))))
 
 (defn coord-to-text [token]
@@ -480,35 +526,6 @@
        [txt %])
      (:art orphaned-link))))
 
-(defn load-dictionary [path]
-  (let [
-        txt (slurp path)
-        lines (str/split txt (re-pattern system-newline))
-        trimmed-lines
-          (map
-           #(subs % 1 (dec (count %)))
-           lines)
-        pattern
-          (re-pattern
-           (str "\"" csv-delimiter "\""))
-        records
-          (map
-           #(str/split % pattern)
-           trimmed-lines)
-        dictionary
-          (map
-           #(vector
-             (re-pattern
-              (replace-several (str "(?i)" (nth % 0))
-                               #"\(" "\\("
-                               #"\)" "\\)"))
-             {:journalYear (nth % 1)
-              :journalNo (nth % 2)
-              :journalEntry (nth % 3)})
-           records)
-        ]
-    dictionary))
-
 (defn cleanse [s]
   (when (not-nil? s)
     (replace-several s
@@ -591,12 +608,13 @@
         act-abbreviation-coll-tokens
           (map split-to-tokens act-abbreviation-coll-lowercase)
         act-coords
-          (extract-year-journal-nmb-and-entry (split-to-tokens (first parts)))
+          (extract-year-journal-nmb-and-entry
+           (split-to-tokens (first parts)))
         ]
     {:act-coords act-coords
      :act-abbreviation act-abbreviation-coll-tokens}))
 
-(def journal-regex #"[\S\s]*Dz\.\s*U[\S\s]*")
+(def journal-regex #"[\S\s]*Dz\.\s*U\.[\S\s]*")
 
 (defn doesnt-contain-journal? [s]
   ((complement matches?) s journal-regex))
@@ -639,7 +657,22 @@
         ]
     local-dictionary))
 
-(defn return-nil [arg1 arg2])
+(defn return-empty-coll [arg1 arg2] [])
+
+(defn get-range-from-first-law-act-to-first-article-token
+  [tokens first-art-index]
+  (if (nil? first-art-index)
+    nil
+    (let [
+          first-law-act-token-index
+            (first
+             (indices
+             #(or (= "ustawa" %) (= "ustawy" %))
+             (get-range tokens 0 first-art-index)))
+          ]
+      (if (nil? first-law-act-token-index)
+        nil
+        [first-law-act-token-index first-art-index]))))
 
 (defn extract-law-links
   [s extract-act-coords-fn
@@ -649,11 +682,15 @@
         extract-local-explicit-dicitionary-fn
           (if use-local-explicit-dictionary
             #(get-local-dictionary % get-local-explicit-dictionary-item)
-            #(return-nil % nil))
+            #(return-empty-coll % nil))
         extract-local-implicit-dicitionary-fn
           (if use-local-implicit-dictionary
             #(get-local-dictionary % get-local-implicit-dictionary-item)
-            #(return-nil % nil))
+            #(return-empty-coll % nil))
+        global-dictionary
+          (if use-global-dictionary
+            dictionary-for-acts-strict
+            [])
 
         preprocessed (preprocess s)
         txt (replace-several preprocessed
@@ -674,20 +711,34 @@
           (map
            extract-art-coords
            (map #(build-coords-text % tokens) correct-art-coords-ranges))
+        range-from-first-law-act-to-first-article-token
+          (get-range-from-first-law-act-to-first-article-token
+           tokens
+           (first (first inter-coords-ranges)))
         act-coords-txts
           (map
            #(build-coords-text % tokens)
-           inter-coords-ranges)
+           (if (nil? range-from-first-law-act-to-first-article-token)
+             inter-coords-ranges
+             (concat [range-from-first-law-act-to-first-article-token]
+                     inter-coords-ranges)))
+        acts-txts (str/split s #"\sustaw(a|y)\s")
+
+;;         _ (prn "=========== EXP")
+;;         _ (prn (extract-local-explicit-dicitionary-fn act-coords-txts))
+;;         _ (prn "=========== IMP")
+;;         _ (prn (extract-local-implicit-dicitionary-fn act-coords-txts))
+;;         _ (prn "===========")
+
         act-coords
           (handle-w-zwiazku-z
            (map
             #(extract-act-coords-fn
               %
-              (extract-local-explicit-dicitionary-fn act-coords-txts)
+              (extract-local-explicit-dicitionary-fn
+               (concat act-coords-txts acts-txts))
               (extract-local-implicit-dicitionary-fn act-coords-txts)
-              use-local-explicit-dictionary
-              use-local-implicit-dictionary
-              use-global-dictionary)
+              global-dictionary)
             (map
              #(get-range tokens (first %) (second %))
              inter-coords-ranges)))
