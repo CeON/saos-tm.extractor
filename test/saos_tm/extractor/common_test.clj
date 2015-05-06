@@ -6,6 +6,7 @@
    [clojure.set :refer :all]
    [clojure-csv.core :refer :all]
    [saos-tm.extractor.law-links :refer :all]
+   [saos-tm.extractor.judgment-links :refer :all]
    [saos-tm.extractor.common :refer :all]))
 
 (defn get-file-paths [dir re]
@@ -69,6 +70,14 @@
   (map
    #(into #{} (:extracted-links (extract-law-links-fn %)))
    txt-files))
+
+(defn judgment-links-extract [txt-files]
+  (map
+    #(extract-all-signatures %)
+    txt-files))
+
+(defn signature-to-csv [signature not-used]
+  (apply str "\"" signature "\"" system-newline))
 
 (defn law-links-extract-greedy [txt-files]
   (law-links-extract txt-files #(extract-law-links-greedy % true true true)))
@@ -211,6 +220,19 @@
 (defn get-signature [file-data]
   (map first
        (parse-csv file-data)))
+
+(defn get-benchmark-signatures [ext-files]
+  (let [
+        jdg-signatures
+          (map
+           #(get-signature %)
+           ext-files)
+        benchmark-signatures
+          (map
+           #(set (remove empty? (map str/trim %)))
+           jdg-signatures)
+        ]
+    benchmark-signatures))
 
 (defn list-file-paths [dir]
   (sort
@@ -358,7 +380,8 @@
     overall-precision-recall))
 
 (defn links-efficiency-test
-  [ext benchmark-records-fn extracted-records-fn txt-files-conv-fn
+  [txt-dir-name ext
+   benchmark-records-fn extracted-records-fn txt-files-conv-fn
    precision-threshold recall-threshold result-to-csv-fn log-results-fn]
   (time
    (let [
@@ -367,7 +390,7 @@
          txt-files
            (txt-files-conv-fn
             (get-files-from-dir
-             (str links-test-data-path "txt/")))
+             (str links-test-data-path txt-dir-name "/")))
          ext-files-names (list-file-names ext-dir)
          log-files-paths
            (sort
@@ -394,7 +417,8 @@
    (map #(key-name %) coll)))
 
 (defn law-links-efficiency-test
-  [ext benchmark-records-fn extracted-records-fn txt-files-conv-fn
+  [txt-dir-name ext
+   benchmark-records-fn extracted-records-fn txt-files-conv-fn
    acts-precision-threshold acts-recall-threshold
    arts-precision-threshold arts-recall-threshold
    overall-precision-threshold overall-recall-threshold
@@ -406,7 +430,7 @@
          txt-files
            (txt-files-conv-fn
             (get-files-from-dir
-             (str links-test-data-path "txt/")))
+             (str links-test-data-path txt-dir-name "/")))
          ext-files-names (list-file-names ext-dir)
          log-files-paths
            (sort

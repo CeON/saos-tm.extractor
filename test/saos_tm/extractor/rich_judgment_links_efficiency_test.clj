@@ -87,6 +87,6 @@
 
 (deftest rich-judgment-links-efficiency-test
   (links-efficiency-test
-   "rich-jdg" get-benchmark-rich-judgment-links
+   "txt1" "rich-jdg" get-benchmark-rich-judgment-links
    rich-judgment-links-extract rich-links-preprocess
    0.929 0.931 conv-coll-to-csv-line log-results-without-signatures))
