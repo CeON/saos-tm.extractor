@@ -1,13 +1,13 @@
-(ns saos-tm.extractor.law-links-greedy-efficiency-test
+(ns saos-tm.extractor.law-links-greedy-efficiency-test-2
   (:require [clojure.test :refer :all]
             [saos-tm.extractor.common-test :refer :all]
             [saos-tm.extractor.common :refer :all]))
 
-(deftest law-links-greedy-efficiency-test
+(deftest law-links-greedy-efficiency-test-2
   (law-links-efficiency-test
-   "law" get-benchmark-records law-links-extract-greedy
+   "txt2" "law2" get-benchmark-records law-links-extract-greedy
    links-preprocess
-   0.893 0.846
-   0.959 0.802
-   0.925 0.779
+   0.839 0.831
+   0.872 0.563
+   0.754 0.497
    get-csv-for-extracted-link log-results-with-signatures))
