@@ -775,3 +775,61 @@
   (extract-law-links
    s extract-act-coords-strict
    false false false))
+
+; Utilities for the art part of extracted link.
+; Includes converting to string and sorting.
+
+(defn ^:private append-prefix-and-suffix-if-suffix-not-zero
+  [ ^String s ^String prefix  ^String suffix ]
+  (if-not (= suffix "0")
+    (str s " " prefix " " suffix)
+    s))
+
+(defn convert-art-to-str [ art ]
+  (-> ""
+    (append-prefix-and-suffix-if-suffix-not-zero "art." (:art art))
+    (append-prefix-and-suffix-if-suffix-not-zero "§" (:par art))
+    (append-prefix-and-suffix-if-suffix-not-zero "ust." (:ust art))
+    (append-prefix-and-suffix-if-suffix-not-zero "pkt" (:pkt art))
+    (append-prefix-and-suffix-if-suffix-not-zero "zd." (:zd art))
+    (append-prefix-and-suffix-if-suffix-not-zero "lit." (:lit art))
+    (str/trim)))
+
+(defn ^:private chain-compare [ res s1 s2 ]
+  (if (= 0 res)
+    (compare s1 s2)
+    res))
+
+(defn ^:private append-zero-if-no-letter [s]
+  (if-not (re-find #"[a-z]$" s)
+    (str s "0")
+    s))
+
+(defn add-spaces ^:private [n s]
+  (str (apply str (repeat n " ")) s))
+
+(defn ^:private conv-number-letter-for-comparison [ s1 s2 ]
+  (let [
+        s1* (append-zero-if-no-letter s1)
+        s2* (append-zero-if-no-letter s2)
+        n (- (.length s1*) (.length s2*))
+        ]
+    [ (add-spaces (- n) s1*) (add-spaces n s2*)]))
+
+(defn ^:private chain-compare-number-letter [ res s1 s2 ]
+  (if (= 0 res)
+    (apply compare
+      (conv-number-letter-for-comparison s1 s2))
+    res))
+
+(defn ^:private compare-arts [ art1 art2 ]
+  (-> 0
+    (chain-compare-number-letter (:art art1) (:art art2))
+    (chain-compare-number-letter (:par art1) (:par art2))
+    (chain-compare-number-letter (:ust art1) (:ust art2))
+    (chain-compare-number-letter (:pkt art1) (:pkt art2))
+    (chain-compare (:lit art1) (:lit art2))
+    (chain-compare (:zd art1) (:zd art2))))
+
+(defn sort-arts [ arts ]
+  (sort-by identity compare-arts arts))

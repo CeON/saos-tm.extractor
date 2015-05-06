@@ -245,3 +245,76 @@
             "Dz.U. z 2006 r. Nr 216, poz. 1584 ze zm.)")))
          {:journalEntry "1584", :journalNo "216", :journalYear "2006"})))
 
+; Test of utilities for the art part of law link (sorting and string conversion)
+
+(deftest convert-art-to-str-test
+  (is (=
+        (convert-art-to-str
+          {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"})
+        "art. 1 § 2 ust. 3 pkt 4 zd. 5 lit. a"))
+  (is (=
+        (convert-art-to-str
+          {:art "1" :par "0" :ust "0" :pkt "3" :zd "4" :lit "a"})
+        "art. 1 pkt 3 zd. 4 lit. a"))
+  (is (=
+        (convert-art-to-str
+          {:art "0" :par "0" :ust "0" :pkt "0" :zd "0" :lit "0"})
+        "")))
+
+(deftest chain-compare-number-letter-test
+  (let [
+        compare-f
+        #'saos-tm.extractor.law-links/chain-compare-number-letter
+        ]
+    (is (< (compare-f 0 "1" "2") 0))
+    (is (< (compare-f 0 "1" "11") 0))
+    (is (< (compare-f 0 "1" "1a") 0))
+    (is (< (compare-f 0 "1a" "1b") 0))
+    (is (> (compare-f 0 "2" "1") 0))
+    (is (> (compare-f 0 "11" "1") 0))
+    (is (> (compare-f 0 "1c" "1") 0))
+    (is (> (compare-f 0 "1c" "1b") 0))
+    (is (= (compare-f 0 "11" "11") 0))
+    (is (= (compare-f 0 "1c" "1c") 0))))
+
+(deftest compare-art-sort-test
+  (is (=
+        (sort-arts
+          [ {:art "3" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "2" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+        [ {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "2" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "3" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}]))
+  (is (=
+        (sort-arts
+          [ {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+        [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}]))
+  (is (=
+        (sort-arts
+          [ {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "1" :par "12" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+        [ {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "1" :par "12" :ust "3" :pkt "4" :zd "5" :lit "a"}]))
+  (is (=
+        (sort-arts
+          [ {:art "1" :par "4a" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+        [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "1" :par "4a" :ust "3" :pkt "4" :zd "5" :lit "a"}]))
+  (is (=
+        (sort-arts
+          [ {:art "1" :par "3a" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+           {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+        [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+         {:art "1" :par "3a" :ust "3" :pkt "4" :zd "5" :lit "a"}])))
