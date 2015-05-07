@@ -86,7 +86,7 @@
       token-map)))
 
 (defn parse-to-tokens [s]
-  (parsers/split* s #"(?m)\s+"))
+  (parsers/split* s #"(?m)\s+|\(|\)"))
 
 (defn conv-tokens-to-plain-maps [ tokens ]
   (map

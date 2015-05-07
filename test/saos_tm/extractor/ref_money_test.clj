@@ -66,6 +66,21 @@
         "Zasądzono odszkodowanie 23\n100 \ntys.\n zł\n 27 \n gr.")
         [{ :amount 100000.27M :text "100 \ntys.\n zł\n 27 \n gr."}])))
 
+(deftest extract-money-refs-parentheses-test
+  ;; Parenthesis check
+  (is (=
+        (extract-money-refs
+          "Zasądzona kwota jest wysoka (2 tys. zł)")
+        [{ :amount 2000M :text "2 tys. zł"}]))
+  (is (=
+        (extract-money-refs
+          "Zasądzona kwota jest wysoka ( 2 tys. zł )")
+        [{ :amount 2000M :text "2 tys. zł"}]))
+  (is (=
+        (extract-money-refs
+          "Zasądzona kwota jest wysoka 2 000 ( zł )")
+        [])))
+
 (deftest extract-max-ref-money-basic-test
   (is (=
         (extract-max-money-ref "")
