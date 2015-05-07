@@ -110,10 +110,10 @@
   (concat money-suffix-multiply-kilo money-suffix-multiply-mega))
 
 (def money-suffix-currency-zl
-  ["zł." "zł," "zł"])
+  ["zł." "zł," "zł" "zł;" "zł?"])
 
 (def money-suffix-currency-gr
-  ["gr." "gr," "gr"])
+  ["gr." "gr," "gr" "gr;" "gr?"])
 
 (def a-money
   [ (a/+ :num )
@@ -224,13 +224,17 @@
         (conj results (conv-automat-state-to-raw-money-refs state tokens))
         (drop n tokens)))))
 
+(defn clean-final-punct [s]
+  (str/replace s #"[,.;?]$" ""))
+
 (defn normalize-raw-money-refs [tokens [i j value-tokens]]
   {
     :amount
       (conv-tokens-to-value
         (filter is-not-blank-token? value-tokens))
     :text
-      (conv-tokens-range-to-str tokens i j)
+      (clean-final-punct
+        (conv-tokens-range-to-str tokens i j))
   })
 
 (defn extract-money-refs [s]
