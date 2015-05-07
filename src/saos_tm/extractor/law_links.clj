@@ -776,7 +776,7 @@
    s extract-act-coords-strict
    false false false))
 
-; Utilities for the art part of extracted link.
+; Utilities for the art part of the extracted link.
 ; Includes converting to string and sorting.
 
 (defn ^:private append-prefix-and-suffix-if-suffix-not-zero
@@ -833,3 +833,13 @@
 
 (defn sort-arts [ arts ]
   (sort-by identity compare-arts arts))
+
+; Utilities for the act part of the extracted link.
+
+(defn conv-act-to-str [ act ]
+  (str
+    "Dz. U. z "
+    (:journalYear act) " r."
+    (when-let [ no (:journalNo act)]
+      (str " Nr " no))
+    " poz. " (:journalEntry act)))

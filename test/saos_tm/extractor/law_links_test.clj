@@ -318,3 +318,12 @@
         [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "3a" :ust "3" :pkt "4" :zd "5" :lit "a"}])))
+
+(deftest conv-act-to-str-test
+  (is (=
+    (conv-act-to-str {:journalNo 23 :journalEntry 17 :journalYear 1996})
+    "Dz. U. z 1996 r. Nr 23 poz. 17"))
+  (is (=
+        (conv-act-to-str {:journalEntry 1732 :journalYear 2015})
+        "Dz. U. z 2015 r. poz. 1732")))
+
