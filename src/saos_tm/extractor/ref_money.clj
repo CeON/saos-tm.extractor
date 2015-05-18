@@ -1,4 +1,5 @@
 (ns saos-tm.extractor.ref-money
+  "Module contains tools for extraction of money sums from raw text."
   (:require
     [clojure.string :as str ]
     [langlab.core.parsers :as parsers]
@@ -146,8 +147,12 @@
              (apply str number-tokens)
            number
              (cond
-               (is-number? number-str "," ".") (parse-number number-str "," ".")
-               (is-number? number-str "." ",") (parse-number number-str "." ",")
+               (is-number? number-str "," ".")
+                 (parse-number number-str "," ".")
+               ; Uncomment this if you wish to try US combination of decimal
+               ; and decadade separator if PL version fails
+               ;(is-number? number-str "." ",")
+               ;  (parse-number number-str "." ",")
                :else  "ERROR")
          ]
       (if (number? number)
@@ -237,7 +242,26 @@
         (conv-tokens-range-to-str tokens i j))
   })
 
-(defn extract-money-refs [s]
+(defn extract-money-refs
+  "Extracts all references to money sums in Polish zł, present in
+   a given string `s`.
+
+   The result is a list of maps, each containing two keys:
+
+   * `:amount` with bigdec number representing the amount of money or \"ERROR\"
+   * `:text` with the precise text referencing detected money sum
+
+   Example:
+
+   `(extract-money-refs \"To kosztowało 123 zł 33 gr\")`
+
+   `[ {:amount 123.33M :text \"123 zł 33\" gr]`
+
+   It works by finding `zł` token and parsing preceeding number.
+   If supports prefixes `tys.` and `mln` as well as suffix `gr`.
+   If the algorithm has difficulties with parsing given text it returns
+   \"ERROR\" in the `:amount` field."
+  [s]
   (let [
          tokens
            (parse-to-tokens s)
@@ -261,5 +285,13 @@
     (when max-amount
       (some #(when (= max-amount (:amount %)) %) money-refs))))
 
-(defn extract-max-money-ref [s]
+(defn extract-max-money-ref
+  "Extract maximu sum of money in Polish zł from a given string `s`.
+   The result format is analagous to `extract-money-refs`, it contains
+   a map with two keys:
+
+   * `:amount` with bigdec number representing the amount of money
+   * `:text` with the precise text referencing detected money sum
+  "
+  [s]
   (select-max-money-ref (extract-money-refs s)))

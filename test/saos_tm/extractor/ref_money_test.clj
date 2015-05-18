@@ -39,8 +39,14 @@
         (extract-money-refs "Kwota 3.570.00 zł.")
         [{:amount "ERROR" :text "3.570.00 zł"}]))
   (is (=
+        (extract-money-refs "0,5 tys. zł")
+        [{:amount 500M :text "0,5 tys. zł"}]))
+
+  ;; US convention for decimal/decade separator is not supported
+  (is (=
         (extract-money-refs "0.5 tys. zł")
-        [{:amount 500M :text "0.5 tys. zł"}]))
+        [{:amount "ERROR" :text "0.5 tys. zł"}]))
+
   (is (=
         (extract-money-refs "Zasądzono wysokie odszkodowanie 23 000 tys. zł.")
         [{ :amount 23000000M :text "23 000 tys. zł"} ])))
@@ -85,6 +91,7 @@
         (extract-money-refs
           "Zasądzona kwota jest wysoka 2 000 ( zł )")
         [])))
+
 
 (deftest extract-max-ref-money-basic-test
   (is (=
