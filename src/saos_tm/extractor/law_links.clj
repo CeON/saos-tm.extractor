@@ -270,7 +270,9 @@
 
 (defn stem [s]
   (let [
-        morfologik-stems (pl-multi-stem-morfologik s)
+        morfologik-stems
+          (when-not (nil? s)
+            (pl-multi-stem-morfologik s))
         ]
     (if (empty? morfologik-stems)
       [s]
@@ -377,7 +379,10 @@
                   "[^e]\\s(U|u)staw|"
                   "\\s(R|r)ozporządz|"
                   "\\)"))))
-        tokens-cut (split-to-tokens string-cut)
+        tokens-cut
+          (if (empty? string-cut)
+            nil
+            (split-to-tokens string-cut))
         ]
     (if (empty? tokens-cut)
       tokens
