@@ -8,5 +8,5 @@
   (links-efficiency-test
    "txt2" "jdg2" get-benchmark-signatures judgment-links-extract
    links-preprocess
-   0.99 0.927
+   0.99 0.945
    signature-to-csv log-results-without-signatures))

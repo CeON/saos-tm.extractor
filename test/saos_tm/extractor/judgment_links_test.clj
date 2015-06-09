@@ -43,9 +43,6 @@
   (is (= (extract-signatures-kio-uzp-zo
         "UZP/ZO/0-1094/99, UZP/ZO/0-725/05")
       #{"UZP/ZO/0-1094/99" "UZP/ZO/0-725/05"}))
-  (is (= (extract-signatures-sn
-        "BSA I-4110-4/13, BSA I-4110-5/07")
-      #{"BSA I-4110-4/13" "BSA I-4110-5/07"}))
   (is (= (extract-signatures-nsa
         "I SA/Bd 680/14, IV SA/Gl 543/14, I SA/Rz 794/11")
       #{"I SA/Bd 680/14" "IV SA/Gl 543/14" "I SA/Rz 794/11"})))
@@ -82,22 +79,4 @@
         (str "1990/1991"))
       #{}))
   )
-
-(deftest is-signature-test
-  (is (is-osp-signature? "IV CKN 178/01"))
-  (is (is-osp-signature? "I.2.C.24/97"))
-  (is (= (is-osp-signature? "sdjhg sjdhf") false))
-  (is (is-kio-signature? "KIO/UZP/102/08"))
-  (is (is-kio-signature? "KIO/UZP/102/08"))
-  (is (is-kio-signature? "KIO/UZP/102/08"))
-  (is (is-kio-signature? "KIO/UZP 102/08"))
-  (is (is-kio-signature? "UZP/ZO/0-1094/99"))
-  (is (= (is-kio-signature? "sdjhg sjdhf") false))
-  (is (is-tk-signature? "Tw 09/87"))
-  (is (= (is-tk-signature? "I Tw 09/87") false))
-  (is (= (is-tk-signature? "sdkjh / askjdh") false))
-  (is (is-sn-signature? "BSA I-4110-4/13"))
-  (is (is-nsa-signature? "I SA/Bd 680/14"))
-  (is (is-sn-or-osp-signature? "IV CKN 178/01"))
-  (is (is-sn-or-osp-signature? "BSA I-4110-4/13")))
 

@@ -2,7 +2,6 @@
   (:require
    [saos-tm.extractor.common :refer :all]
    [clojure.string :as str]
-   [langlab.core.parsers :refer [lg-split-tokens-bi]]
    [clojure.set :refer :all])
   (:import java.io.File)
   (:gen-class))
@@ -15,9 +14,6 @@
 
 (def osp-regex
   #"[IVXLCDM]+[\s\.]+[0-9]*[\s\.]*[a-zA-Z]*-?[a-zA-Z]*[\s\.]+\d+/\d+")
-
-(defn is-osp-signature? [s]
-  (matches? s osp-regex))
 
 (defn extract-signatures-osp [s]
   (extract osp-regex s identity))
@@ -42,22 +38,10 @@
 (defn extract-signatures-kio-uzp-zo [s]
   (extract kio-uzp-zo-regex s identity))
 
-(defn is-kio-signature? [s]
-  (or
-   (matches? s kio-regex)
-   (matches? s kio-uzp-regex)
-   (matches? s kio-uzp-no-space-regex)
-   (matches? s kio-uzp-zo-regex)))
-
 (def tk-regex-str
-  "(Co|K|Kp|U|P|SK|Kpt|Pp|M|S|Tp|Ts|Tw|Twn|Kw|Uw|W)\\.?\\s+\\d+/\\d+")
+  "(Co|K|Kp|U|P|SK|Kpt|Pp|M|S|T|Tp|Ts|Tw|Twn|Kw|Uw|W)\\.?\\s+\\d+/\\d+")
 (def tk-extraction-regex
   (re-pattern (str "[^a-zA-Z0-9]" tk-regex-str)))
-(def tk-check-regex
-  (re-pattern  tk-regex-str))
-
-(defn is-tk-signature? [s]
-  (matches? s tk-check-regex))
 
 (defn choose-string [element]
   (if (string? element)
@@ -81,26 +65,15 @@
     (extract-tk s))))
 
 (def sn-regex
-  #"[a-zA-Z]+\s+[IVXLCDM]+-\d+-\d+/\d+|SNO\s+\d+/\d+")
-
-(defn is-sn-signature? [s]
-  (matches? s sn-regex))
+  #"SNO\s+\d+/\d+")
 
 (defn extract-signatures-sn [s]
   (extract sn-regex s identity))
-
-(defn is-sn-or-osp-signature? [s]
-  (or
-   (matches? s sn-regex)
-   (matches? s osp-regex)))
 
 (def nsa-regex
   (re-pattern (str "[IVXLCDM]+\\s+[a-zA-Z]+/[a-zA-Z]+\\s+\\d+/\\d+|"
                    "[a-zA-Z]+/[a-zA-Z]+\\s+\\d+/\\d+|"
                    "OPS+\\s+\\d+/\\d+")))
-
-(defn is-nsa-signature? [s]
-  (matches? s nsa-regex))
 
 (defn extract-signatures-nsa [s]
   (extract nsa-regex s identity))
@@ -124,6 +97,8 @@
                       #"(?i)najwyż[^\s]*" " "
                       #"/[a-ż]+" " "
                       #"[a-ż]+:" " "
+
+                      #"ogłosz[^\s]*" " "
 
                       #"\s+" " "
                       #"^[a-ż]+\s" " "
