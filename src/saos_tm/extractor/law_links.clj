@@ -219,7 +219,6 @@
       (extract-when-entry-present parts))))
 
 (defn extract-year-journal-nmb-and-entry [tokens]
-;;   (prn tokens)
   (let [
         year (get-year-of-law-act (tokens-to-string tokens))
         journal-nmb-and-entry (extract-journal-nmb-and-entry tokens)
@@ -729,13 +728,6 @@
              (concat [range-from-first-law-act-to-first-article-token]
                      inter-coords-ranges)))
         acts-txts (str/split s #"\sustaw(a|y)\s")
-
-;;         _ (prn "=========== EXP")
-;;         _ (prn (extract-local-explicit-dicitionary-fn act-coords-txts))
-;;         _ (prn "=========== IMP")
-;;         _ (prn (extract-local-implicit-dicitionary-fn act-coords-txts))
-;;         _ (prn "===========")
-
         act-coords
           (handle-w-zwiazku-z
            (map

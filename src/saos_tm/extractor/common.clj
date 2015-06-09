@@ -214,7 +214,6 @@
   (let [
         to-first-closing-parenthesis
           (re-find #"[^\(]*\([^\)]*\)" s)
-;;         _ (prn to-first-closing-parenthesis)
         before-law-change-indication
           (if (nil? to-first-closing-parenthesis)
             s
@@ -235,9 +234,6 @@
             (get-year-from-act-name
              (first
               (str/split txt #"Dz\."))))
-;;         _ (prn "===============")
-;;         _ (prn year)
-;;         _ (prn "===============")
         ]
     year))
 
