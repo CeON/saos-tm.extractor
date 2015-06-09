@@ -219,6 +219,7 @@
       (extract-when-entry-present parts))))
 
 (defn extract-year-journal-nmb-and-entry [tokens]
+;;   (prn tokens)
   (let [
         year (get-year-of-law-act (tokens-to-string tokens))
         journal-nmb-and-entry (extract-journal-nmb-and-entry tokens)

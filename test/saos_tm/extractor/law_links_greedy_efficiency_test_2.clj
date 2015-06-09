@@ -7,7 +7,7 @@
   (law-links-efficiency-test
    "txt2" "law2" get-benchmark-records law-links-extract-greedy
    links-preprocess
-   0.839 0.831
+   0.847 0.831
    0.872 0.563
-   0.754 0.497
+   0.781 0.512
    get-csv-for-extracted-link log-results-with-signatures))

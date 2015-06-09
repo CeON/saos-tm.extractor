@@ -214,10 +214,15 @@
   (let [
         to-first-closing-parenthesis
           (re-find #"[^\(]*\([^\)]*\)" s)
-        txt
+;;         _ (prn to-first-closing-parenthesis)
+        before-law-change-indication
           (if (nil? to-first-closing-parenthesis)
             s
-            to-first-closing-parenthesis)
+            (first (str/split to-first-closing-parenthesis #"zm\." )))
+        txt
+          (if (nil? before-law-change-indication)
+            s
+            before-law-change-indication)
         pattern
           (re-find
            #"Dz\.\s*U\.\s*z?\s*\d+\s*r|Dz\.\s*U\.\s*\d{4}"
@@ -230,6 +235,9 @@
             (get-year-from-act-name
              (first
               (str/split txt #"Dz\."))))
+;;         _ (prn "===============")
+;;         _ (prn year)
+;;         _ (prn "===============")
         ]
     year))
 
