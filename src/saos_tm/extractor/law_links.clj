@@ -704,7 +704,8 @@
                              #"§" " § "
                              #"pkt" " pkt "
                              #"zd\." " zd. "
-                             #"poz\." " poz. ")
+                             #"poz\." " poz. "
+                             #"art\.?\s*art\.?" " art. ")
         tokens (split-to-tokens txt)
         interfering-art-coords-ranges
           (get-interfering-art-coords-ranges tokens)

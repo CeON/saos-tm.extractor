@@ -482,3 +482,16 @@
      (str "<xBx> Szpitalowi <xAnon>(...)</xAnon> w <xAnon>Ł.</xAnon>"
           ", <xAnon>L. P. (1)</xAnon> i <xAnon>A. G. (1)</xAnon></xBx>"))
     " Szpitalowi (...) w Ł., L. P. (1) i A. G. (1)")))
+
+(deftest cleanse-commas-test
+  (is (=
+       (cleanse-commas "art , 24 ust 2 pkt 4")
+       "art 24 ust 2 pkt 4"))
+  (is (=
+       (cleanse-commas "art 24 ust , 2 pkt 3 i 4")
+       "art 24 ust 2 pkt 3 i 4")))
+
+(deftest extract-art-coords-test
+  (is (=
+       (extract-art-coords "art 90")
+       '(("90" "0" "0" "0" "0" "0")))))

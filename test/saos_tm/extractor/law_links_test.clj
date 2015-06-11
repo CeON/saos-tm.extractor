@@ -326,4 +326,3 @@
   (is (=
         (conv-act-to-str {:journalEntry 1732 :journalYear 2015})
         "Dz. U. z 2015 r. poz. 1732")))
-

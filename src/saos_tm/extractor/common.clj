@@ -50,6 +50,63 @@
 (defn substring? [sub st]
   (not= (str/.indexOf st sub) -1))
 
+(defn remove-hard-spaces [s]
+  (str/replace s #"\u00A0" " "))
+
+(defn remove-double-spaces [s]
+  (str/replace s #"\s+" " "))
+
+(defn remove-newlines [s]
+  (let [
+        without-double-slash-newlines (str/replace s #"\\n" " ")
+        without-newlines
+          (str/replace without-double-slash-newlines
+                       (re-pattern system-newline) " ")
+        ]
+    without-newlines))
+
+(defn unsplit-words-across-lines [s]
+  (let [
+        without-split-numbers
+          (str/replace s
+                       (re-pattern (str "(?<=\\d-)" system-newline "(?=\\d)"))
+                       "")
+        ]
+  (str/replace without-split-numbers (str "-" system-newline) "")))
+
+(defn remove-all-html-tags [s]
+  (str/replace s
+               (re-pattern (str "<[^>]*>")) " "))
+
+(defn remove-html-tags-other-than [tag-name s]
+  (str/replace s
+               (re-pattern (str "<(?!/?" tag-name ")((?!>)[\\s\\S])*>")) " "))
+
+(defn remove-html-tags-other-than-span [s]
+  (remove-html-tags-other-than "span" s))
+
+(defn conv-html-to-text [ ^String s]
+  (let [
+          istream (IOUtils/toInputStream s "UTF-8");
+          parser (HtmlParser.)
+          context (ParseContext.)
+          metadata (Metadata.)
+          handler (BodyContentHandler. (.length s))
+          ]
+      (.set context Parser parser)
+      (.parse parser istream handler metadata context)
+      (.toString  handler)))
+
+(defn preprocess [s]
+  (let [
+        without-split-words (unsplit-words-across-lines s)
+        without-tags (remove-all-html-tags without-split-words)
+        without-hard-spaces (remove-hard-spaces without-tags)
+        without-newlines (remove-newlines without-hard-spaces)
+        without-double-spaces (remove-double-spaces without-newlines)
+        ]
+    without-double-spaces))
+
 ;; for debugging
 (defn print-if-contains [s element]
   (if (substring? element s) (prn s)))
@@ -127,10 +184,10 @@
                (drop 1
                      (str/split
                       s
-                      #"Art\.|art\.|§|ust\.|ust|pkt|zd\.|zd|lit\.|lit")))
+                      #"Art\.?|art\.?|§|ust\.?|ust|pkt|zd\.?|lit\.?")))
         coords-names
           (get-coords-names
-           (or (substring? "art." s) (substring? "Art." s))
+           (or (substring? "art" s) (substring? "Art" s))
            (substring? "§" s)
            (substring? "ust" s)
            (substring? "pkt" s)
@@ -184,15 +241,26 @@
      content
      replacement-list)))
 
+(defn cleanse-commas [s]
+  (remove-double-spaces
+   (replace-several s
+                    #"art\.?\s*," "art "
+                    #"par\.?\s*," "par "
+                    #"ust\.?\s*," "ust "
+                    #"pkt\.?\s*," "pkt "
+                    #"zd\.?\s*," "zd "
+                    #"lit\.?\s*," "lit ")))
+
 (defn extract-art-coords [s]
   (let [
-        trimmed (str/trim s)
+        cleansed-commas (cleanse-commas s)
+        trimmed (str/trim cleansed-commas)
         separate-art-coords
-          (if (substring? "art." trimmed)
+          (if (substring? "art" trimmed)
             (map
              #(apply str "art." %)
              (drop 1
-                   (str/split trimmed #"art\.")))
+                   (str/split trimmed #"art\.?")))
             [trimmed])
         separate-art-coords-trimmed
           (map str/trim separate-art-coords)
@@ -352,29 +420,6 @@
   (get-regex-match-case-sen
    get-closest-regex-match regexes following-text-regex s))
 
-(defn remove-all-html-tags [s]
-  (str/replace s
-               (re-pattern (str "<[^>]*>")) " "))
-
-(defn remove-html-tags-other-than [tag-name s]
-  (str/replace s
-               (re-pattern (str "<(?!/?" tag-name ")((?!>)[\\s\\S])*>")) " "))
-
-(defn remove-html-tags-other-than-span [s]
-  (remove-html-tags-other-than "span" s))
-
-(defn conv-html-to-text [ ^String s]
-  (let [
-          istream (IOUtils/toInputStream s "UTF-8");
-          parser (HtmlParser.)
-          context (ParseContext.)
-          metadata (Metadata.)
-          handler (BodyContentHandler. (.length s))
-          ]
-      (.set context Parser parser)
-      (.parse parser istream handler metadata context)
-      (.toString  handler)))
-
 (defn get-csv-for-extracted-link [link signature]
   (let [
         art (:art link)
@@ -385,40 +430,6 @@
            "\"" (:journalYear act) "\"" csv-delimiter
            "\"" (:journalNo act) "\"" csv-delimiter
            "\"" (:journalEntry act) "\"" system-newline)))
-
-(defn remove-hard-spaces [s]
-  (str/replace s #"\u00A0" " "))
-
-(defn remove-double-spaces [s]
-  (str/replace s #"\s+" " "))
-
-(defn remove-newlines [s]
-  (let [
-        without-double-slash-newlines (str/replace s #"\\n" " ")
-        without-newlines
-          (str/replace without-double-slash-newlines
-                       (re-pattern system-newline) " ")
-        ]
-    without-newlines))
-
-(defn unsplit-words-across-lines [s]
-  (let [
-        without-split-numbers
-          (str/replace s
-                       (re-pattern (str "(?<=\\d-)" system-newline "(?=\\d)"))
-                       "")
-        ]
-  (str/replace without-split-numbers (str "-" system-newline) "")))
-
-(defn preprocess [s]
-  (let [
-        without-split-words (unsplit-words-across-lines s)
-        without-tags (remove-all-html-tags without-split-words)
-        without-hard-spaces (remove-hard-spaces without-tags)
-        without-newlines (remove-newlines without-hard-spaces)
-        without-double-spaces (remove-double-spaces without-newlines)
-        ]
-    without-double-spaces))
 
 (def pl-big-diacritics "ĄĆĘŁŃÓŚŻŹ")
 (def pl-diacritics (str "ąćęłńóśżź" pl-big-diacritics))
