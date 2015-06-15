@@ -475,14 +475,6 @@
      (is (> (:precision arts-precision-recall) arts-precision-threshold))
      (is (> (:recall arts-precision-recall) arts-recall-threshold)))))
 
-(deftest dexmlise-test
-  (is
-   (=
-    (dexmlise
-     (str "<xBx> Szpitalowi <xAnon>(...)</xAnon> w <xAnon>Ł.</xAnon>"
-          ", <xAnon>L. P. (1)</xAnon> i <xAnon>A. G. (1)</xAnon></xBx>"))
-    " Szpitalowi (...) w Ł., L. P. (1) i A. G. (1)")))
-
 (deftest cleanse-commas-test
   (is (=
        (cleanse-commas "art , 24 ust 2 pkt 4")
@@ -491,7 +483,45 @@
        (cleanse-commas "art 24 ust , 2 pkt 3 i 4")
        "art 24 ust 2 pkt 3 i 4")))
 
+(deftest cast-coords-lists-test
+  (is (=
+       (cast-coords-lists '("1" "2" "0" "0" "0" "0")
+                          '("0" "3" "0" "0" "0" "0"))
+       '("1" "3" "0" "0" "0" "0")))
+  (is (=
+       (cast-coords-lists '("1" "2" "0" "0" "2" "2")
+                          '("0" "3" "0" "0" "0" "0"))
+       '("1" "3" "0" "0" "0" "0")))
+  (is (=
+       (cast-coords-lists '("1" "2" "0" "0" "2" "2")
+                          '("0" "3" "3" "0" "0" "0"))
+       '("1" "3" "3" "0" "0" "0")))
+  (is (=
+       (cast-coords-lists '("1" "2" "0" "0" "2" "2")
+                          '("0" "0" "3" "0" "0" "0"))
+       '("1" "2" "3" "0" "0" "0"))))
+
 (deftest extract-art-coords-test
   (is (=
        (extract-art-coords "art 90")
-       '(("90" "0" "0" "0" "0" "0")))))
+       '(("90" "0" "0" "0" "0" "0"))))
+  (is (=
+       (extract-art-coords "art. 183 ust 5 pkt 2 oraz 6")
+       '(("183" "0" "5" "2" "0" "0") ("183" "0" "5" "6" "0" "0"))))
+  (is (=
+       (extract-art-coords "art. 183 ust 5 pkt 2 oraz ust. 6")
+       '(("183" "0" "5" "2" "0" "0") ("183" "0" "6" "0" "0" "0"))))
+  (is (=
+       (extract-art-coords "art. 89 ust. 1 pkt 2 , pkt 3 , pkt 8")
+       '(("89" "0" "1" "2" "0" "0")
+         ("89" "0" "1" "3" "0" "0")
+         ("89" "0" "1" "8" "0" "0"))))
+  (is (=
+       (extract-art-coords " art. 89 ust. 1 pkt 2 oraz pkt 4")
+       '(("89" "0" "1" "2" "0" "0") ("89" "0" "1" "4" "0" "0"))))
+  (is (=
+       (extract-art-coords "art. 24 ust. 1 pkt 10 oraz ust. 2 pkt 2")
+       '(("24" "0" "1" "10" "0" "0") ("24" "0" "2" "2" "0" "0"))))
+  (is (=
+       (extract-art-coords "art. 89 ust. 1 pkt. 2 i pkt. 6")
+       '(("89" "0" "1" "2" "0" "0") ("89" "0" "1" "6" "0" "0")))))

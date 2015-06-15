@@ -8,6 +8,6 @@
    "txt2" "law2" get-benchmark-records law-links-extract-greedy
    links-preprocess
    0.847 0.831
-   0.874 0.563
-   0.783 0.512
+   0.944 0.586
+   0.83 0.53
    get-csv-for-extracted-link log-results-with-signatures))
