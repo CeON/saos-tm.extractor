@@ -142,6 +142,9 @@
 
 (def latin-big-without-roman-digits "A-HJ-UWYZ")
 
+(def pl-big-diacritics "ĄĆĘŁŃÓŚŻŹ")
+(def pl-diacritics (str "ąćęłńóśżź" pl-big-diacritics))
+
 (def cities-names
   (str
    "(\\s[" latin-big-without-roman-digits pl-big-diacritics "]"

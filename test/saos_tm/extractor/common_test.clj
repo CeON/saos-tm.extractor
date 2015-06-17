@@ -9,6 +9,40 @@
    [saos-tm.extractor.judgment-links :refer :all]
    [saos-tm.extractor.common :refer :all]))
 
+(defn get-art-coords-csv [art-coords]
+  (let [
+        art-nr (:art art-coords)
+        par-nr (:par art-coords)
+        ust-nr (:ust art-coords)
+        pkt-nr (:pkt art-coords)
+        zd-nr  (:zd art-coords)
+        lit-nr (:lit art-coords)
+        ]
+    (apply str
+           "\"" art-nr "\"" csv-delimiter
+           "\"" par-nr "\"" csv-delimiter
+           "\"" ust-nr "\"" csv-delimiter
+           "\"" pkt-nr "\"" csv-delimiter
+           "\"" zd-nr "\"" csv-delimiter
+           "\"" lit-nr "\"" csv-delimiter)))
+
+(defn get-csv-for-extracted-link [link signature]
+  (let [
+        art (:art link)
+        act (:act link)
+        ]
+    (apply str (get-art-coords-csv art)
+           "\"" signature "\"" csv-delimiter
+           "\"" (:journalYear act) "\"" csv-delimiter
+           "\"" (:journalNo act) "\"" csv-delimiter
+           "\"" (:journalEntry act) "\"" system-newline)))
+
+(defn get-measure [true-positives-count elements-count]
+  (if
+    (= elements-count 0)
+    nil
+    (float (/ true-positives-count elements-count))))
+
 (defn get-file-paths [dir re]
   (let [
           file-paths

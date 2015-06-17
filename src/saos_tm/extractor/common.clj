@@ -48,29 +48,6 @@
 (defn indices [pred coll]
    (keep-indexed #(when (pred %2) %1) coll))
 
-(defn seq-to-csv [coll]
-  (let [
-          with-delim-at-the-end
-            (str/join ""
-              (map
-                #(apply str "\"" % "\"" csv-delimiter)
-                coll))
-          with-newline-at-the-end
-            (str
-              (apply str (drop-last with-delim-at-the-end))
-              system-newline)
-            ]
-            with-newline-at-the-end))
-
-(defn get-measure [true-positives-count elements-count]
-  (if
-    (= elements-count 0)
-    nil
-    (float (/ true-positives-count elements-count))))
-
-(defn parse-int [s]
-   (Integer. (re-find  #"\d+" s )))
-
 (defn remove-hard-spaces [s]
   (str/replace s #"\u00A0" " "))
 
@@ -95,10 +72,6 @@
         ]
   (str/replace without-split-numbers (str "-" system-newline) "")))
 
-(defn remove-all-html-tags [s]
-  (str/replace s
-               (re-pattern (str "<[^>]*>")) " "))
-
 (defn remove-html-tags-other-than [tag-name s]
   (str/replace s
                (re-pattern (str "<(?!/?" tag-name ")((?!>)[\\s\\S])*>")) " "))
@@ -121,40 +94,12 @@
 (defn preprocess [s]
   (let [
         without-split-words (unsplit-words-across-lines s)
-        without-tags (remove-all-html-tags without-split-words)
+        without-tags (conv-html-to-text without-split-words)
         without-hard-spaces (remove-hard-spaces without-tags)
         without-newlines (remove-newlines without-hard-spaces)
         without-double-spaces (remove-double-spaces without-newlines)
         ]
     without-double-spaces))
-
-(defn get-art-coords-csv [art-coords]
-  (let [
-        art-nr (:art art-coords)
-        par-nr (:par art-coords)
-        ust-nr (:ust art-coords)
-        pkt-nr (:pkt art-coords)
-        zd-nr  (:zd art-coords)
-        lit-nr (:lit art-coords)
-        ]
-    (apply str
-           "\"" art-nr "\"" csv-delimiter
-           "\"" par-nr "\"" csv-delimiter
-           "\"" ust-nr "\"" csv-delimiter
-           "\"" pkt-nr "\"" csv-delimiter
-           "\"" zd-nr "\"" csv-delimiter
-           "\"" lit-nr "\"" csv-delimiter)))
-
-(defn get-csv-for-extracted-link [link signature]
-  (let [
-        art (:art link)
-        act (:act link)
-        ]
-    (apply str (get-art-coords-csv art)
-           "\"" signature "\"" csv-delimiter
-           "\"" (:journalYear act) "\"" csv-delimiter
-           "\"" (:journalNo act) "\"" csv-delimiter
-           "\"" (:journalEntry act) "\"" system-newline)))
 
 ;; for debugging
 (defn print-if-contains [s element]
@@ -475,6 +420,3 @@
 (defn get-closest-regex-match-case-sen [regexes following-text-regex s]
   (get-regex-match-case-sen
    get-closest-regex-match regexes following-text-regex s))
-
-(def pl-big-diacritics "ĄĆĘŁŃÓŚŻŹ")
-(def pl-diacritics (str "ąćęłńóśżź" pl-big-diacritics))

@@ -9,6 +9,9 @@
   (:import java.io.File)
   (:gen-class))
 
+(defn parse-int [s]
+   (Integer. (re-find  #"\d+" s )))
+
 (defn in? [seq elm]
   (some #(= elm %) seq))
 
