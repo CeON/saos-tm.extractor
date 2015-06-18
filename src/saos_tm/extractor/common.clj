@@ -303,34 +303,39 @@
 
 (defn get-year-from-act-name [s]
   (let [
-        pattern (last (re-seq #"\d+\s*r" s))
+        pattern (last (re-seq #"\s\d{4}\s" s))
         ]
         (when
           (not-empty pattern)
           (apply str
             (re-seq #"\d+" pattern)))))
 
+(defn cut-to-first-parenthesis-pair [s]
+  (re-find #"[^\(]*\([^\)]*\)" s))
+
+(def journal-year-extraction-regex
+  (re-pattern
+   (str "Dz\\.\\s*U\\.\\s*z?\\s*\\d+\\s*r|"
+        "Dz\\.\\s*U\\.\\s*\\d{4}|"
+        "Dz\\.\\s*U\\.\\s*t\\.j\\.\\s*z\\s*\\d{4}")))
+
 (defn get-year-of-law-act [s]
   (let [
-        to-first-closing-parenthesis
-          (re-find #"[^\(]*\([^\)]*\)" s)
+        to-first-parenthesis-pair (cut-to-first-parenthesis-pair s)
         before-law-change-indication
-          (if (nil? to-first-closing-parenthesis)
+          (if (nil? to-first-parenthesis-pair)
             s
-            (first (str/split to-first-closing-parenthesis #"zm\." )))
+            (first (str/split to-first-parenthesis-pair #"zm\." )))
         txt
           (if (nil? before-law-change-indication)
             s
             before-law-change-indication)
-        pattern
-          (re-find
-           #"Dz\.\s*U\.\s*z?\s*\d+\s*r|Dz\.\s*U\.\s*\d{4}"
-           txt)
+        year-pattern-match (re-find journal-year-extraction-regex txt)
         year
           (if
-            (not-empty pattern)
+            (not-empty year-pattern-match)
             (apply str
-                   (re-seq #"[\d]+" pattern))
+                   (re-seq #"[\d]+" year-pattern-match))
             (get-year-from-act-name
              (first
               (str/split txt #"Dz\."))))
@@ -420,3 +425,6 @@
 (defn get-closest-regex-match-case-sen [regexes following-text-regex s]
   (get-regex-match-case-sen
    get-closest-regex-match regexes following-text-regex s))
+
+(def pl-big-diacritics "ĄĆĘŁŃÓŚŻŹ")
+(def pl-diacritics (str "ąćęłńóśżź" pl-big-diacritics))

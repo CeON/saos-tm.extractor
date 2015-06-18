@@ -99,43 +99,6 @@
     ]
   (= (tokens-to-string (split-to-tokens s)) s)))
 
-(deftest get-year-of-law-act-test []
-  (is (=
-    "1992"
-    (get-year-of-law-act
-      (str
-        "KONSTYTUCYJNE utrzymane w mocy na podstawie art. 77"
-        " Ustawy Konstytucyjnej"
-        " z dnia 17 października 1992 r. o wzajemnych stosunkach między"
-        " władzą ustawodawczą i wykonawczą Rzeczypospolitej Polskiej "
-        "oraz o samorządzie terytorialnym "
-        "(Dz. U. Nr 84, poz. 426, z 1995 r. Nr 38, poz. 184): "
-        "(uchylony) ogólnie – w. 6.01.09, SK 22/06 (poz. 1), w. 15.01.09"))))
-  (is (=
-    "1994"
-    (get-year-of-law-act
-      (str
-        " Karta Samorządu Lokalnego sporządzona w Strasburgu"
-        " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
-        " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
-        "– p. 21.01.09, P 14/08 (poz. 7)"))))
-  (is (=
-    "1994"
-    (get-year-of-law-act
-      (str
-        " ustawy z dnia 28 grudnia 1989 r. – Prawo celne"
-        " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)"))))
-  (is (=
-    "1991"
-    (get-year-of-law-act
-      (str
-        "ustawy z dnia 30 sierpnia 1991 r. o zakładach opieki zdrowotnej"
-       " (Dz.U. Nr 91, poz. 408 ze zm.) kjhkjh "
-       "(Dz.U. z 2001 r. Nr 65, poz. 659)")))))
-
-;; (defn extract-law-journal-case-one [s answer]
-;;   (is (= (extract-law-links-greedy s true true true) answer)))
-
 (defn extract-law-journal-case-one [s answer]
   (is (=
     (extract-act-coords-greedy
@@ -245,7 +208,27 @@
             "Dz.U. z 2006 r. Nr 216, poz. 1584 ze zm.)")))
          {:journalEntry "1584", :journalNo "216", :journalYear "2006"})))
 
-; Test of utilities for the art part of law link (sorting and string conversion)
+(deftest cut-to-first-parenthesis-pair-test
+  (is (=
+       (cut-to-first-parenthesis-pair
+        (str "z dnia 29 stycznia 2004 r. – Prawo zamówień publicznych"
+             " (t.j. Dz. U. z 2010 r. 113, poz. 759 ze zm.) na niniejszy wyrok"
+             " – w terminie 7 dni od dnia jego doręczenia – "
+             "przysługuje skarga za pośrednictwem Prezesa "
+             "Krajowej Izby Odwoławczej"
+             " do Sądu Okręgowego w Warszawie. Przewodniczący"))
+       (str "z dnia 29 stycznia 2004 r. – Prawo zamówień publicznych"
+            " (t.j. Dz. U. z 2010 r. 113, poz. 759 ze zm.)")))
+  (is (=
+       (cut-to-first-parenthesis-pair
+        (str "z dnia 29 stycznia 2004 r. Prawo zamówień publicznych "
+             "(t.j. Dz. U. z 2010 r. Nr 113, poz. 759 z późn. zm.), "
+             "w trybie przetargu nieograniczonego. Ogłoszenie"))
+       (str "z dnia 29 stycznia 2004 r. Prawo zamówień publicznych "
+             "(t.j. Dz. U. z 2010 r. Nr 113, poz. 759 z późn. zm.)"))))
+
+; Test of utilities for the art part of law link
+; (sorting and string conversion)
 
 (deftest convert-art-to-str-test
   (is (=
@@ -321,8 +304,8 @@
 
 (deftest conv-act-to-str-test
   (is (=
-    (conv-act-to-str {:journalNo 23 :journalEntry 17 :journalYear 1996})
-    "Dz. U. z 1996 r. Nr 23 poz. 17"))
+       (conv-act-to-str {:journalNo 23 :journalEntry 17 :journalYear 1996})
+       "Dz. U. z 1996 r. Nr 23 poz. 17"))
   (is (=
-        (conv-act-to-str {:journalEntry 1732 :journalYear 2015})
-        "Dz. U. z 2015 r. poz. 1732")))
+       (conv-act-to-str {:journalEntry 1732 :journalYear 2015})
+       "Dz. U. z 2015 r. poz. 1732")))

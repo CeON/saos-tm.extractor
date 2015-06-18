@@ -303,23 +303,22 @@
 (defn check-second-and-third-token
   [first-match-index dictionary-stems dictionary-stems-count tokens]
   (cond
-    (or
-     (= (count tokens) 1)
-     (= (count tokens) 2)
-     (= (inc first-match-index) dictionary-stems-count))
-    false
+   (or
+    (= (count tokens) 1)
+    (= (count tokens) 2)
+    (= (inc first-match-index) dictionary-stems-count))
+   false
    :else
-    (if
-      (or
+   (if
      (stems-match?
       (nth dictionary-stems (inc first-match-index))
-      (stem (second tokens))))
+      (stem (second tokens)))
      (or
       (= (+ 2 first-match-index) dictionary-stems-count)
-     (stems-match?
-      (nth dictionary-stems (+ 2 first-match-index))
-      (stem (nth tokens 2))))
-      false)))
+      (stems-match?
+       (nth dictionary-stems (+ 2 first-match-index))
+       (stem (nth tokens 2))))
+     false)))
 
 (defn local-implicit-dictionary-item-matches? [item tokens]
   (let [
@@ -369,19 +368,20 @@
         tokens-or-coords
         (:act-coords (first matches))))))
 
+(def cut-for-act-coords-regex
+  (re-pattern
+   (str "w\\s*zw\\.\\s*z|"
+        "w\\s*związku\\s*z|"
+        "[^e]\\s(U|u)staw|"
+        "\\s(R|r)ozporządz|"
+        "\\)")))
+
 (defn cut-tokens-for-act-coords [tokens]
   (let [
         string (tokens-to-string tokens)
         string-cut
           (first
-           (str/split
-            string
-            (re-pattern
-             (str "w\\s*zw\\.\\s*z|"
-                  "w\\s*związku\\s*z|"
-                  "[^e]\\s(U|u)staw|"
-                  "\\s(R|r)ozporządz|"
-                  "\\)"))))
+           (str/split string cut-for-act-coords-regex))
         tokens-cut
           (if (empty? string-cut)
             nil
@@ -428,7 +428,9 @@
       (cond
        (some #{"Dz.U"} tokens-cut)
        (extract-act-coords-journal-with-dot tokens)
-       (and (some #{"Dz"} tokens-cut) (some #{"U"} tokens-cut))
+       (and
+        (some #{"Dz"} tokens-cut)
+        (some #{"U"} tokens-cut))
        (extract-year-journal-nmb-and-entry tokens)
        :else
        (extract-with-dictionaries
@@ -465,7 +467,7 @@
   (map
    #(find-coords-ranges % tokens)
    (indices
-    #(or (= % "art") (= % "Art") (= % "§"))
+    #(or (= % "art") (= % "Art") (= % "§") (= % "artykuł") (= % "Artykuł"))
     tokens)))
 
 (defn split-sum-of-colls-to-pairs [coll1 coll2]
@@ -584,16 +586,7 @@
                     #"^[^A-Za-ząćęłńóśżźĄĆĘŁŃÓŚŻŹ\.]+" ""
                     #"[^A-Za-ząćęłńóśżźĄĆĘŁŃÓŚŻŹ\\.]+$" "")))
 
-(def explicit-local-dictionary-definition-regex
-  (re-pattern
-   (str
-    ";\\s*dalej\\s*:?|"
-    ",\\s*dalej\\s*:?|"
-    "zwana\\s*dalej\\s*:?|"
-    "zwanej\\s*dalej\\s*:?|"
-    "\\(dalej\\s*:?")))
-
-(defn extract-dictionary-item [parts]
+(defn extract-local-explicit-dictionary-item [parts]
   (let [
         act-abbreviation-txt (second parts)
         act-abbreviation-without-dash
@@ -625,41 +618,74 @@
 (def journal-regex #"[\S\s]*Dz\.\s*U\.[\S\s]*")
 
 (defn doesnt-contain-journal? [s]
-  ((complement matches?) s journal-regex))
+  (if (nil? s)
+    false
+    ((complement matches?) s journal-regex)))
+
+(defn cannot-extract-act-coords? [s]
+  (or
+   (empty? s)
+   (doesnt-contain-journal?
+    (first (str/split s #"w\s*zw\.\s*z|w\s*związku\s*z")))))
+
+(def explicit-local-dictionary-definition-regex
+  (re-pattern
+   (str
+    ";\\s*dalej\\s*:?|"
+    ",\\s*dalej\\s*:?|"
+    "zwana\\s*dalej\\s*:?|"
+    "zwanej\\s*dalej\\s*:?|"
+    "\\(dalej\\s*:?")))
 
 (defn get-local-explicit-dictionary-item [s]
-  (if (doesnt-contain-journal? s)
-  nil
-  (let [
-        parts
-          (str/split
-           s
-           explicit-local-dictionary-definition-regex)
-        ]
-    (if (= (count parts) 1)
-      nil
-      (extract-dictionary-item parts)))))
+  (if
+    (cannot-extract-act-coords? s)
+    nil
+    (let [
+          parts
+            (str/split
+             s
+             explicit-local-dictionary-definition-regex)
+          ]
+      (if (= (count parts) 1)
+        nil
+        (extract-local-explicit-dictionary-item parts)))))
 
-(defn get-local-implicit-dictionary-item [s]
-  (if (doesnt-contain-journal?
-       (first (str/split s #"w\s*zw\.\s*z|w\s*związku\s*z")))
-  nil
+(defn split-to-journal-indication [s]
+  (first
+   (str/split s #"\(|\[|Dz.\s*U.")))
+
+(defn extract-item [s]
   (let [
+        lowercase (str/lower-case s)
         act-name
           (map stem
                (split-to-tokens
-                (first
-                 (str/split (str/lower-case s) #"\(|\["))))
+                (split-to-journal-indication lowercase)))
         act-coords
           (extract-year-journal-nmb-and-entry (split-to-tokens s))
         ]
     {:act-coords act-coords
-     :act-name   act-name})))
+     :act-name   act-name}))
 
-(defn get-local-dictionary [act-coords-txts get-dictionary-item-fn]
+(defn extract-local-implicit-dictionary-item [s]
+  (let [
+        to-first-parenthesis-pair (cut-to-first-parenthesis-pair s)
+        ]
+    (if (nil? to-first-parenthesis-pair)
+      nil
+      (extract-item to-first-parenthesis-pair))))
+
+(defn get-local-implicit-dictionary-item [s]
+  (if
+    (cannot-extract-act-coords? s)
+    nil
+    (extract-local-implicit-dictionary-item s)))
+
+(defn get-local-dictionary [acts-txts get-dictionary-item-fn]
   (let [
         local-dictionary-with-nils
-          (map get-dictionary-item-fn act-coords-txts)
+          (map get-dictionary-item-fn acts-txts)
         local-dictionary
           (remove nil? local-dictionary-with-nils)
         ]
@@ -681,6 +707,14 @@
       (if (nil? first-law-act-token-index)
         nil
         [first-law-act-token-index first-art-index]))))
+
+(def acts-txts-split-regex
+  (re-pattern
+            (str "(?i)\\sustaw(a|y)\\s|"
+                 "\\srozporządzen[^\\s]*\\s|"
+                 "\\skodeksu\\s|"
+                 "(A|a)rt\\.|"
+                 "§")))
 
 (defn extract-law-links
   [s extract-act-coords-fn
@@ -724,22 +758,14 @@
           (get-range-from-first-law-act-to-first-article-token
            tokens
            (first (first inter-coords-ranges)))
-        act-coords-txts
-          (map
-           #(build-coords-text % tokens)
-           (if (nil? range-from-first-law-act-to-first-article-token)
-             inter-coords-ranges
-             (concat [range-from-first-law-act-to-first-article-token]
-                     inter-coords-ranges)))
-        acts-txts (str/split s #"\sustaw(a|y)\s")
+        acts-txts (drop 1 (str/split txt acts-txts-split-regex))
         act-coords
           (handle-w-zwiazku-z
            (map
             #(extract-act-coords-fn
               %
-              (extract-local-explicit-dicitionary-fn
-               (concat act-coords-txts acts-txts))
-              (extract-local-implicit-dicitionary-fn act-coords-txts)
+              (extract-local-explicit-dicitionary-fn acts-txts)
+              (extract-local-implicit-dicitionary-fn acts-txts)
               global-dictionary)
             (map
              #(get-range tokens (first %) (second %))

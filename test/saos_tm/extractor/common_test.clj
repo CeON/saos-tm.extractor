@@ -186,9 +186,7 @@
       (extract-art-coords "art. 64 ust. 2 i 3 oraz art. 84")))
   (is(=
       '(("64" "0" "2" "0" "0" "a"))
-      (extract-art-coords "art. 64 ust. 2 lit. a")))
-  ; (is(= [[]] (extract-art-coords "")))
-  )
+      (extract-art-coords "art. 64 ust. 2 lit. a"))))
 
 (defn get-precision-recall [extracted-set benchmark-set]
   (if (and (empty? extracted-set) (empty? benchmark-set))
@@ -379,14 +377,17 @@
         overall-precision-recall
           (get-precision-recall
            extracted-items-with-file-names benchmark-items-with-file-names)
-        counts (map #(* (count %1) (- 1.0 %2)) extracted-items precisions)
+        counts-precs
+          (map #(* (count %1) (- 1.0 %2)) extracted-items precisions)
+        counts-recalls
+          (map #(* (count %1) (- 1.0 %2)) benchmark-items recalls)
 
         names-precs-recalls
           (sort
            #(compare (nth %1 3) (nth %2 3))
            (map
             vector
-            ext-files-names precisions recalls counts))
+            ext-files-names precisions recalls counts-precs counts-recalls))
 
         _ (prn)
         _ (prn description)
@@ -559,3 +560,51 @@
   (is (=
        (extract-art-coords "art. 89 ust. 1 pkt. 2 i pkt. 6")
        '(("89" "0" "1" "2" "0" "0") ("89" "0" "1" "6" "0" "0")))))
+
+(deftest get-year-of-law-act-test
+  (is (=
+       (get-year-of-law-act
+        (str
+         " ustawy Prawo zamówień publicznych ( Dz. U. t.j. z 2007 r. Nr 223"
+         " , poz. 1655 ). O kosztach postępowania orzeczono na podstawie"))
+       "2007"))
+  (is (=
+       (get-year-of-law-act
+        (str
+         "rozporządzenia Prezesa Rady Ministrów z dnia 17 maja 2006"
+         " w sprawie wysokości oraz szczegółowych zasad pobierania"
+         " wpisu od odwołania oraz szczegółowych zasad rozliczania"
+         " kosztów w postępowaniu odwoławczym ( Dz. U. Nr 87 , poz. 608 )"))
+       "2006"))
+  (is (=
+    "1992"
+    (get-year-of-law-act
+      (str
+        "KONSTYTUCYJNE utrzymane w mocy na podstawie art. 77"
+        " Ustawy Konstytucyjnej"
+        " z dnia 17 października 1992 r. o wzajemnych stosunkach między"
+        " władzą ustawodawczą i wykonawczą Rzeczypospolitej Polskiej "
+        "oraz o samorządzie terytorialnym "
+        "(Dz. U. Nr 84, poz. 426, z 1995 r. Nr 38, poz. 184): "
+        "(uchylony) ogólnie – w. 6.01.09, SK 22/06 (poz. 1), w. 15.01.09"))))
+  (is (=
+    "1994"
+    (get-year-of-law-act
+      (str
+        " Karta Samorządu Lokalnego sporządzona w Strasburgu"
+        " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
+        " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
+        "– p. 21.01.09, P 14/08 (poz. 7)"))))
+  (is (=
+    "1994"
+    (get-year-of-law-act
+      (str
+        " ustawy z dnia 28 grudnia 1989 r. – Prawo celne"
+        " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)"))))
+  (is (=
+    "1991"
+    (get-year-of-law-act
+      (str
+        "ustawy z dnia 30 sierpnia 1991 r. o zakładach opieki zdrowotnej"
+       " (Dz.U. Nr 91, poz. 408 ze zm.) kjhkjh "
+       "(Dz.U. z 2001 r. Nr 65, poz. 659)")))))
