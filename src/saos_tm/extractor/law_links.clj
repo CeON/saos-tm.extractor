@@ -170,10 +170,9 @@
               (nth matched-indices min-i)
               (first matched-indices))
           dictionary-record
-            (if (not-nil? first-index)
+            (when (not-nil? first-index)
               (second
-               (nth dictionary first-index))
-              nil)
+               (nth dictionary first-index)))
           ]
       (if (nil? dictionary-record)
         tokens-or-coords
@@ -383,8 +382,7 @@
           (first
            (str/split string cut-for-act-coords-regex))
         tokens-cut
-          (if (empty? string-cut)
-            nil
+          (when-not (empty? string-cut)
             (split-to-tokens string-cut))
         ]
     (if (empty? tokens-cut)
@@ -618,8 +616,7 @@
 (def journal-regex #"[\S\s]*Dz\.\s*U\.[\S\s]*")
 
 (defn doesnt-contain-journal? [s]
-  (if (nil? s)
-    false
+  (when (not-nil? s)
     ((complement matches?) s journal-regex)))
 
 (defn cannot-extract-act-coords? [s]
@@ -638,17 +635,14 @@
     "\\(dalej\\s*:?")))
 
 (defn get-local-explicit-dictionary-item [s]
-  (if
-    (cannot-extract-act-coords? s)
-    nil
+  (when-not (cannot-extract-act-coords? s)
     (let [
           parts
             (str/split
              s
              explicit-local-dictionary-definition-regex)
           ]
-      (if (= (count parts) 1)
-        nil
+      (when-not (= (count parts) 1)
         (extract-local-explicit-dictionary-item parts)))))
 
 (defn split-to-journal-indication [s]
@@ -673,13 +667,11 @@
         to-first-parenthesis-pair (cut-to-first-parenthesis-pair s)
         ]
     (if (nil? to-first-parenthesis-pair)
-      nil
+      (extract-item s)
       (extract-item to-first-parenthesis-pair))))
 
 (defn get-local-implicit-dictionary-item [s]
-  (if
-    (cannot-extract-act-coords? s)
-    nil
+  (when-not (cannot-extract-act-coords? s)
     (extract-local-implicit-dictionary-item s)))
 
 (defn get-local-dictionary [acts-txts get-dictionary-item-fn]
@@ -695,8 +687,7 @@
 
 (defn get-range-from-first-law-act-to-first-article-token
   [tokens first-art-index]
-  (if (nil? first-art-index)
-    nil
+  (when-not (nil? first-art-index)
     (let [
           first-law-act-token-index
             (first
@@ -704,13 +695,12 @@
              #(or (= "ustawa" %) (= "ustawy" %))
              (get-range tokens 0 first-art-index)))
           ]
-      (if (nil? first-law-act-token-index)
-        nil
+      (when-not (nil? first-law-act-token-index)
         [first-law-act-token-index first-art-index]))))
 
 (def acts-txts-split-regex
   (re-pattern
-            (str "(?i)\\sustaw(a|y)\\s|"
+            (str "(?i)[^:]\\s+ustaw(a|y)\\s|"
                  "\\srozporządzen[^\\s]*\\s|"
                  "\\skodeksu\\s|"
                  "(A|a)rt\\.|"

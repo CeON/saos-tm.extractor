@@ -384,7 +384,7 @@
 
         names-precs-recalls
           (sort
-           #(compare (nth %1 3) (nth %2 3))
+           #(compare (nth %1 4) (nth %2 4))
            (map
             vector
             ext-files-names precisions recalls counts-precs counts-recalls))
