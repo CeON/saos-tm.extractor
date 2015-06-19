@@ -1,10 +1,9 @@
 (ns saos-tm.extractor.saos-json
   (:require
    [clojure.string :as str]
-   [cheshire.core :refer :all]
-   [saos-tm.extractor.common :refer :all]
-   [saos-tm.extractor.csv-helpers :refer :all]
-   [saos-tm.extractor.common-test :refer :all])
+   [cheshire.core :as cheshire]
+   [saos-tm.extractor.common :as common]
+   [saos-tm.extractor.csv-helpers :as csv-helpers])
   (:gen-class))
 
 (defn spit-contents [path ids contents]
@@ -25,10 +24,10 @@
 (defn get-jsons [path]
   (let [
         jsons-paths
-          (get-file-paths path #"[\s\S]*\.json")
+          (common/get-file-paths path #"[\s\S]*\.json")
         _ (prn jsons-paths)
         jsons-strings (map #(slurp %) jsons-paths)
-        jsons (map #(parse-string %) jsons-strings)
+        jsons (map #(cheshire/parse-string %) jsons-strings)
         ]
     jsons))
 
@@ -52,11 +51,12 @@
 
 (defn generate-osp-parties-test-set []
   (let [
-        ids (get-nth-args (slurp "test-data/osp-parties/answers-3.txt"))
+        ids
+          (csv-helpers/get-nth-args
+           (slurp "test-data/osp-parties/answers-3.txt"))
         jsons (get-jsons "/home/floydian/icm/osp/json/4/")
         json (flatten jsons)
         _ (spit-judgments-by-ids json ids)
-;;         _ (spit "ids.txt" (apply str (map #(apply str % system-newline) ids)))
         ]
     ))
 

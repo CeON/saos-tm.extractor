@@ -1,38 +1,37 @@
 (ns saos-tm.extractor.cc-parties-efficiency-test
   (:require
-    [clojure.test :refer :all]
-    [clojure.string :as str]
-    [clojure.set :refer :all]
-    [langlab.core.parsers :refer :all]
-    [saos-tm.extractor.common :refer :all]
-    [saos-tm.extractor.common-test :refer :all]
-    [saos-tm.extractor.cc-parties :refer :all])
+   [clojure.test :refer :all]
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [clojure.set :as set]
+   [saos-tm.extractor.common :as common]
+   [saos-tm.extractor.common-test :as common-test]
+   [saos-tm.extractor.cc-parties :as cc-parties])
   (:import java.io.File)
   (:gen-class))
 
-(defn extract-parties-from-judgments [judgments extract-parties-func]
-  (remove nil?
-          (map
-           #(extract-parties-func %)
-           judgments)))
+(def cc-parties-test-data-path "test-data/cc-parties/")
+
+; Files utilities
+
+(defn get-file-contents [dir re]
+  (let [
+        sorted-paths (sort (common/get-file-paths dir re))
+        ]
+    (map #(slurp %) sorted-paths)))
+
+(defn get-file-names [dir re]
+  (let [
+        sorted-paths (sort (common/get-file-paths dir re))
+        ]
+    (map #(last (str/split (str %) #"/")) sorted-paths)))
+
+; CSV utilities
 
 (defn split-csv [s]
   (str/split
    s
-   (re-pattern (str "\"" csv-delimiter "\""))))
-
-(defn answers-to-string [coll]
-  (map #(str  (:id %) system-newline
-              (:plaintiff %) system-newline
-              (:defendant %) system-newline)
-       coll))
-
-(def cc-parties-test-data-path "test-data/cc-parties/")
-
-(defn remove-opening-closing-quots [coll]
-  (map
-   #(subs % 1 (dec (count %)))
-   coll))
+   (re-pattern (str "\"" common/csv-delimiter "\""))))
 
 (defn create-cc-parties-map [answers is-civil]
   (into #{}
@@ -45,6 +44,25 @@
              [:id :prosecutor]
              (split-csv %)))
          answers)))
+
+; End of CSV utilities
+
+(defn extract-parties-from-judgments [judgments extract-parties-func]
+  (remove nil?
+          (map
+           #(extract-parties-func %)
+           judgments)))
+
+(defn answers-to-string [coll]
+  (map #(str  (:id %) common/system-newline
+              (:plaintiff %) common/system-newline
+              (:defendant %) common/system-newline)
+       coll))
+
+(defn remove-opening-closing-quots [coll]
+  (map
+   #(subs % 1 (dec (count %)))
+   coll))
 
 (defn extract-parties [coll]
   (into #{}
@@ -98,10 +116,12 @@
                        "log/errors-2-civil.txt" "log/errors-2-criminal.txt"
                        "log/errors-3-civil.txt" "log/errors-3-criminal.txt"]
            :extract-parties-funcs
-             [extract-parties-cc-civil extract-parties-cc-criminal
-              extract-parties-cc-civil extract-parties-cc-criminal
-              extract-parties-cc-civil extract-parties-cc-criminal]
-           }
+             [cc-parties/extract-parties-cc-civil
+              cc-parties/extract-parties-cc-criminal
+              cc-parties/extract-parties-cc-civil
+              cc-parties/extract-parties-cc-criminal
+              cc-parties/extract-parties-cc-civil
+              cc-parties/extract-parties-cc-criminal]}
 
         judgments
           (map
@@ -124,7 +144,7 @@
 
         answers-txts
          (map #(slurp %) (cc-parties-paths (files-funcs :answers)))
-        answers-lines (map #(split-lines %) answers-txts)
+        answers-lines (map #(common-test/split-lines %) answers-txts)
         answers-without-quots
           (map #(remove-opening-closing-quots %) answers-lines)
         is-civil [true false true false true false]
@@ -134,16 +154,18 @@
                is-civil)
 
         corrects
-          (map #(difference %1 %2)
+          (map #(set/difference %1 %2)
                answers extracted-parties-with-ids-sets)
         _ (handle-results corrects (files-funcs :corrects))
 
         errors
-          (map #(difference %1 %2) extracted-parties-with-ids-sets answers)
+          (map #(set/difference %1 %2) extracted-parties-with-ids-sets answers)
         _ (handle-results errors (files-funcs :errors))
 
         precisions-recalls
-          (map get-precision-recall extracted-parties-with-ids-sets answers)
+          (map
+           common-test/get-precision-recall
+           extracted-parties-with-ids-sets answers)
         efficiencies (map #(:recall %) precisions-recalls)
 
         _
@@ -156,7 +178,7 @@
         ]
     (is (= ((nth precisions-recalls 0) :recall)    1.0    ))
     (is (= ((nth precisions-recalls 1) :recall)    1.0    ))
-    (is (= ((nth precisions-recalls 2) :recall)    1.0  ))
+    (is (= ((nth precisions-recalls 2) :recall)    1.0    ))
     (is (> ((nth precisions-recalls 3) :recall)    0.956  ))
     (is (> ((nth precisions-recalls 4) :recall)    0.958  ))
     (is (= ((nth precisions-recalls 5) :recall)    1.0  ))))

@@ -1,45 +1,43 @@
 (ns saos-tm.extractor.rich-judgment-links-efficiency-test
   (:require
    [clojure.test :refer :all]
-   [saos-tm.extractor.rich-judgment-links :refer :all]
-   [saos-tm.extractor.judgment-links :refer :all]
-   [saos-tm.extractor.common :refer :all]
-   [saos-tm.extractor.common-test :refer :all]
    [clojure.string :as str]
-   [clojure-csv.core :refer :all]))
+   [clojure-csv.core :as csv]
+   [saos-tm.extractor.rich-judgment-links :as rich-judgment-links]
+   [saos-tm.extractor.judgment-links :as judgment-links]
+   [saos-tm.extractor.common :as common]
+   [saos-tm.extractor.common-test :as common-test]))
 
 (defn get-benchmark-rich-judgment-links [ext-files]
   (let [
-        rich-judgments-links
-          (map parse-csv ext-files)
-        rich-judgments-links-sets
-          (map set rich-judgments-links)
+        rich-judgments-links      (map csv/parse-csv ext-files)
+        rich-judgments-links-sets (map set rich-judgments-links)
         ]
     rich-judgments-links-sets))
 
 (defn conv-coll-to-csv-line [coll not-used]
   (apply str "\""
-         (str/join (str "\"" csv-delimiter "\"") coll)
-         "\"" system-newline))
+         (str/join (str "\"" common/csv-delimiter "\"") coll)
+         "\"" common/system-newline))
 
 (defn rich-judgment-links-extract [txt-files]
   (map
-    #(set (map vals (extract-ref-judgments %)))
+    #(set (map vals (rich-judgment-links/extract-ref-judgments %)))
     txt-files))
 
 (defn extract-own-signature-line [s]
   (first
    (re-find
     (re-pattern
-     (str "(?i)(sygn\\.|sygnatur)[^" system-newline "]*"))
+     (str "(?i)(sygn\\.|sygnatur)[^" common/system-newline "]*"))
     s)))
 
 (defn extract-own-signature [s]
   (let [
         own-signature-line (extract-own-signature-line s)
         own-signature
-          (when (not-nil? own-signature-line)
-            (cleanse-signature
+          (when (common/not-nil? own-signature-line)
+            (judgment-links/cleanse-signature
              (second
               (str/split own-signature-line #"(?i)sygn[^\s]*\s*(akt:?)?"))))
         ]
@@ -60,19 +58,21 @@
 
 (defn remove-own-signature [s]
   (let [
-        case-nmbs (extract-all-signatures s)
+        case-nmbs (judgment-links/extract-all-signatures s)
         regex
           (re-pattern
            (str/join "|"
-                     (map #(conv-str-to-regex %) case-nmbs)))
+                     (map #(rich-judgment-links/conv-str-to-regex %)
+                          case-nmbs)))
         matches-with-starts-ends
-          (sort-regexes
-           (get-regex-matches-with-starts-ends-maps regex s)
+          (rich-judgment-links/sort-regexes
+           (common/get-regex-matches-with-starts-ends-maps
+            regex s)
            :start)
         first-case-nmb (:regex (first matches-with-starts-ends))
         first-case-nmb-regex
           (re-pattern
-           (replace-several first-case-nmb
+           (common/replace-several first-case-nmb
                             #"\s" "."
                             #"/" "."))
         ]
@@ -81,12 +81,14 @@
 (defn rich-links-preprocess [coll]
   (let [
         without-own-signatures (map remove-own-signature coll)
-        without-page-nmbs (map remove-page-nmbs without-own-signatures)
+        without-page-nmbs
+          (map common-test/remove-page-nmbs without-own-signatures)
         ]
   without-page-nmbs))
 
 (deftest rich-judgment-links-efficiency-test
-  (links-efficiency-test
+  (common-test/links-efficiency-test
    "txt1" "rich-jdg" get-benchmark-rich-judgment-links
    rich-judgment-links-extract rich-links-preprocess
-   0.929 0.931 conv-coll-to-csv-line log-results-without-signatures))
+   0.929 0.931
+   conv-coll-to-csv-line common-test/log-results-without-signatures))

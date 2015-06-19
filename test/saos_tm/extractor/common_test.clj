@@ -1,13 +1,13 @@
 (ns saos-tm.extractor.common-test
   (:require
-   [clojure.java.io :as io]
    [clojure.test :refer :all]
+   [clojure.java.io :as io]
    [clojure.string :as str]
-   [clojure.set :refer :all]
-   [clojure-csv.core :refer :all]
-   [saos-tm.extractor.law-links :refer :all]
-   [saos-tm.extractor.judgment-links :refer :all]
-   [saos-tm.extractor.common :refer :all]))
+   [clojure.set :as set]
+   [clojure-csv.core :as csv]
+   [saos-tm.extractor.common :as common]
+   [saos-tm.extractor.law-links :as law-links]
+   [saos-tm.extractor.judgment-links :as judgment-links]))
 
 (defn get-art-coords-csv [art-coords]
   (let [
@@ -19,12 +19,12 @@
         lit-nr (:lit art-coords)
         ]
     (apply str
-           "\"" art-nr "\"" csv-delimiter
-           "\"" par-nr "\"" csv-delimiter
-           "\"" ust-nr "\"" csv-delimiter
-           "\"" pkt-nr "\"" csv-delimiter
-           "\"" zd-nr "\"" csv-delimiter
-           "\"" lit-nr "\"" csv-delimiter)))
+           "\"" art-nr "\"" common/csv-delimiter
+           "\"" par-nr "\"" common/csv-delimiter
+           "\"" ust-nr "\"" common/csv-delimiter
+           "\"" pkt-nr "\"" common/csv-delimiter
+           "\"" zd-nr "\"" common/csv-delimiter
+           "\"" lit-nr "\"" common/csv-delimiter)))
 
 (defn get-csv-for-extracted-link [link signature]
   (let [
@@ -32,39 +32,15 @@
         act (:act link)
         ]
     (apply str (get-art-coords-csv art)
-           "\"" signature "\"" csv-delimiter
-           "\"" (:journalYear act) "\"" csv-delimiter
-           "\"" (:journalNo act) "\"" csv-delimiter
-           "\"" (:journalEntry act) "\"" system-newline)))
+           "\"" signature "\"" common/csv-delimiter
+           "\"" (:journalYear act) "\"" common/csv-delimiter
+           "\"" (:journalNo act) "\"" common/csv-delimiter
+           "\"" (:journalEntry act) "\"" common/system-newline)))
 
 (defn get-measure [true-positives-count elements-count]
-  (if
+  (when-not
     (= elements-count 0)
-    nil
     (float (/ true-positives-count elements-count))))
-
-(defn get-file-paths [dir re]
-  (let [
-          file-paths
-            (.listFiles
-              (clojure.java.io/file dir))
-          file-paths
-            (filter #(matches? (str %) re)
-                    file-paths)
-        ]
-    file-paths))
-
-(defn get-file-names [dir re]
-  (let [
-        sorted-paths (sort (get-file-paths dir re))
-        ]
-    (map #(last (str/split (str %) #"/")) sorted-paths)))
-
-(defn get-file-contents [dir re]
-  (let [
-        sorted-paths (sort (get-file-paths dir re))
-        ]
-    (map #(slurp %) sorted-paths)))
 
 (defn get-precision-recall [extracted-set benchmark-set]
   (if (and (empty? extracted-set) (empty? benchmark-set))
@@ -72,7 +48,7 @@
     (let [
           true-positives-count
             (count
-             (intersection extracted-set benchmark-set))
+             (set/intersection extracted-set benchmark-set))
           extracted-count (count extracted-set)
           benchmark-count (count benchmark-set)
           precision (get-measure true-positives-count extracted-count)
@@ -82,7 +58,7 @@
 
 (defn read-law-links-to-maps [file-data]
   (let [
-        data (parse-csv file-data)
+        data (csv/parse-csv file-data)
         ]
     (into #{} (map
                #(zipmap
@@ -107,86 +83,15 @@
 
 (defn judgment-links-extract [txt-files]
   (map
-    #(extract-all-signatures %)
+    #(judgment-links/extract-all-signatures %)
     txt-files))
 
 (defn signature-to-csv [signature not-used]
-  (apply str "\"" signature "\"" system-newline))
+  (apply str "\"" signature "\"" common/system-newline))
 
 (defn law-links-extract-greedy [txt-files]
-  (law-links-extract txt-files #(extract-law-links-greedy % true true true)))
-
-(defn law-links-extract-strict [txt-files]
-  (law-links-extract txt-files extract-law-links-strict))
-
-(deftest article-coords-test
-  (is(=
-      [["4" "0" "0" "2" "0" "0"]]
-      (extract-art-coords "art. 4 pkt 2")))
-  (is(=
-      [["14a" "0" "0" "0" "0" "0"]]
-      (extract-art-coords "art. 14a ")))
-  (is(=
-      [["50" "0" "1" "1" "0" "0"]]
-      (extract-art-coords "art. 50 ust. 1 pkt 1 ")))
-  (is(=
-      [["3" "0" "2-3" "0" "0" "0"]]
-      (extract-art-coords "art. 3 ust. 2-3 ")))
-  (is(=
-      [["103-105" "0" "0" "0" "0" "0"]]
-      (extract-art-coords "art. 103-105 ")))
-  (is(=
-      [["47" "0" "1" "2" "0" "0"] ["47" "0" "1" "3" "0" "0"]]
-      (extract-art-coords "art. 47 ust. 1 pkt 2 i 3 ")))
-  (is(=
-      [["0" "44" "1" "1" "0" "0"]]
-      (extract-art-coords "§ 44 ust. 1 pkt 1 ")))
-  (is(=
-      [["0" "25" "3" "0" "0" "0"]]
-      (extract-art-coords "§ 25 ust. 3 ")))
-  (is(=
-      [["0" "68a" "1" "0" "0" "0"]]
-      (extract-art-coords "§ 68a ust. 1 ")))
-  (is(=
-      [["0" "79" "0" "0" "0" "0"]]
-      (extract-art-coords "§ 79 ")))
-  (is(=
-      [["0" "34" "3" "2" "0" "0"]]
-      (extract-art-coords "§ 34 ust. 3 pkt 2 ")))
-  (is(=
-      [["37" "4a" "0" "0" "0" "0"] ["37" "4b" "0" "0" "0" "0"]]
-      (extract-art-coords "art. 37 § 4a, 4b ")))
-  (is(=
-      [["56" "1-3" "0" "0" "0" "0"]]
-      (extract-art-coords "art. 56 § 1-3 ")))
-  (is(=
-      [["77" "1" "0" "0" "0" "0"] ["77" "2" "0" "0" "0" "0"]
-       ["77" "2a" "0" "0" "0" "0"] ["77" "3" "0" "0" "0" "0"]
-       ["77" "3a" "0" "0" "0" "0"] ["77" "6" "0" "0" "0" "0"]
-       ["77" "7a" "0" "0" "0" "0"] ["77" "7b" "0" "0" "0" "0"]]
-      (extract-art-coords "art. 77 § 1, 2, 2a, 3, 3a, 6, 7a i 7b ")))
-  (is(=
-      [["46" "1" "0" "0" "1" "0"]]
-      (extract-art-coords "art. 46 § 1 zd. 1 ")))
-  (is(=
-      [["178" "0" "1" "0" "0" "0"] ["91" "0" "1" "0" "0" "0"]]
-      (extract-art-coords "art. 178 ust. 1 i art. 91 ust. 1")))
-  (is(=
-      [["84" "0" "0" "0" "0" "0"] ["92" "0" "1" "0" "0" "0"]
-       ["31" "0" "3" "0" "0" "0"]]
-      (extract-art-coords "art. 84, art. 92 ust. 1 i art. 31 ust. 3")))
-  (is(=
-      [["2" "0" "0" "0" "0" "0"] ["84" "0" "0" "0" "0" "0"]
-       ["91" "0" "1" "0" "0" "0"] ["178" "0" "1" "0" "0" "0"]]
-      (extract-art-coords
-       "art. 2, art. 84, z art. 91 ust. 1, art. 178 ust. 1")))
-  (is(=
-      '(("64" "0" "2" "0" "0" "0") ("64" "0" "3" "0" "0" "0")
-        ("84" "0" "0" "0" "0" "0"))
-      (extract-art-coords "art. 64 ust. 2 i 3 oraz art. 84")))
-  (is(=
-      '(("64" "0" "2" "0" "0" "a"))
-      (extract-art-coords "art. 64 ust. 2 lit. a"))))
+  (law-links-extract
+   txt-files #(law-links/extract-law-links-greedy % true true true)))
 
 (defn get-precision-recall [extracted-set benchmark-set]
   (if (and (empty? extracted-set) (empty? benchmark-set))
@@ -194,7 +99,7 @@
     (let [
           true-positives-count
             (count
-             (intersection extracted-set benchmark-set))
+             (set/intersection extracted-set benchmark-set))
           extracted-count (count extracted-set)
           benchmark-count (count benchmark-set)
           precision (get-measure true-positives-count extracted-count)
@@ -213,33 +118,11 @@
      (get-precision-recall #{} #{}))))
 
 (deftest unsplit-words-across-lines-test
-  (is (= (unsplit-words-across-lines "postę-\npowania") "postępowania")))
+  (is (=
+       (common/unsplit-words-across-lines "postę-\npowania") "postępowania")))
 
 (deftest preprocess-test
-  (is (= (preprocess "postę-\npowania") "postępowania")))
-
-(defn get-file-paths [dir re]
-  (let [
-        file-paths
-          (.listFiles
-           (clojure.java.io/file dir))
-        file-paths
-          (filter #(matches? (str %) re)
-                  file-paths)
-        ]
-    file-paths))
-
-(defn get-file-names [dir re]
-  (let [
-        sorted-paths (sort (get-file-paths dir re))
-        ]
-    (map #(last (str/split (str %) #"/")) sorted-paths)))
-
-(defn get-file-contents [dir re]
-  (let [
-        sorted-paths (sort (get-file-paths dir re))
-        ]
-    (map slurp sorted-paths)))
+  (is (= (common/preprocess "postę-\npowania") "postępowania")))
 
 (defn get-average [coll]
   (/ (reduce + coll) (count coll)))
@@ -251,7 +134,7 @@
 
 (defn get-signature [file-data]
   (map first
-       (parse-csv file-data)))
+       (csv/parse-csv file-data)))
 
 (defn get-benchmark-signatures [ext-files]
   (let [
@@ -267,14 +150,10 @@
     benchmark-signatures))
 
 (defn list-file-paths [dir]
-  (sort
-    (.listFiles
-     (clojure.java.io/file dir))))
+  (sort (.listFiles (io/file dir))))
 
 (defn list-file-names [dir]
-  (sort
-    (.list
-     (clojure.java.io/file dir))))
+  (sort (.list (io/file dir))))
 
 (defn get-files-from-dir [dir]
   (map
@@ -307,7 +186,7 @@
    (mapcat zip-with-file-name file-names items)))
 
 (defn split-lines [s]
-  (str/split s (re-pattern system-newline)))
+  (str/split s (re-pattern common/system-newline)))
 
 (def links-test-data-path "test-data/links/")
 (def log-data-path "log/")
@@ -319,7 +198,7 @@
                 (map-fn result-to-csv-fn data signature)))))
 
 (defn split-csv-line [s]
-  (str/split s (re-pattern (str #"\"" csv-delimiter "\""))))
+  (str/split s (re-pattern (str #"\"" common/csv-delimiter "\""))))
 
 (defn extract-signatures-from-csv [txts]
   (map
@@ -346,7 +225,7 @@
 (defn remove-page-nmbs [s]
   (str/replace s
                (re-pattern
-                (str system-newline "\\d+" system-newline))
+                (str common/system-newline "\\d+" common/system-newline))
                "\n"))
 
 (defn links-preprocess [coll]
@@ -512,64 +391,64 @@
 
 (deftest cleanse-commas-test
   (is (=
-       (cleanse-commas "art , 24 ust 2 pkt 4")
+       (law-links/cleanse-commas "art , 24 ust 2 pkt 4")
        "art 24 ust 2 pkt 4"))
   (is (=
-       (cleanse-commas "art 24 ust , 2 pkt 3 i 4")
+       (law-links/cleanse-commas "art 24 ust , 2 pkt 3 i 4")
        "art 24 ust 2 pkt 3 i 4")))
 
 (deftest cast-coords-lists-test
   (is (=
-       (cast-coords-lists '("1" "2" "0" "0" "0" "0")
+       (law-links/cast-coords-lists '("1" "2" "0" "0" "0" "0")
                           '("0" "3" "0" "0" "0" "0"))
        '("1" "3" "0" "0" "0" "0")))
   (is (=
-       (cast-coords-lists '("1" "2" "0" "0" "2" "2")
+       (law-links/cast-coords-lists '("1" "2" "0" "0" "2" "2")
                           '("0" "3" "0" "0" "0" "0"))
        '("1" "3" "0" "0" "0" "0")))
   (is (=
-       (cast-coords-lists '("1" "2" "0" "0" "2" "2")
+       (law-links/cast-coords-lists '("1" "2" "0" "0" "2" "2")
                           '("0" "3" "3" "0" "0" "0"))
        '("1" "3" "3" "0" "0" "0")))
   (is (=
-       (cast-coords-lists '("1" "2" "0" "0" "2" "2")
+       (law-links/cast-coords-lists '("1" "2" "0" "0" "2" "2")
                           '("0" "0" "3" "0" "0" "0"))
        '("1" "2" "3" "0" "0" "0"))))
 
 (deftest extract-art-coords-test
   (is (=
-       (extract-art-coords "art 90")
+       (law-links/extract-art-coords "art 90")
        '(("90" "0" "0" "0" "0" "0"))))
   (is (=
-       (extract-art-coords "art. 183 ust 5 pkt 2 oraz 6")
+       (law-links/extract-art-coords "art. 183 ust 5 pkt 2 oraz 6")
        '(("183" "0" "5" "2" "0" "0") ("183" "0" "5" "6" "0" "0"))))
   (is (=
-       (extract-art-coords "art. 183 ust 5 pkt 2 oraz ust. 6")
+       (law-links/extract-art-coords "art. 183 ust 5 pkt 2 oraz ust. 6")
        '(("183" "0" "5" "2" "0" "0") ("183" "0" "6" "0" "0" "0"))))
   (is (=
-       (extract-art-coords "art. 89 ust. 1 pkt 2 , pkt 3 , pkt 8")
+       (law-links/extract-art-coords "art. 89 ust. 1 pkt 2 , pkt 3 , pkt 8")
        '(("89" "0" "1" "2" "0" "0")
          ("89" "0" "1" "3" "0" "0")
          ("89" "0" "1" "8" "0" "0"))))
   (is (=
-       (extract-art-coords " art. 89 ust. 1 pkt 2 oraz pkt 4")
+       (law-links/extract-art-coords " art. 89 ust. 1 pkt 2 oraz pkt 4")
        '(("89" "0" "1" "2" "0" "0") ("89" "0" "1" "4" "0" "0"))))
   (is (=
-       (extract-art-coords "art. 24 ust. 1 pkt 10 oraz ust. 2 pkt 2")
+       (law-links/extract-art-coords "art. 24 ust. 1 pkt 10 oraz ust. 2 pkt 2")
        '(("24" "0" "1" "10" "0" "0") ("24" "0" "2" "2" "0" "0"))))
   (is (=
-       (extract-art-coords "art. 89 ust. 1 pkt. 2 i pkt. 6")
+       (law-links/extract-art-coords "art. 89 ust. 1 pkt. 2 i pkt. 6")
        '(("89" "0" "1" "2" "0" "0") ("89" "0" "1" "6" "0" "0")))))
 
 (deftest get-year-of-law-act-test
   (is (=
-       (get-year-of-law-act
+       (law-links/get-year-of-law-act
         (str
          " ustawy Prawo zamówień publicznych ( Dz. U. t.j. z 2007 r. Nr 223"
          " , poz. 1655 ). O kosztach postępowania orzeczono na podstawie"))
        "2007"))
   (is (=
-       (get-year-of-law-act
+       (law-links/get-year-of-law-act
         (str
          "rozporządzenia Prezesa Rady Ministrów z dnia 17 maja 2006"
          " w sprawie wysokości oraz szczegółowych zasad pobierania"
@@ -578,7 +457,7 @@
        "2006"))
   (is (=
     "1992"
-    (get-year-of-law-act
+    (law-links/get-year-of-law-act
       (str
         "KONSTYTUCYJNE utrzymane w mocy na podstawie art. 77"
         " Ustawy Konstytucyjnej"
@@ -589,7 +468,7 @@
         "(uchylony) ogólnie – w. 6.01.09, SK 22/06 (poz. 1), w. 15.01.09"))))
   (is (=
     "1994"
-    (get-year-of-law-act
+    (law-links/get-year-of-law-act
       (str
         " Karta Samorządu Lokalnego sporządzona w Strasburgu"
         " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
@@ -597,13 +476,13 @@
         "– p. 21.01.09, P 14/08 (poz. 7)"))))
   (is (=
     "1994"
-    (get-year-of-law-act
+    (law-links/get-year-of-law-act
       (str
         " ustawy z dnia 28 grudnia 1989 r. – Prawo celne"
         " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)"))))
   (is (=
     "1991"
-    (get-year-of-law-act
+    (law-links/get-year-of-law-act
       (str
         "ustawy z dnia 30 sierpnia 1991 r. o zakładach opieki zdrowotnej"
        " (Dz.U. Nr 91, poz. 408 ze zm.) kjhkjh "

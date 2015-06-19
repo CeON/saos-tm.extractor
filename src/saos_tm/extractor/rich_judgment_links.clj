@@ -1,101 +1,10 @@
 (ns saos-tm.extractor.rich-judgment-links
   (:require
-   [clojure.string :as str]
-   [saos-tm.extractor.judgment-links :refer :all]
-   [saos-tm.extractor.common :refer :all])
+   [saos-tm.extractor.common :as common]
+   [saos-tm.extractor.judgment-links :as judgment-links]
+   [clojure.string :as str])
   (:import java.io.File)
   (:gen-class))
-
-(defn sort-regexes [coll end-indicator]
-  (sort
-   #(compare (end-indicator %1) (end-indicator %2))
-   coll))
-
-(defn national-appeals-chamber? [case-nmb]
-  (or
-   (substring? "UZP/" case-nmb)
-   (substring? "/UZP" case-nmb)
-   (substring? "KIO" case-nmb)))
-
-(defn split-and-take-first [s regex-str]
-  (when (not-nil? s)
-    (first
-     (str/split
-      s
-      (re-pattern regex-str)))))
-
-(defn extract-no-empties-only-before [before regex]
-  (let [
-        from-before
-          (sort-regexes
-           (get-regex-matches-with-starts-ends-maps regex before)
-           :end)
-        extracted-element (:regex (last from-before))
-        ]
-    extracted-element))
-
-(defn extract-only-from-before [before regex]
-  (cond
-   (empty? before)
-   nil
-   :else
-   (extract-no-empties-only-before before regex)))
-
-(defn extract-regexes-not-empty [from-before from-after count-before]
-  (let [
-        before-end-position (:end (last from-before))
-        after-start-position (:start (first from-after))
-        before-offset (- count-before before-end-position)
-        ]
-    (if
-      (< before-offset after-start-position)
-      (:regex (last from-before))
-      (:regex (first from-after)))))
-
-(defn extract-no-empties [before after regex]
-  (let [
-        from-before
-          (sort-regexes
-           (get-regex-matches-with-starts-ends-maps regex before)
-           :end)
-        from-after
-          (sort-regexes
-           (get-regex-matches-with-starts-ends-maps regex after)
-           :start)
-        extracted-element
-          (cond
-           (empty? from-before)
-           (:regex (first from-after))
-           (empty? from-after)
-           (:regex (last from-before))
-           :else
-           (extract-regexes-not-empty
-            from-before from-after (count before)))
-        ]
-    extracted-element))
-
-(defn extract-from-before-and-after [before after regex]
-  (cond
-   (and (empty? before) (empty? after))
-   nil
-   (empty? before)
-   (:regex
-    (first
-     (sort-regexes
-      (get-regex-matches-with-starts-ends-maps regex after)
-      :start)))
-   (empty? after)
-   (:regex
-    (last
-     (sort-regexes
-      (get-regex-matches-with-starts-ends-maps regex before)
-      :end)))
-   :else
-   (extract-no-empties before after regex)))
-
-(defn conv-str-to-regex [s]
-  (re-pattern
-   (str "\\Q" s "\\E")))
 
 (def date-regex
   (re-pattern
@@ -144,7 +53,7 @@
 
 (def cities-names
   (str
-   "(\\s[" latin-big-without-roman-digits pl-big-diacritics "]"
+   "(\\s[" latin-big-without-roman-digits common/pl-big-diacritics "]"
    to-word-end ")+"))
 
 (def non-nac-regex-str
@@ -174,29 +83,121 @@
 (def court-regex
   (re-pattern court-regex-str))
 
+(def starting-or-ending-with-non-letter
+  (re-pattern
+   (str
+    "[^a-zA-Z" common/pl-diacritics "]$|^[^a-zA-Z" common/pl-diacritics "]")))
+
+(defn sort-regexes [coll end-indicator]
+  (sort
+   #(compare (end-indicator %1) (end-indicator %2))
+   coll))
+
+(defn national-appeals-chamber? [case-nmb]
+  (or
+   (common/substring? "UZP/" case-nmb)
+   (common/substring? "/UZP" case-nmb)
+   (common/substring? "KIO" case-nmb)))
+
+(defn split-and-take-first [s regex-str]
+  (when (common/not-nil? s)
+    (first
+     (str/split
+      s
+      (re-pattern regex-str)))))
+
+(defn extract-no-empties-only-before [before regex]
+  (let [
+        from-before
+          (sort-regexes
+           (common/get-regex-matches-with-starts-ends-maps regex before)
+           :end)
+        extracted-element (:regex (last from-before))
+        ]
+    extracted-element))
+
+(defn extract-only-from-before [before regex]
+  (cond
+   (empty? before)
+   nil
+   :else
+   (extract-no-empties-only-before before regex)))
+
+(defn extract-regexes-not-empty [from-before from-after count-before]
+  (let [
+        before-end-position (:end (last from-before))
+        after-start-position (:start (first from-after))
+        before-offset (- count-before before-end-position)
+        ]
+    (if
+      (< before-offset after-start-position)
+      (:regex (last from-before))
+      (:regex (first from-after)))))
+
+(defn extract-no-empties [before after regex]
+  (let [
+        from-before
+          (sort-regexes
+           (common/get-regex-matches-with-starts-ends-maps regex before)
+           :end)
+        from-after
+          (sort-regexes
+           (common/get-regex-matches-with-starts-ends-maps regex after)
+           :start)
+        extracted-element
+          (cond
+           (empty? from-before)
+           (:regex (first from-after))
+           (empty? from-after)
+           (:regex (last from-before))
+           :else
+           (extract-regexes-not-empty
+            from-before from-after (count before)))
+        ]
+    extracted-element))
+
+(defn extract-from-before-and-after [before after regex]
+  (cond
+   (and (empty? before) (empty? after))
+   nil
+   (empty? before)
+   (:regex
+    (first
+     (sort-regexes
+      (common/get-regex-matches-with-starts-ends-maps regex after)
+      :start)))
+   (empty? after)
+   (:regex
+    (last
+     (sort-regexes
+      (common/get-regex-matches-with-starts-ends-maps regex before)
+      :end)))
+   :else
+   (extract-no-empties before after regex)))
+
+(defn conv-str-to-regex [s]
+  (re-pattern
+   (str "\\Q" s "\\E")))
+
 (defn extract-court [parts regex-str]
   (let [
         split-second-part
           (split-and-take-first
            (second parts)
            (str judgment-type-regex-str
-                "|\\)\\.\\s(?=[A-Z" pl-big-diacritics "])"))
+                "|\\)\\.\\s(?=[A-Z" common/pl-big-diacritics "])"))
         ]
     (extract-from-before-and-after
      (first parts)
      split-second-part
      (re-pattern regex-str))))
 
-(def starting-or-ending-with-non-letter
-  (re-pattern
-   (str "[^a-zA-Z" pl-diacritics "]$|^[^a-zA-Z" pl-diacritics "]")))
-
 (defn trim-non-letters [s]
   (str/replace s starting-or-ending-with-non-letter ""))
 
 (defn postprocess [s]
   (when
-    (not-nil? s)
+    (common/not-nil? s)
     (let [
           before-dot-or-comma
             (first (str/split s #"\.|,"))
@@ -228,8 +229,8 @@
 
 (defn extract-ref-judgments [s]
   (let [
-        preprocessed (preprocess s)
-        case-nmbs (extract-all-signatures s)
+        preprocessed (common/preprocess s)
+        case-nmbs (judgment-links/extract-all-signatures s)
         other-judgment-links-data
           (map #(extract-other-data % preprocessed) case-nmbs)
         ]

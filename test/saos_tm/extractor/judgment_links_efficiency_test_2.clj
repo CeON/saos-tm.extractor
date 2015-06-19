@@ -1,12 +1,12 @@
 (ns saos-tm.extractor.judgment-links-efficiency-test-2
   (:require
    [clojure.test :refer :all]
-   [saos-tm.extractor.common :refer :all]
-   [saos-tm.extractor.common-test :refer :all]))
+   [saos-tm.extractor.common-test :as common-test]))
 
 (deftest judgment-links-efficiency-test-2
-  (links-efficiency-test
-   "txt2" "jdg2" get-benchmark-signatures judgment-links-extract
-   links-preprocess
+  (common-test/links-efficiency-test
+   "txt2" "jdg2"
+   common-test/get-benchmark-signatures common-test/judgment-links-extract
+   common-test/links-preprocess
    0.99 0.945
-   signature-to-csv log-results-without-signatures))
+   common-test/signature-to-csv common-test/log-results-without-signatures))

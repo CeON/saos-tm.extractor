@@ -1,23 +1,107 @@
 (ns saos-tm.extractor.law-links
   (:require
-   [saos-tm.extractor.common :refer :all]
+   [saos-tm.extractor.common :as common]
    [clojure.string :as str]
-   [clojure.set :refer :all]
+   [clojure.set :as set]
    [langlab.core.parsers :refer [lg-split-tokens-bi]]
-   [langlab.core.parsers :refer :all]
-   [langlab.core.multi-stemmers :refer :all])
+   [langlab.core.parsers :as langlab-parsers]
+   [langlab.core.multi-stemmers :as langlab-multi-stemmers]
+   [langlab.core.characters :as langlab-characters])
   (:import java.io.File)
   (:gen-class))
+
+(def coords-tokens
+  ["." "," ";" "Art" "art" "ust" "par" "§" "pkt" "zd" "i"
+   "oraz" "lub" "z" "-" "a" "także" "lit"])
+
+(def dictionary-for-acts
+  [[#"(?i)^\s*Konstytucji"
+    {:journalNo "78" :journalEntry "483", :journalYear "1997"}]
+   [#"(?i)^\s*k\.?c" {:journalNo "16" :journalEntry "93", :journalYear "1964"}]
+   [#"(?i)^\s*k\.?h"
+    {:journalNo "57" :journalEntry "502", :journalYear "1934"}]
+   [#"(?i)^\s*k\.?k\.?s"
+    {:journalNo "83" :journalEntry "930", :journalYear "1999"}]
+   [#"(?i)^\s*k\.?k\.?w"
+    {:journalNo "90" :journalEntry "557", :journalYear "1997"}]
+   [#"(?i)^\s*k\.?k"
+    {:journalNo "88" :journalEntry "553", :journalYear "1997"}]
+   [#"(?i)^\s*k\.?m"
+    {:journalNo "138" :journalEntry "1545", :journalYear "2001"}]
+   [#"(?i)^\s*k\.?p\.?a"
+    {:journalNo "30" :journalEntry "168", :journalYear "1960"}]
+   [#"(?i)^\s*k\.?p\.?c"
+    {:journalNo "43" :journalEntry "296", :journalYear "1964"}]
+   [#"(?i)^\s*k\.?p\.?k"
+    {:journalNo "89" :journalEntry "555", :journalYear "1997"}]
+   [#"(?i)^\s*k\.?p\.?w"
+    {:journalNo "106" :journalEntry "1148", :journalYear "2001"}]
+   [#"(?i)^\s*k\.?p"
+    {:journalNo "24" :journalEntry "141", :journalYear "1974"}]
+   [#"(?i)^\s*k\.?r\.?o"
+    {:journalNo "9" :journalEntry "59", :journalYear "2001"}]
+   [#"(?i)^\s*k\.?s\.?h"
+    {:journalNo "94" :journalEntry "1037", :journalYear "2000"}]
+   [#"(?i)^\s*k\.?w"
+    {:journalNo "12" :journalEntry "114", :journalYear "1971"}]
+   [#"(?i)^\s*k\.?z"
+    {:journalNo "82" :journalEntry "598", :journalYear "1933"}]
+   [#"(?i)^\s*u\.?s\.?p"
+    {:journalNo "98" :journalEntry "1070", :journalYear "2001"}]
+   [#"(?i)^\s*ustawy o TK"
+    {:journalNo "102" :journalEntry "643", :journalYear "1997"}]
+   [#"(?i)^\s*ustawy o Trybunale Konstytucyjnym"
+    {:journalNo "102" :journalEntry "643", :journalYear "1997"}]
+   [#"(?i)^\s*ustawy o komornikach"
+    {:journalNo "133" :journalEntry "882", :journalYear "1997"}]
+   [#"(?i)^\s*ustawy o ochronie konkurencji"
+    {:journalNo "50" :journalEntry "331", :journalYear "2007"}]])
+
+(def art-coords-names [:art :par :ust :pkt :zd :lit])
+
+(def journal-regex #"[\S\s]*Dz\.\s*U\.[\S\s]*")
+
+(def explicit-local-dictionary-definition-regex
+  (re-pattern
+   (str
+    ";\\s*dalej\\s*:?|"
+    ",\\s*dalej\\s*:?|"
+    "zwana\\s*dalej\\s*:?|"
+    "zwanej\\s*dalej\\s*:?|"
+    "\\(dalej\\s*:?")))
+
+(def acts-txts-split-regex
+  (re-pattern
+            (str "(?i)[^:]\\s+ustaw(a|y)\\s|"
+                 "\\srozporządzen[^\\s]*\\s|"
+                 "\\skodeksu\\s|"
+                 "(A|a)rt\\.|"
+                 "§")))
+
+(def journal-year-extraction-regex
+  (re-pattern
+   (str "Dz\\.\\s*U\\.\\s*z?\\s*\\d+\\s*r|"
+        "Dz\\.\\s*U\\.\\s*\\d{4}|"
+        "Dz\\.\\s*U\\.\\s*t\\.j\\.\\s*z\\s*\\d{4}")))
+
+(def cut-for-act-coords-regex
+  (re-pattern
+   (str "w\\s*zw\\.\\s*z|"
+        "w\\s*związku\\s*z|"
+        "[^e]\\s(U|u)staw|"
+        "\\s(R|r)ozporządz|"
+        "\\)")))
+
+(def not-map? (complement map?))
+
+(defn split-to-tokens [s]
+  (lg-split-tokens-bi "pl" s))
 
 (defn parse-int [s]
    (Integer. (re-find  #"\d+" s )))
 
 (defn in? [seq elm]
   (some #(= elm %) seq))
-
-(def coords-tokens
-  ["." "," ";" "Art" "art" "ust" "par" "§" "pkt" "zd" "i"
-   "oraz" "lub" "z" "-" "a" "także" "lit"])
 
 (defn not-coords-nmb? [s]
   (nil?
@@ -29,7 +113,7 @@
 
 (defn get-coords-tokens [first-token-index tokens]
   (first
-   (indices
+   (common/indices
     #(and (not-coord-token? %) (not-coords-nmb? %))
     (drop first-token-index tokens))))
 
@@ -76,54 +160,11 @@
         (nth tokens-and-coords (inc i))
         (nth tokens-and-coords i)))))
 
-(def dictionary-for-acts-strict
-  [[#"(?i)^\s*Konstytucji"
-    {:journalNo "78" :journalEntry "483", :journalYear "1997"}]
-   [#"(?i)^\s*k\.?c" {:journalNo "16" :journalEntry "93", :journalYear "1964"}]
-   [#"(?i)^\s*k\.?h"
-    {:journalNo "57" :journalEntry "502", :journalYear "1934"}]
-   [#"(?i)^\s*k\.?k\.?s"
-    {:journalNo "83" :journalEntry "930", :journalYear "1999"}]
-   [#"(?i)^\s*k\.?k\.?w"
-    {:journalNo "90" :journalEntry "557", :journalYear "1997"}]
-   [#"(?i)^\s*k\.?k"
-    {:journalNo "88" :journalEntry "553", :journalYear "1997"}]
-   [#"(?i)^\s*k\.?m"
-    {:journalNo "138" :journalEntry "1545", :journalYear "2001"}]
-   [#"(?i)^\s*k\.?p\.?a"
-    {:journalNo "30" :journalEntry "168", :journalYear "1960"}]
-   [#"(?i)^\s*k\.?p\.?c"
-    {:journalNo "43" :journalEntry "296", :journalYear "1964"}]
-   [#"(?i)^\s*k\.?p\.?k"
-    {:journalNo "89" :journalEntry "555", :journalYear "1997"}]
-   [#"(?i)^\s*k\.?p\.?w"
-    {:journalNo "106" :journalEntry "1148", :journalYear "2001"}]
-   [#"(?i)^\s*k\.?p"
-    {:journalNo "24" :journalEntry "141", :journalYear "1974"}]
-   [#"(?i)^\s*k\.?r\.?o"
-    {:journalNo "9" :journalEntry "59", :journalYear "2001"}]
-   [#"(?i)^\s*k\.?s\.?h"
-    {:journalNo "94" :journalEntry "1037", :journalYear "2000"}]
-   [#"(?i)^\s*k\.?w"
-    {:journalNo "12" :journalEntry "114", :journalYear "1971"}]
-   [#"(?i)^\s*k\.?z"
-    {:journalNo "82" :journalEntry "598", :journalYear "1933"}]
-   [#"(?i)^\s*u\.?s\.?p"
-    {:journalNo "98" :journalEntry "1070", :journalYear "2001"}]
-   [#"(?i)^\s*ustawy o TK"
-    {:journalNo "102" :journalEntry "643", :journalYear "1997"}]
-   [#"(?i)^\s*ustawy o Trybunale Konstytucyjnym"
-    {:journalNo "102" :journalEntry "643", :journalYear "1997"}]
-   [#"(?i)^\s*ustawy o komornikach"
-    {:journalNo "133" :journalEntry "882", :journalYear "1997"}]
-   [#"(?i)^\s*ustawy o ochronie konkurencji"
-    {:journalNo "50" :journalEntry "331", :journalYear "2007"}]])
-
 (defn tokens-to-string [tokens]
   (let [
         txt (str/join " " tokens)
         without-unnecessary-spaces
-          (replace-several txt
+          (common/replace-several txt
                            #" \." "."
                            #" ," ","
                            #" / " "/"
@@ -132,8 +173,6 @@
                            #" ;" ";")
         ]
     without-unnecessary-spaces))
-
-(def not-map? (complement map?))
 
 (defn min-index [coll]
   (.indexOf coll
@@ -147,14 +186,242 @@
 (defn are-coords? [item]
   (map? item))
 
+(defn insert-at-index [s ch index]
+  (str (apply str (take index s)) ch (apply str (drop index s))))
+
+(defn handle-superscript-no-range [s]
+  (let [
+        length (count s)
+        ]
+    (if (and (> length 3) (langlab-characters/contains-digits-only? s))
+      (str (insert-at-index s "(" 3) ")")
+      s)))
+
+(defn handle-superscript-range [s]
+  (let [
+        numbers
+          (map handle-superscript-no-range
+               (str/split s #"-"))
+        ]
+    (str/join "-" numbers)))
+
+(defn handle-superscript [s]
+  (if (common/substring? "-" s)
+    (handle-superscript-range s)
+    (handle-superscript-no-range s)))
+
+(defn get-coords-names [is-art is-par is-ust is-pkt is-zd is-lit]
+  (filter #(not= "" %)
+    [(if is-art "art" "")
+     (if is-par "par" "")
+     (if is-ust "ust" "")
+     (if is-pkt "pkt" "")
+     (if is-zd "zd." "")
+     (if is-lit "lit." "")]))
+
+(defn zero-if-empty [item]
+  (if (empty? item) "0" item))
+
+(defn convert-ranges-to-single-records [record]
+  (map
+   #(zero-if-empty (record %))
+   ["art" "par" "ust" "pkt" "zd." "lit."]))
+
+(defn cartesian-product [colls]
+  (if (empty? colls)
+    '(())
+    (for [x (first colls)
+      more (cartesian-product (rest colls))]
+      (cons x more))))
+
+(defn remove-trailing-conjunction [s]
+  (str/replace s #"\si$|\sz$|\soraz$" ""))
+
+(defn insert-art [s]
+  (if (common/matches? s #"^(A|a)rt[\S\s]*")
+    s
+    (str "art. " s)))
+
+(defn split-to-art-coords-parts [s]
+  (str/split s #"Art\.?|art\.?|§|ust\.?|pkt\.?|zd\.?|lit\.?"))
+
+(defn extract-coords [s]
+  (let [
+        numbers
+          (map #(handle-superscript (str/trim %))
+               (drop 1 (split-to-art-coords-parts s)))
+        coords-names
+          (get-coords-names
+           (or (common/substring? "art" s) (common/substring? "Art" s))
+           (common/substring? "§"   s)
+           (common/substring? "ust" s)
+           (common/substring? "pkt" s)
+           (common/substring? "zd"  s)
+           (common/substring? "lit" s))
+        full-coords
+           (convert-ranges-to-single-records
+            (zipmap coords-names numbers))
+        ]
+    full-coords))
+
+(defn create-coords-list-with-value-at-index [index coords-list-length s]
+  (concat
+   (take index (repeat "0"))
+   [(str/trim s)]
+   (take (dec (- coords-list-length index)) (repeat "0"))))
+
+(defn cast-coords-lists [more-important-list less-important-list]
+  (let [
+        first-non-zero-index
+          (count (take-while #(= % "0") less-important-list))
+        ]
+    (concat
+     (take first-non-zero-index more-important-list)
+     (drop first-non-zero-index less-important-list))))
+
+(defn extract-coords-lists-for-other-parts [the-part first-part-coords]
+  (if
+    (or
+     (common/substring? "§"   the-part)
+     (common/substring? "ust" the-part)
+     (common/substring? "pkt" the-part)
+     (common/substring? "zd"  the-part)
+     (common/substring? "lit" the-part))
+    (extract-coords the-part)
+    (let [
+          trailing-zeros-count
+            (count
+             (take-while #(= % "0")
+                         (reverse first-part-coords)))
+          index-of-least-important-art-coord
+            (dec
+             (- (count first-part-coords)
+                trailing-zeros-count))
+          ]
+      (create-coords-list-with-value-at-index
+       index-of-least-important-art-coord
+       (count first-part-coords)
+       the-part))))
+
+(defn convert-to-coords-lists [parts-sep-by-conj]
+  (let [
+        first-part-coords (extract-coords (first parts-sep-by-conj))
+        other-parts-coords
+          (if (= (count parts-sep-by-conj) 1)
+            nil
+            (map #(extract-coords-lists-for-other-parts % first-part-coords)
+                 (drop 1 parts-sep-by-conj)))
+        other-parts-coords-cast
+          (map #(cast-coords-lists first-part-coords %) other-parts-coords)
+        ]
+    (concat [first-part-coords] other-parts-coords-cast)))
+
+(defn extract-coords-lists [s]
+  (let [
+        seperated-by-conjunctions (str/split s #",| i | oraz | lub ")
+        coords (convert-to-coords-lists seperated-by-conjunctions)
+        ]
+    coords))
+
+(defn extract-art-coords-with-multiple-art-numbers [art-part other-part]
+  (let [
+        art-parts (str/split art-part #",|\si\s|\soraz\s|\slub\s")
+        last-part (str/join "" [(last art-parts) other-part])
+        to-extract-coll (conj (drop-last art-parts) last-part)
+        to-extract-with-art-coll (map insert-art to-extract-coll)
+        ]
+    (mapcat extract-coords-lists to-extract-with-art-coll)))
+
+(defn extract-coords-for-single-art [s]
+  (let [
+        parts
+          (langlab-parsers/split*
+           (str/replace s #",$" "")
+           #"§|ust\.|ust|pkt|zd\.|zd|lit\.|lit")
+        art-part (first parts)
+        other-part (str/join "" (rest parts))
+        result
+          (if (or
+               (common/substring? "," art-part)
+               (common/substring? " i " art-part)
+               (common/substring? " oraz " art-part)
+               (common/substring? " lub " art-part))
+            (extract-art-coords-with-multiple-art-numbers art-part other-part)
+            (extract-coords-lists (str/replace s #";$" "")))
+        ]
+    result))
+
+(defn cleanse-commas [s]
+  (common/remove-double-spaces
+   (common/replace-several s
+                    #"art\.?\s*," "art "
+                    #"par\.?\s*," "par "
+                    #"ust\.?\s*," "ust "
+                    #"pkt\.?\s*," "pkt "
+                    #"zd\.?\s*," "zd "
+                    #"lit\.?\s*," "lit ")))
+
+(defn extract-art-coords [s]
+  (let [
+        cleansed-commas (cleanse-commas s)
+        trimmed (str/trim cleansed-commas)
+        separate-art-coords
+          (if (common/substring? "art" trimmed)
+            (map
+             #(apply str "art." %)
+             (drop 1
+                   (str/split trimmed #"art\.?")))
+            [trimmed])
+        separate-art-coords-trimmed
+          (map str/trim separate-art-coords)
+        without-conjunctions
+          (map remove-trailing-conjunction separate-art-coords-trimmed)
+        ]
+    (mapcat extract-coords-for-single-art without-conjunctions)))
+
+(defn get-year-from-act-name [s]
+  (let [
+        pattern (last (re-seq #"\s\d{4}\s" s))
+        ]
+        (when
+          (not-empty pattern)
+          (apply str
+            (re-seq #"\d+" pattern)))))
+
+(defn cut-to-first-parenthesis-pair [s]
+  (re-find #"[^\(]*\([^\)]*\)" s))
+
+(defn get-year-of-law-act [s]
+  (let [
+        to-first-parenthesis-pair (cut-to-first-parenthesis-pair s)
+        before-law-change-indication
+          (if (nil? to-first-parenthesis-pair)
+            s
+            (first (str/split to-first-parenthesis-pair #"zm\." )))
+        txt
+          (if (nil? before-law-change-indication)
+            s
+            before-law-change-indication)
+        year-pattern-match (re-find journal-year-extraction-regex txt)
+        year
+          (if
+            (not-empty year-pattern-match)
+            (apply str
+                   (re-seq #"[\d]+" year-pattern-match))
+            (get-year-from-act-name
+             (first
+              (str/split txt #"Dz\."))))
+        ]
+    year))
+
 (defn extract-with-global-dictionary [tokens-or-coords dictionary]
   (if (are-coords? tokens-or-coords)
     tokens-or-coords
     (let [
           txt (tokens-to-string tokens-or-coords)
           matched-indices
-            (indices
-             #(not-nil? (re-find % txt))
+            (common/indices
+             #(common/not-nil? (re-find % txt))
              (map #(first %) dictionary))
           positions
             (if-not (= 1 (count matched-indices))
@@ -170,7 +437,7 @@
               (nth matched-indices min-i)
               (first matched-indices))
           dictionary-record
-            (when (not-nil? first-index)
+            (when (common/not-nil? first-index)
               (second
                (nth dictionary first-index)))
           ]
@@ -198,11 +465,11 @@
         entry-part (nth parts 2)
         entry
           (first
-           (filter #(matches? % #"\d+") entry-part))
+           (filter #(common/matches? % #"\d+") entry-part))
         index-of-last-nmb
           (last
-           (indices
-            #(matches? % #"\d+")
+           (common/indices
+            #(common/matches? % #"\d+")
             journal-nmb-part))
         journal-nmb
           (if
@@ -266,7 +533,7 @@
         index-of-journal-nmb-token (.indexOf tokens "Dz.U")
         token-after-journal-nmb (nth tokens (inc index-of-journal-nmb-token))
         ]
-    (if (matches? token-after-journal-nmb #"(\.\d+)+")
+    (if (common/matches? token-after-journal-nmb #"(\.\d+)+")
       (extract-journal-nmb-and-entry-dots token-after-journal-nmb)
       (extract-year-journal-nmb-and-entry tokens))))
 
@@ -274,14 +541,14 @@
   (let [
         morfologik-stems
           (when-not (nil? s)
-            (pl-multi-stem-morfologik s))
+            (langlab-multi-stemmers/pl-multi-stem-morfologik s))
         ]
     (if (empty? morfologik-stems)
       [s]
       morfologik-stems)))
 
 (defn stems-match? [stems1 stems2]
-  ((complement empty?) (intersection (set stems1) (set stems2))))
+  ((complement empty?) (set/intersection (set stems1) (set stems2))))
 
 (defn tokens-match? [tokens1 tokens2]
   (let [
@@ -324,7 +591,7 @@
         dictionary-stems (:act-name item)
         first-match-index
           (first
-           (indices
+           (common/indices
             #(stems-match? % (stem (first tokens)))
             dictionary-stems))
         dictionary-stems-count (count dictionary-stems)
@@ -366,14 +633,6 @@
       (if (empty? matches)
         tokens-or-coords
         (:act-coords (first matches))))))
-
-(def cut-for-act-coords-regex
-  (re-pattern
-   (str "w\\s*zw\\.\\s*z|"
-        "w\\s*związku\\s*z|"
-        "[^e]\\s(U|u)staw|"
-        "\\s(R|r)ozporządz|"
-        "\\)")))
 
 (defn cut-tokens-for-act-coords [tokens]
   (let [
@@ -435,19 +694,6 @@
         local-explicit-dictionary local-implicit-dictionary global-dictionary
         tokens-cut)))))
 
-(defn extract-act-coords-strict [tokens & _]
-  (let [
-        extracted-with-dictionary
-          (extract-with-global-dictionary tokens dictionary-for-acts-strict)
-        ]
-    (if (map? extracted-with-dictionary)
-      extracted-with-dictionary
-      (cond
-       (some #{"Dz.U"} tokens)
-       (extract-act-coords-journal-with-dot tokens)
-       (and (some #{"Dz"} tokens) (some #{"U"} tokens))
-       (extract-year-journal-nmb-and-entry tokens)))))
-
 (defn coord-to-text [token]
   (if (or (= "." token) (= "-" token))
     token
@@ -464,7 +710,7 @@
 (defn get-interfering-art-coords-ranges [tokens]
   (map
    #(find-coords-ranges % tokens)
-   (indices
+   (common/indices
     #(or (= % "art") (= % "Art") (= % "§") (= % "artykuł") (= % "Artykuł"))
     tokens)))
 
@@ -497,22 +743,6 @@
      [(first (first interfering-art-coords-ranges))]
      (flatten inter-coords-ranges))))
 
-(defn get-line-with-signature [s]
-  (let [
-        lines (str/split s (re-pattern system-newline))
-        lines-with-sygn-text (filter #(.startsWith % "Sygn.") lines)
-        index-of-first-line-ending-with-date
-          (first
-           (indices
-            #(.endsWith % " r.")
-            lines))
-        ]
-    (if (empty? lines-with-sygn-text)
-      (nth lines (+ index-of-first-line-ending-with-date 1))
-      (first lines-with-sygn-text))))
-
-(def art-coords-names [:art :par :ust :pkt :zd :lit])
-
 (defn zip-link-to-map [link]
   (let [
         art (:art link)
@@ -535,8 +765,8 @@
      (:art orphaned-link))))
 
 (defn cleanse [s]
-  (when (not-nil? s)
-    (replace-several s
+  (when (common/not-nil? s)
+    (common/replace-several s
                      #"\." ""
                      #"\s" "")))
 
@@ -579,7 +809,7 @@
 
 (defn cleanse-act-abbrevation [s]
   (str/trim
-   (replace-several s
+   (common/replace-several s
                     #"^\s*również" ""
                     #"^[^A-Za-ząćęłńóśżźĄĆĘŁŃÓŚŻŹ\.]+" ""
                     #"[^A-Za-ząćęłńóśżźĄĆĘŁŃÓŚŻŹ\\.]+$" "")))
@@ -598,7 +828,7 @@
         act-abbreviation-cleansed
           (cleanse-act-abbrevation act-abbreviation-cut)
         act-abbreviation-coll
-          (if (substring? " lub " act-abbreviation-cleansed)
+          (if (common/substring? " lub " act-abbreviation-cleansed)
             (map cleanse-act-abbrevation
                  (str/split act-abbreviation-cleansed #"\slub\s"))
             [act-abbreviation-cleansed])
@@ -613,26 +843,15 @@
     {:act-coords act-coords
      :act-abbreviation act-abbreviation-coll-tokens}))
 
-(def journal-regex #"[\S\s]*Dz\.\s*U\.[\S\s]*")
-
 (defn doesnt-contain-journal? [s]
-  (when (not-nil? s)
-    ((complement matches?) s journal-regex)))
+  (when (common/not-nil? s)
+    ((complement common/matches?) s journal-regex)))
 
 (defn cannot-extract-act-coords? [s]
   (or
    (empty? s)
    (doesnt-contain-journal?
     (first (str/split s #"w\s*zw\.\s*z|w\s*związku\s*z")))))
-
-(def explicit-local-dictionary-definition-regex
-  (re-pattern
-   (str
-    ";\\s*dalej\\s*:?|"
-    ",\\s*dalej\\s*:?|"
-    "zwana\\s*dalej\\s*:?|"
-    "zwanej\\s*dalej\\s*:?|"
-    "\\(dalej\\s*:?")))
 
 (defn get-local-explicit-dictionary-item [s]
   (when-not (cannot-extract-act-coords? s)
@@ -691,20 +910,12 @@
     (let [
           first-law-act-token-index
             (first
-             (indices
+             (common/indices
              #(or (= "ustawa" %) (= "ustawy" %))
              (get-range tokens 0 first-art-index)))
           ]
       (when-not (nil? first-law-act-token-index)
         [first-law-act-token-index first-art-index]))))
-
-(def acts-txts-split-regex
-  (re-pattern
-            (str "(?i)[^:]\\s+ustaw(a|y)\\s|"
-                 "\\srozporządzen[^\\s]*\\s|"
-                 "\\skodeksu\\s|"
-                 "(A|a)rt\\.|"
-                 "§")))
 
 (defn extract-law-links
   [s extract-act-coords-fn
@@ -721,11 +932,11 @@
             #(return-empty-coll % nil))
         global-dictionary
           (if use-global-dictionary
-            dictionary-for-acts-strict
+            dictionary-for-acts
             [])
 
-        preprocessed (preprocess s)
-        txt (replace-several preprocessed
+        preprocessed (common/preprocess s)
+        txt (common/replace-several preprocessed
                              #"art\." " art. "
                              #"ust\." " ust. "
                              #"§" " § "
@@ -788,11 +999,6 @@
    use-local-explicit-dictionary
    use-local-implicit-dictionary
    use-global-dictionary))
-
-(defn extract-law-links-strict [s]
-  (extract-law-links
-   s extract-act-coords-strict
-   false false false))
 
 ; Utilities for the art part of the extracted link.
 ; Includes converting to string and sorting.

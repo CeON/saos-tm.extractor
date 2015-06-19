@@ -1,47 +1,59 @@
 (ns saos-tm.extractor.judgment-links
   (:require
-   [saos-tm.extractor.common :refer :all]
+   [saos-tm.extractor.common :as common]
    [clojure.string :as str]
-   [clojure.set :refer :all])
+   [clojure.set :as set])
   (:import java.io.File)
   (:gen-class))
-
-(defn extract [re s fnc]
-  (set
-   (map
-    #(str/replace (fnc %) system-newline " ")
-    (re-seq re s))))
 
 (def osp-regex
   #"[IVXLCDM]+[\s\.]+[0-9]*[\s\.]*[a-zA-Z]*-?[a-zA-Z]*[\s\.]+\d+/\d+")
 
+(def kio-regex #"KIO\s*\d+\s*/\s*\d+")
+
+(def kio-uzp-regex #"KIO\s*/\s*UZP\s+\d+\s*(/\s*\d+)?")
+
+(def kio-uzp-no-space-regex #"KIO\s*/\s*UZP\s*/\s*\d+\s*/\s*\d+")
+
+(def kio-uzp-zo-regex #"UZP\s*/\s*ZO\s*/\s*\d+-\d+\s*/\s*\d+")
+
+(def tk-regex-str
+  "(Co|K|Kp|U|P|SK|Kpt|Pp|M|S|T|Tp|Ts|Tw|Twn|Kw|Uw|W)\\.?\\s+\\d+/\\d+")
+
+(def tk-extraction-regex
+  (re-pattern (str "[^a-zA-Z0-9]" tk-regex-str)))
+
+(def sn-regex #"SNO\s+\d+/\d+")
+
+(def nsa-regex
+  (re-pattern (str "[IVXLCDM]+\\s+[a-zA-Z]+/[a-zA-Z]+\\s+\\d+/\\d+|"
+                   "[a-zA-Z]+/[a-zA-Z]+\\s+\\d+/\\d+|"
+                   "OPS+\\s+\\d+/\\d+")))
+
+(def signature-regex #"(?i)(sygn\.*|sygnatur[^\s]*)\s*(akt)?:?")
+
+(def not-substring? (complement common/substring?))
+
+(defn extract [re s fnc]
+  (set
+   (map
+    #(str/replace (fnc %) common/system-newline " ")
+    (re-seq re s))))
+
 (defn extract-signatures-osp [s]
   (extract osp-regex s identity))
-
-(def kio-regex #"KIO\s*\d+\s*/\s*\d+")
 
 (defn extract-signatures-kio [s]
   (extract kio-regex s identity))
 
-(def kio-uzp-regex #"KIO\s*/\s*UZP\s+\d+\s*(/\s*\d+)?")
-
 (defn extract-signatures-kio-uzp [s]
   (extract kio-uzp-regex s #(if (string? %) % (first %))))
-
-(def kio-uzp-no-space-regex #"KIO\s*/\s*UZP\s*/\s*\d+\s*/\s*\d+")
 
 (defn extract-signatures-kio-uzp-zo-no-space [s]
   (extract kio-uzp-no-space-regex s identity))
 
-(def kio-uzp-zo-regex #"UZP\s*/\s*ZO\s*/\s*\d+-\d+\s*/\s*\d+")
-
 (defn extract-signatures-kio-uzp-zo [s]
   (extract kio-uzp-zo-regex s identity))
-
-(def tk-regex-str
-  "(Co|K|Kp|U|P|SK|Kpt|Pp|M|S|T|Tp|Ts|Tw|Twn|Kw|Uw|W)\\.?\\s+\\d+/\\d+")
-(def tk-extraction-regex
-  (re-pattern (str "[^a-zA-Z0-9]" tk-regex-str)))
 
 (defn choose-string [element]
   (if (string? element)
@@ -61,19 +73,11 @@
 (defn extract-signatures-tk [s]
   (set
    (map
-    #(str/replace % system-newline " ")
+    #(str/replace % common/system-newline " ")
     (extract-tk s))))
-
-(def sn-regex
-  #"SNO\s+\d+/\d+")
 
 (defn extract-signatures-sn [s]
   (extract sn-regex s identity))
-
-(def nsa-regex
-  (re-pattern (str "[IVXLCDM]+\\s+[a-zA-Z]+/[a-zA-Z]+\\s+\\d+/\\d+|"
-                   "[a-zA-Z]+/[a-zA-Z]+\\s+\\d+/\\d+|"
-                   "OPS+\\s+\\d+/\\d+")))
 
 (defn extract-signatures-nsa [s]
   (extract nsa-regex s identity))
@@ -82,7 +86,7 @@
   (str/trim
    (first
     (str/split
-     (replace-several s
+     (common/replace-several s
 
                       #"^[0-9]+\." " "
 
@@ -112,8 +116,8 @@
 (defn extract-signature-universal [tokens]
   (let [
         tokens-with-slash-indices
-          (indices
-           #(substring? "/" %)
+          (common/indices
+           #(common/substring? "/" %)
            tokens)
         first-index-with-slash (first tokens-with-slash-indices)
         second-index-with-slash (second tokens-with-slash-indices)
@@ -124,7 +128,8 @@
              (are-subsequent
               first-index-with-slash
               second-index-with-slash)
-             (not-matches? (nth tokens second-index-with-slash) #"/[\s\S]*"))
+             (common/not-matches?
+              (nth tokens second-index-with-slash) #"/[\s\S]*"))
             (second tokens-with-slash-indices)
             (first tokens-with-slash-indices))
         signature-tokens
@@ -135,9 +140,7 @@
     (str/join " " signature-tokens)))
 
 (defn has-slash? [s]
-  (substring? "/" s))
-
-(def signature-regex #"(?i)(sygn\.*|sygnatur[^\s]*)\s*(akt)?:?")
+  (common/substring? "/" s))
 
 (defn extract-signatures-universal
   "Function splits text by signature indicators. It takes 5 first tokens
@@ -176,7 +179,7 @@
     (extract-fn s)))
 
 (defn extract-signatures [extract-fncs s]
-  (union
+  (set/union
    (flatten
     (map
      #(extract-cleansed-signatures % s)
@@ -193,8 +196,6 @@
        (rest left-signatures)
        (clojure.string/replace curr-str (first left-signatures) " ")))))
 
-(def not-substring? (complement substring?))
-
 (defn one-word-but-not-uzp-kio? [s]
   (and
    (not-substring? " " s)
@@ -203,7 +204,7 @@
 
 (defn extract-all-signatures [s]
   (let [
-        preprocessed (preprocess s)
+        preprocessed (common/preprocess s)
 
         signatures-universal
           (extract-signatures
@@ -226,7 +227,7 @@
            signatures-osp-kio-space-set without-universal-signatures)
 
         all-signatures
-          (union
+          (set/union
            signatures-universal-set
            signatures-osp-kio-space-set
            (extract-signatures

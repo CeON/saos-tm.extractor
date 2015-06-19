@@ -1,51 +1,51 @@
 (ns saos-tm.extractor.cc-appealed-judgment-links-test
   (:require
    [clojure.test :refer :all]
-   [ clojure.string :as str ]
-   [clojure.set :refer :all]
-   [saos-tm.extractor.common :refer :all]
-   [saos-tm.extractor.common-test :refer :all]
-   [saos-tm.extractor.cc-appealed-judgment-links :refer :all]
-   [clojure.java.io :as io]))
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [clojure.set :as set]
+   [saos-tm.extractor.common :as common]
+   [saos-tm.extractor.common-test :as common-test]
+   [saos-tm.extractor.cc-appealed-judgment-links
+    :as cc-appealed-judgment-links]))
 
 (deftest remove-html-tags-other-than-span-test []
   (is (=
-       (remove-html-tags-other-than-span
+       (common/remove-html-tags-other-than-span
         (str "<p></p>kdjh <span> </span>"
              " <span class=\"anon-block\"> (...) S.A.</span>"))
-        "  kdjh <span> </span> <span class=\"anon-block\"> (...) S.A.</span>")))
+       (str "  kdjh <span> </span> "
+            "<span class=\"anon-block\"> (...) S.A.</span>"))))
 
 (defn appeals-to-write [coll]
-  (str/join system-newline (sort coll)))
+  (str/join common/system-newline (sort coll)))
 
 (defn results-to-file [elements1 elements2 results-type court-type]
+  (if (not (.isDirectory (io/file common-test/log-data-path)))
+    (.mkdir (io/file common-test/log-data-path)))
   (let [
-        log-path "log/"
-        ]
-    (if (not (.isDirectory (io/file log-path)))
-      (.mkdir (io/file log-path)))
-       (let [
-             results (difference elements1 elements2)
-             _ (spit (str log-path court-type "-" results-type ".txt")
-                     (appeals-to-write results))
-             ])))
+        results (set/difference elements1 elements2)
+        _ (spit
+           (str common-test/log-data-path court-type "-" results-type ".txt")
+           (appeals-to-write results))
+        ]))
 
 (defn results-to-strs [file-names extracted-appeals]
   (into #{}
         (map
-         #(str "\"" %1 "\"" csv-delimiter "\""
-               (:appeal-type %2) "\"" csv-delimiter "\""
-               (:appellant %2) "\"" csv-delimiter "\""
-               (:judgment-type %2) "\"" csv-delimiter "\""
-               (:court %2) "\"" csv-delimiter "\""
-               (:date %2) "\"" csv-delimiter "\""
+         #(str "\"" %1 "\"" common/csv-delimiter "\""
+               (:appeal-type %2) "\"" common/csv-delimiter "\""
+               (:appellant %2) "\"" common/csv-delimiter "\""
+               (:judgment-type %2) "\"" common/csv-delimiter "\""
+               (:court %2) "\"" common/csv-delimiter "\""
+               (:date %2) "\"" common/csv-delimiter "\""
                (:signature %2) "\"")
          file-names extracted-appeals)))
 
 (defn handle-appeal-test [court-type extract-fn]
   (let [
         file-paths
-          (list-file-paths
+          (common-test/list-file-paths
            (str "test-data/cc-appealed/" court-type "/"))
         file-names (map #(last (str/split (str %) #"/")) file-paths)
         sentences (map #(slurp %) file-paths)
@@ -55,7 +55,7 @@
           (results-to-strs file-names extracted-appeals)
         correct-appeals-strs
           (into #{}
-                (split-lines
+                (common-test/split-lines
                  (slurp
                   (str "test-data/cc-appealed/" court-type ".txt"))))
 
@@ -69,7 +69,8 @@
            "error" court-type)
 
         precision-recall
-          (get-precision-recall extracted-appeals-strs correct-appeals-strs)
+          (common-test/get-precision-recall
+           extracted-appeals-strs correct-appeals-strs)
         ]
     precision-recall))
 
@@ -80,12 +81,12 @@
            "app-decision" "reg-decision"
            "app-decision-complaint" "reg-decision-complaint"]
         extract-fns
-          [extract-appeal-or-grievance
-           extract-appeal-or-grievance
-           extract-appeal-or-grievance
-           extract-appeal-or-grievance
-           extract-complaint
-           extract-complaint]
+          [cc-appealed-judgment-links/extract-appeal-or-grievance
+           cc-appealed-judgment-links/extract-appeal-or-grievance
+           cc-appealed-judgment-links/extract-appeal-or-grievance
+           cc-appealed-judgment-links/extract-appeal-or-grievance
+           cc-appealed-judgment-links/extract-complaint
+           cc-appealed-judgment-links/extract-complaint]
 
         results
           (map

@@ -1,7 +1,7 @@
 (ns saos-tm.extractor.csv-helpers
   (:require
-   [clojure.string :as str]
-   [saos-tm.extractor.common :refer :all])
+   [saos-tm.extractor.common :as common]
+   [clojure.string :as str])
   (:gen-class))
 
 (defn get-nth-args [csv-string]
@@ -10,7 +10,7 @@
         nth-args
           (map
            #(first
-             (str/split % (re-pattern csv-delimiter)))
+             (str/split % (re-pattern common/csv-delimiter)))
            lines)
         without-quots
           (map
