@@ -11,4 +11,15 @@
                  [clojure-csv/clojure-csv "2.0.1"]
                  [cheshire "5.3.1"]
                  [langlab "1.2.0"]
-                 [automat "0.1.3"]])
+                 [automat "0.1.3"]]
+
+   :plugins [ [codox "0.8.12"] ]
+
+   :codox {
+           :output-dir "target/apidoc"
+           :sources [ "src"]
+           :defaults {:doc/format :markdown}
+           :src-dir-uri "https://github.com/CeON/saos-tm.extractor/blob/master/"
+           :src-linenum-anchor-prefix "L"
+          }
+)
