@@ -9,6 +9,21 @@
    [saos-tm.extractor.law-links :as law-links]
    [saos-tm.extractor.judgment-links :as judgment-links]))
 
+(def test-data-path "test-data/")
+
+(def links-input-txts-dir-name "links-input-txts/")
+
+(def log-data-path "log/")
+
+(defn mkdir-if-not-exists [path]
+  (if (not (.isDirectory (io/file path)))
+    (.mkdir (io/file path))))
+
+(defn mkdir-path [path]
+  (let [dir (java.io.File. path)]
+    (if-not (.exists dir)
+      (.mkdirs dir))))
+
 (defn get-art-coords-csv [art-coords]
   (let [
         art-nr (:art art-coords)
@@ -188,9 +203,6 @@
 (defn split-lines [s]
   (str/split s (re-pattern common/system-newline)))
 
-(def links-test-data-path "test-data/links/")
-(def log-data-path "log/")
-
 (defn spit-all-csv-with-signatures [result-to-csv-fn path data signature]
   (spit path
         (apply str
@@ -293,101 +305,114 @@
         ]
     overall-precision-recall))
 
-(defn links-efficiency-test
-  [txt-dir-name ext
+(defn prepare-files-and-file-paths
+  [links-type-dir-name ext-dir-name txt-dir-name txt-files-conv-fn]
+  (let [
+        ext-dir-path (str test-data-path links-type-dir-name ext-dir-name)
+        ext-files (get-files-from-dir ext-dir-path)
+        txt-files
+          (txt-files-conv-fn
+           (get-files-from-dir
+            (str test-data-path links-input-txts-dir-name txt-dir-name "/")))
+        ext-files-names (list-file-names ext-dir-path)
+        log-files-paths
+          (sort
+           (map
+            #(str log-data-path links-type-dir-name ext-dir-name "/" %)
+            ext-files-names))
+        _ (mkdir-path
+            (str log-data-path links-type-dir-name ext-dir-name "/"))
+        ]
+    {:ext-files ext-files
+     :ext-files-names ext-files-names
+     :txt-files txt-files
+     :log-files-paths log-files-paths}))
+
+(defn judgment-links-efficiency-test
+  [links-type-dir-name txt-dir-name ext-dir-name
    benchmark-records-fn extracted-records-fn txt-files-conv-fn
    precision-threshold recall-threshold result-to-csv-fn log-results-fn]
-  (time
-   (let [
-         ext-dir (str links-test-data-path ext)
-         ext-files (get-files-from-dir ext-dir)
-         txt-files
-           (txt-files-conv-fn
-            (get-files-from-dir
-             (str links-test-data-path txt-dir-name "/")))
-         ext-files-names (list-file-names ext-dir)
-         log-files-paths
-           (sort
-             (map
-              #(str log-data-path ext "/" %)
-              ext-files-names))
-         _ (.mkdir (java.io.File. (str log-data-path ext)))
+  (let [
+        files-and-file-paths
+          (prepare-files-and-file-paths
+           links-type-dir-name ext-dir-name txt-dir-name txt-files-conv-fn)
 
-         benchmark-items (benchmark-records-fn ext-files)
-         extracted-items (extracted-records-fn txt-files)
+        benchmark-items
+          (benchmark-records-fn (files-and-file-paths :ext-files))
+        extracted-items
+          (extracted-records-fn (files-and-file-paths :txt-files))
 
-         overall-precision-recall
-           (get-and-print-efficiencies
-            benchmark-items extracted-items
-            ext-files ext-files-names log-files-paths
-            log-results-fn result-to-csv-fn
-            "OVERALL")
-         ]
-     (is (> (:precision overall-precision-recall) precision-threshold))
-     (is (> (:recall overall-precision-recall) recall-threshold)))))
+        overall-precision-recall
+          (get-and-print-efficiencies
+           benchmark-items extracted-items
+           (files-and-file-paths :ext-files)
+           (files-and-file-paths :ext-files-names)
+           (files-and-file-paths :log-files-paths)
+           log-results-fn result-to-csv-fn
+           "OVERALL")
+        ]
+    (is (> (:precision overall-precision-recall) precision-threshold))
+    (is (> (:recall overall-precision-recall) recall-threshold))))
 
 (defn extract-elems [key-name coll]
   (set
    (map #(key-name %) coll)))
 
 (defn law-links-efficiency-test
-  [txt-dir-name ext
+  [links-type-dir-name txt-dir-name ext-dir-name
    benchmark-records-fn extracted-records-fn txt-files-conv-fn
    acts-precision-threshold acts-recall-threshold
    arts-precision-threshold arts-recall-threshold
    overall-precision-threshold overall-recall-threshold
    result-to-csv-fn log-results-fn]
-  (time
-   (let [
-         ext-dir (str links-test-data-path ext)
-         ext-files (get-files-from-dir ext-dir)
-         txt-files
-           (txt-files-conv-fn
-            (get-files-from-dir
-             (str links-test-data-path txt-dir-name "/")))
-         ext-files-names (list-file-names ext-dir)
-         log-files-paths
-           (sort
-             (map
-              #(str log-data-path ext "/" %)
-              ext-files-names))
-         _ (.mkdir (java.io.File. (str log-data-path ext)))
+  (let [
+        files-and-file-paths
+          (prepare-files-and-file-paths
+           links-type-dir-name ext-dir-name txt-dir-name txt-files-conv-fn)
 
-         benchmark-items (benchmark-records-fn ext-files)
-         benchmark-acts (map #(extract-elems :act %) benchmark-items)
-         benchmark-arts (map #(extract-elems :art %) benchmark-items)
+        benchmark-items
+          (benchmark-records-fn (files-and-file-paths :ext-files))
+        benchmark-acts (map #(extract-elems :act %) benchmark-items)
+        benchmark-arts (map #(extract-elems :art %) benchmark-items)
 
-         extracted-items (extracted-records-fn txt-files)
-         extracted-acts (map #(extract-elems :act %) extracted-items)
-         extracted-arts (map #(extract-elems :art %) extracted-items)
+        extracted-items
+          (extracted-records-fn (files-and-file-paths :txt-files))
+        extracted-acts (map #(extract-elems :act %) extracted-items)
+        extracted-arts (map #(extract-elems :art %) extracted-items)
 
-         acts-precision-recall
-           (get-and-print-efficiencies
-            benchmark-acts extracted-acts
-            ext-files ext-files-names log-files-paths
-            log-results-fn result-to-csv-fn
-            "ACTS")
+        acts-precision-recall
+          (get-and-print-efficiencies
+           benchmark-acts extracted-acts
+           (files-and-file-paths :ext-files)
+           (files-and-file-paths :ext-files-names)
+           (files-and-file-paths :log-files-paths)
+           log-results-fn result-to-csv-fn
+           "ACTS")
 
-         arts-precision-recall
-           (get-and-print-efficiencies
-            benchmark-arts extracted-arts
-            ext-files ext-files-names log-files-paths
-            log-results-fn result-to-csv-fn
-            "ARTS")
+        arts-precision-recall
+          (get-and-print-efficiencies
+           benchmark-arts extracted-arts
+           (files-and-file-paths :ext-files)
+           (files-and-file-paths :ext-files-names)
+           (files-and-file-paths :log-files-paths)
+           log-results-fn result-to-csv-fn
+           "ARTS")
 
-         overall-precision-recall
-           (get-and-print-efficiencies
-            benchmark-items extracted-items
-            ext-files ext-files-names log-files-paths
-            log-results-fn result-to-csv-fn
-            "ACTS+ARTS")
-         ]
-     (is (> (:precision overall-precision-recall) overall-precision-threshold))
-     (is (> (:recall overall-precision-recall) overall-recall-threshold))
-     (is (> (:precision acts-precision-recall) acts-precision-threshold))
-     (is (> (:recall acts-precision-recall) acts-recall-threshold))
-     (is (> (:precision arts-precision-recall) arts-precision-threshold))
-     (is (> (:recall arts-precision-recall) arts-recall-threshold)))))
+        overall-precision-recall
+          (get-and-print-efficiencies
+           benchmark-items extracted-items
+           (files-and-file-paths :ext-files)
+           (files-and-file-paths :ext-files-names)
+           (files-and-file-paths :log-files-paths)
+           log-results-fn result-to-csv-fn
+           "ACTS+ARTS")
+        ]
+    (is (> (:precision overall-precision-recall) overall-precision-threshold))
+    (is (> (:recall overall-precision-recall) overall-recall-threshold))
+    (is (> (:precision acts-precision-recall) acts-precision-threshold))
+    (is (> (:recall acts-precision-recall) acts-recall-threshold))
+    (is (> (:precision arts-precision-recall) arts-precision-threshold))
+    (is (> (:recall arts-precision-recall) arts-recall-threshold))))
 
 (deftest cleanse-commas-test
   (is (=

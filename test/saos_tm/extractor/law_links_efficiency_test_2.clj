@@ -1,10 +1,10 @@
-(ns saos-tm.extractor.law-links-greedy-efficiency-test-2
+(ns saos-tm.extractor.law-links-efficiency-test-2
   (:require [clojure.test :refer :all]
             [saos-tm.extractor.common-test :as common-test]))
 
-(deftest law-links-greedy-efficiency-test-2
+(deftest law-links-efficiency-test-2
   (common-test/law-links-efficiency-test
-   "txt2" "law2"
+   "law-links-answers/" "txt2" "law2"
    common-test/get-benchmark-records common-test/law-links-extract-greedy
    common-test/links-preprocess
    0.829 0.775

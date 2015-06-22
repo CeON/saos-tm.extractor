@@ -4,8 +4,8 @@
    [saos-tm.extractor.common-test :as common-test]))
 
 (deftest judgment-links-efficiency-test-2
-  (common-test/links-efficiency-test
-   "txt2" "jdg2"
+  (common-test/judgment-links-efficiency-test
+   "judgment-links-answers/" "txt2" "jdg2"
    common-test/get-benchmark-signatures common-test/judgment-links-extract
    common-test/links-preprocess
    0.99 0.945

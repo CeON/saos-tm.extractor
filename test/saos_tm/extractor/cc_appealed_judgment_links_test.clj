@@ -9,6 +9,8 @@
    [saos-tm.extractor.cc-appealed-judgment-links
     :as cc-appealed-judgment-links]))
 
+(def cc-appealed-dir-name "cc-appealed/")
+
 (deftest remove-html-tags-other-than-span-test []
   (is (=
        (common/remove-html-tags-other-than-span
@@ -21,12 +23,13 @@
   (str/join common/system-newline (sort coll)))
 
 (defn results-to-file [elements1 elements2 results-type court-type]
-  (if (not (.isDirectory (io/file common-test/log-data-path)))
-    (.mkdir (io/file common-test/log-data-path)))
+  (common-test/mkdir-path
+   (str common-test/log-data-path cc-appealed-dir-name))
   (let [
         results (set/difference elements1 elements2)
         _ (spit
-           (str common-test/log-data-path court-type "-" results-type ".txt")
+           (str common-test/log-data-path cc-appealed-dir-name
+                court-type "-" results-type ".txt")
            (appeals-to-write results))
         ]))
 
@@ -46,7 +49,8 @@
   (let [
         file-paths
           (common-test/list-file-paths
-           (str "test-data/cc-appealed/" court-type "/"))
+           (str
+            common-test/test-data-path cc-appealed-dir-name court-type "/"))
         file-names (map #(last (str/split (str %) #"/")) file-paths)
         sentences (map #(slurp %) file-paths)
         extracted-appeals
@@ -57,7 +61,9 @@
           (into #{}
                 (common-test/split-lines
                  (slurp
-                  (str "test-data/cc-appealed/" court-type ".txt"))))
+                  (str
+                   common-test/test-data-path
+                   cc-appealed-dir-name court-type "-answers.txt"))))
 
         _
           (results-to-file
@@ -77,9 +83,9 @@
 (deftest extract-appeals-efficiency-test []
   (let [
         court-types
-          ["app-sentence" "reg-sentence"
-           "app-decision" "reg-decision"
-           "app-decision-complaint" "reg-decision-complaint"]
+          ["appeal-sentence" "regional-sentence"
+           "appeal-decision" "regional-decision"
+           "appeal-decision-complaint" "regional-decision-complaint"]
         extract-fns
           [cc-appealed-judgment-links/extract-appeal-or-grievance
            cc-appealed-judgment-links/extract-appeal-or-grievance

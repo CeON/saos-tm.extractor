@@ -73,8 +73,8 @@
         first-case-nmb-regex
           (re-pattern
            (common/replace-several first-case-nmb
-                            #"\s" "."
-                            #"/" "."))
+                                   #"\s" "."
+                                   #"/" "."))
         ]
     (str/replace s first-case-nmb-regex " ")))
 
@@ -87,8 +87,9 @@
   without-page-nmbs))
 
 (deftest rich-judgment-links-efficiency-test
-  (common-test/links-efficiency-test
-   "txt1" "rich-jdg" get-benchmark-rich-judgment-links
+  (common-test/judgment-links-efficiency-test
+   "rich-judgment-links-answers/" "txt1" "rich-jdg"
+   get-benchmark-rich-judgment-links
    rich-judgment-links-extract rich-links-preprocess
    0.929 0.931
    conv-coll-to-csv-line common-test/log-results-without-signatures))
