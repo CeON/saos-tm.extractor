@@ -107,7 +107,7 @@
 (def ^:private money-suffix-multiply-mega
   ["mln" "mln."])
 
-(def money-suffix-multiply
+(def ^:private money-suffix-multiply
   (concat money-suffix-multiply-kilo money-suffix-multiply-mega))
 
 (def ^:private money-suffix-currency-zl
@@ -257,7 +257,7 @@
 
    `[ {:amount 123.33M :text \"123 zł 33\" gr]`
 
-   It works by finding `zł` token and parsing preceeding number.
+   It works by finding `zł` token and parsing preceding number.
    If supports prefixes `tys.` and `mln` as well as suffix `gr`.
    If the algorithm has difficulties with parsing given text it returns
    \"ERROR\" in the `:amount` field."
@@ -286,8 +286,8 @@
       (some #(when (= max-amount (:amount %)) %) money-refs))))
 
 (defn extract-max-money-ref
-  "Extract maximu sum of money in Polish zł from a given string `s`.
-   The result format is analagous to `extract-money-refs`, it contains
+  "Extract maximum sum of money in Polish zł from a given string `s`.
+   The result format is analogous to `extract-money-refs`, it contains
    a map with two keys:
 
    * `:amount` with bigdec number representing the amount of money
