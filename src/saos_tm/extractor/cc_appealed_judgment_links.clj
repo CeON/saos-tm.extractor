@@ -6,11 +6,11 @@
   (:import java.io.File)
   (:gen-class))
 
-(def osp-regex
+(def ^:private osp-regex
   (str "[IVXLCDM]+[\\s\\.]*[0-9]*[\\s\\.]*"
     "[a-zA-Z]*-?[a-zA-Z]*[\\s\\.]+\\d+\\s*/\\s*\\d+(/[A-Z]+)?(\\s*upr\\.?)?"))
 
-(def appeal-indiction-phrases
+(def ^:private appeal-indiction-phrases
   ["(?<=skutek)\\s+apelacji" "(?<=z powodu)\\s+apelacji"
    "(?<=skutek)\\s+zażalenia"
    "(?<=z powodu)\\s+zażalenia" "zażalenia\\s+wniesionego"
@@ -19,11 +19,11 @@
    "zażalenia pokrzywdz" "zażalenia str"
    "zażalenia oskarżon"])
 
-(def complaint-indiction-phrases
+(def ^:private complaint-indiction-phrases
   ["na skutek skarg" "z powodu skarg" "sprawy ze skarg"
    "przedmiocie skarg" "skargi? wniesion" "w związku ze skarg"])
 
-(defn cleanse-appeal-str [s]
+(defn ^:private cleanse-appeal-str [s]
   (let [
         without-html-tags (common/remove-html-tags-other-than-span s)
         without-newlines
@@ -32,22 +32,23 @@
         ]
     without-newlines))
 
-(defn find-from-to-first [s find-regex-func from to case-sensitivity]
+(defn ^:private find-from-to-first
+  [s find-regex-func from to case-sensitivity]
   (find-regex-func
    (re-pattern
     (str case-sensitivity from "((?!" to ")[\\s\\S])*" to))
    s))
 
-(defn find-from-to-first-case-ins [s find-regex-func from to]
+(defn ^:private find-from-to-first-case-ins [s find-regex-func from to]
   (find-from-to-first s find-regex-func from to "(?i)"))
 
-(defn find-from-to-first-case-sen [s find-regex-func from to]
+(defn ^:private find-from-to-first-case-sen [s find-regex-func from to]
   (find-from-to-first s find-regex-func from to ""))
 
-(defn split-take-first [s re]
+(defn ^:private split-take-first [s re]
   (first (str/split s re)))
 
-(defn extract-appeal [parts judgment-type appeal-type appellant]
+(defn ^:private extract-appeal [parts judgment-type appeal-type appellant]
   (let [
         remainder (str/replace (second parts) judgment-type "")
         remainder-parts
@@ -69,7 +70,7 @@
      [appeal-type appellant judgment-type]
      without-space-only-words)))
 
-(defn split-appeal-str [s]
+(defn ^:private split-appeal-str [s]
   (let [
         s (cleanse-appeal-str s)
         appeal-type (re-find #"apelacj[^\s]*|zażalen[^\s]*" s)
@@ -90,33 +91,33 @@
         ]
     appeal-parts))
 
-(defn post-process-appellant [s]
+(defn ^:private post-process-appellant [s]
   (if (common/substring? "przez" s)
     (second (str/split s #"przez"))
     s))
 
-(defn cleanse-appeal [s]
+(defn ^:private cleanse-appeal [s]
   (let [
         s (if (string? s) s (first s))
         result
           (when (common/not-nil? s)
             (str/trim
              (common/replace-several s
-                              #"akt[:\.]?" ""
+                                     #"akt[:\.]?" ""
 
-                              #"^\s*\.+" ""
-                              #"^\s*:" ""
+                                     #"^\s*\.+" ""
+                                     #"^\s*:" ""
 
-                              #",\s*$" ""
-                              #"-\s*$" ""
+                                     #",\s*$" ""
+                                     #"-\s*$" ""
 
-                              #"roku\." "roku"
+                                     #"roku\." "roku"
 
-                              #"\s+" " ")))
+                                     #"\s+" " ")))
         ]
     result))
 
-(defn map-appeal-parts [coll]
+(defn ^:private map-appeal-parts [coll]
   (let [
         appeal-parts
           (conj
@@ -129,7 +130,7 @@
   (zipmap [:appeal-type :appellant :judgment-type :court :date :signature]
           appeal-parts-trimmed)))
 
-(defn extract-non-complaint [s]
+(defn ^:private extract-non-complaint [s]
   (let [
         appeal-str-cleansed (cleanse-appeal-str s)
         appeal-parts (split-appeal-str appeal-str-cleansed)
@@ -156,7 +157,7 @@
         ]
     result))
 
-(defn identify-complaint [s]
+(defn ^:private identify-complaint [s]
   (let [
         s (cleanse-appeal-str s)
         part

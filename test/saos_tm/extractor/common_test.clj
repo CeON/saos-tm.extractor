@@ -12,7 +12,7 @@
 
 (def test-data-path "test-data/")
 
-(def links-input-txts-dir-name "links-input-txts/")
+(def ^:private links-input-txts-dir-name "links-input-txts/")
 
 (def log-data-path "log/")
 
@@ -21,7 +21,7 @@
     (if-not (.exists dir)
       (.mkdirs dir))))
 
-(defn get-art-coords-csv [art-coords]
+(defn ^:private get-art-coords-csv [art-coords]
   (let [
         art-nr (:art art-coords)
         par-nr (:par art-coords)
@@ -49,7 +49,7 @@
            "\"" (:journalNo act) "\"" common/csv-delimiter
            "\"" (:journalEntry act) "\"" common/system-newline)))
 
-(defn get-measure [true-positives-count elements-count]
+(defn ^:private get-measure [true-positives-count elements-count]
   (when-not
     (= elements-count 0)
     (float (/ true-positives-count elements-count))))
@@ -68,7 +68,7 @@
           ]
       (zipmap [:precision :recall] [precision recall]))))
 
-(defn read-law-links-to-maps [file-data]
+(defn ^:private read-law-links-to-maps [file-data]
   (let [
         data (csv/parse-csv file-data)
         ]
@@ -86,7 +86,7 @@
 (defn get-benchmark-records [files]
   (map read-law-links-to-maps files))
 
-(defn law-links-extract [txt-files extract-law-links-fn]
+(defn ^:private law-links-extract [txt-files extract-law-links-fn]
   (map
    #(into #{} (:extracted-links (extract-law-links-fn %)))
    txt-files))
@@ -99,33 +99,19 @@
 (defn signature-to-csv [signature not-used]
   (apply str "\"" signature "\"" common/system-newline))
 
-(defn law-links-extract-greedy [txt-files]
+(defn law-links-extract-all-dictionaries [txt-files]
   (law-links-extract
-   txt-files #(law-links/extract-law-links-greedy % true true true)))
+   txt-files #(law-links/extract-law-links % true true true)))
 
-(defn get-precision-recall [extracted-set benchmark-set]
-  (if (and (empty? extracted-set) (empty? benchmark-set))
-    {:precision 1.0 :recall 1.0}
-    (let [
-          true-positives-count
-            (count
-             (set/intersection extracted-set benchmark-set))
-          extracted-count (count extracted-set)
-          benchmark-count (count benchmark-set)
-          precision (get-measure true-positives-count extracted-count)
-          recall (get-measure true-positives-count benchmark-count)
-          ]
-      {:precision precision :recall recall})))
-
-(defn get-average [coll]
+(defn ^:private get-average [coll]
   (/ (reduce + coll) (count coll)))
 
-(defn get-elements [key-name coll]
+(defn ^:private get-elements [key-name coll]
   (map
    #(key-name %)
    coll))
 
-(defn get-signature [file-data]
+(defn ^:private get-signature [file-data]
   (map first
        (csv/parse-csv file-data)))
 
@@ -142,47 +128,49 @@
 (defn list-file-paths [dir]
   (sort (.listFiles (io/file dir))))
 
-(defn list-file-names [dir]
+(defn ^:private list-file-names [dir]
   (sort (.list (io/file dir))))
 
-(defn get-files-from-dir [dir]
+(defn ^:private get-files-from-dir [dir]
   (map slurp (sort (list-file-paths dir))))
 
-(defn map-fn [func coll additional-item]
+(defn ^:private map-fn [func coll additional-item]
   (map
    #(func % additional-item)
    coll))
 
-(defn spit-all-csv [result-to-csv-fn path data]
+(defn ^:private spit-all-csv [result-to-csv-fn path data]
   (spit path
         (apply str
                (sort
                 (map-fn result-to-csv-fn data "signature")))))
 
-(defn nils-to-zeros [coll]
+(defn ^:private nils-to-zeros [coll]
   (map #(if (nil? %) 0 %) coll))
 
-(defn zip-with-file-name [file-name coll]
+(defn ^:private zip-with-file-name [file-name coll]
   (map
    #(zipmap
      [:fileName :link]
      [file-name %])
    coll))
 
-(defn get-items-with-file-names [file-names items]
+(defn ^:private get-items-with-file-names [file-names items]
   (set
    (mapcat zip-with-file-name file-names items)))
 
-(defn spit-all-csv-with-signatures [result-to-csv-fn path data signature]
+(defn ^:private spit-all-csv-with-signatures
+  [result-to-csv-fn path data signature]
   (spit path
         (apply str
                (sort
                 (map-fn result-to-csv-fn data signature)))))
 
-(defn split-csv-line [s]
-  (str/split s (re-pattern (str #"\"" common/csv-delimiter "\""))))
+(defn ^:private split-csv-line [s]
+  (str/split s
+             (re-pattern (str #"\"" common/csv-delimiter "\""))))
 
-(defn extract-signatures-from-csv [txts]
+(defn ^:private extract-signatures-from-csv [txts]
   (map
    #(nth (split-csv-line %) 6)
    txts))
@@ -220,18 +208,18 @@
                (- length (count s))
                (repeat " ")))))
 
-(defn format-numbers [coll]
+(defn ^:private format-numbers [coll]
   (map #(format "%.4f" %) coll))
 
-(defn get-harmonic-mean [nmb1 nmb2]
+(defn ^:private get-harmonic-mean [nmb1 nmb2]
   (/ (* 2 nmb1 nmb2) (+ nmb1 nmb2)))
 
-(defn count-items-from-measures [items measures]
+(defn ^:private count-items-from-measures [items measures]
   (map
    #(numeric-tower/round (* (count %1) (- 1.0 %2)))
    items measures))
 
-(defn get-and-log-efficiencies
+(defn ^:private get-and-log-efficiencies
   [benchmark-items extracted-items
    ext-files ext-files-names
    log-per-doc-stats-path log-files-paths
@@ -315,7 +303,7 @@
         ]
     overall-precision-recall))
 
-(defn prepare-files-and-file-paths
+(defn ^:private prepare-files-and-file-paths
   [links-type-dir-name ext-dir-name txt-dir-name txt-files-conv-fn]
   (let [
         ext-dir-path (str test-data-path links-type-dir-name ext-dir-name)
@@ -365,7 +353,7 @@
     (is (> (:precision overall-precision-recall) precision-threshold))
     (is (> (:recall overall-precision-recall) recall-threshold))))
 
-(defn extract-elems [key-name coll]
+(defn ^:private extract-elems [key-name coll]
   (set
    (map #(key-name %) coll)))
 
@@ -450,106 +438,117 @@
 
 (deftest unsplit-words-across-lines-test
   (is (=
-       (common/unsplit-words-across-lines "postę-\npowania") "postępowania")))
+       (#'saos-tm.extractor.common/unsplit-words-across-lines
+        "postę-\npowania")
+       "postępowania")))
 
 (deftest preprocess-test
   (is (= (common/preprocess "postę-\npowania") "postępowania")))
 
 (deftest cleanse-commas-test
   (is (=
-       (law-links/cleanse-commas "art , 24 ust 2 pkt 4")
+       (#'saos-tm.extractor.law-links/cleanse-commas
+        "art , 24 ust 2 pkt 4")
        "art 24 ust 2 pkt 4"))
   (is (=
-       (law-links/cleanse-commas "art 24 ust , 2 pkt 3 i 4")
+       (#'saos-tm.extractor.law-links/cleanse-commas
+        "art 24 ust , 2 pkt 3 i 4")
        "art 24 ust 2 pkt 3 i 4")))
 
 (deftest cast-coords-lists-test
   (is (=
-       (law-links/cast-coords-lists '("1" "2" "0" "0" "0" "0")
-                          '("0" "3" "0" "0" "0" "0"))
+       (#'saos-tm.extractor.law-links/cast-coords-lists
+        '("1" "2" "0" "0" "0" "0") '("0" "3" "0" "0" "0" "0"))
        '("1" "3" "0" "0" "0" "0")))
   (is (=
-       (law-links/cast-coords-lists '("1" "2" "0" "0" "2" "2")
-                          '("0" "3" "0" "0" "0" "0"))
+       (#'saos-tm.extractor.law-links/cast-coords-lists
+        '("1" "2" "0" "0" "2" "2") '("0" "3" "0" "0" "0" "0"))
        '("1" "3" "0" "0" "0" "0")))
   (is (=
-       (law-links/cast-coords-lists '("1" "2" "0" "0" "2" "2")
-                          '("0" "3" "3" "0" "0" "0"))
+       (#'saos-tm.extractor.law-links/cast-coords-lists
+        '("1" "2" "0" "0" "2" "2") '("0" "3" "3" "0" "0" "0"))
        '("1" "3" "3" "0" "0" "0")))
   (is (=
-       (law-links/cast-coords-lists '("1" "2" "0" "0" "2" "2")
-                          '("0" "0" "3" "0" "0" "0"))
+       (#'saos-tm.extractor.law-links/cast-coords-lists
+        '("1" "2" "0" "0" "2" "2") '("0" "0" "3" "0" "0" "0"))
        '("1" "2" "3" "0" "0" "0"))))
 
 (deftest extract-art-coords-test
   (is (=
-       (law-links/extract-art-coords "art 90")
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art 90")
        '(("90" "0" "0" "0" "0" "0"))))
   (is (=
-       (law-links/extract-art-coords "art. 183 ust 5 pkt 2 oraz 6")
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 183 ust 5 pkt 2 oraz 6")
        '(("183" "0" "5" "2" "0" "0") ("183" "0" "5" "6" "0" "0"))))
   (is (=
-       (law-links/extract-art-coords "art. 183 ust 5 pkt 2 oraz ust. 6")
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 183 ust 5 pkt 2 oraz ust. 6")
        '(("183" "0" "5" "2" "0" "0") ("183" "0" "6" "0" "0" "0"))))
   (is (=
-       (law-links/extract-art-coords "art. 89 ust. 1 pkt 2 , pkt 3 , pkt 8")
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 89 ust. 1 pkt 2 , pkt 3 , pkt 8")
        '(("89" "0" "1" "2" "0" "0")
          ("89" "0" "1" "3" "0" "0")
          ("89" "0" "1" "8" "0" "0"))))
   (is (=
-       (law-links/extract-art-coords " art. 89 ust. 1 pkt 2 oraz pkt 4")
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        " art. 89 ust. 1 pkt 2 oraz pkt 4")
        '(("89" "0" "1" "2" "0" "0") ("89" "0" "1" "4" "0" "0"))))
   (is (=
-       (law-links/extract-art-coords "art. 24 ust. 1 pkt 10 oraz ust. 2 pkt 2")
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 24 ust. 1 pkt 10 oraz ust. 2 pkt 2")
        '(("24" "0" "1" "10" "0" "0") ("24" "0" "2" "2" "0" "0"))))
   (is (=
-       (law-links/extract-art-coords "art. 89 ust. 1 pkt. 2 i pkt. 6")
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 89 ust. 1 pkt. 2 i pkt. 6")
        '(("89" "0" "1" "2" "0" "0") ("89" "0" "1" "6" "0" "0")))))
 
 (deftest get-year-of-law-act-test
   (is (=
-       (law-links/get-year-of-law-act
+       "2007"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
         (str
          " ustawy Prawo zamówień publicznych ( Dz. U. t.j. z 2007 r. Nr 223"
-         " , poz. 1655 ). O kosztach postępowania orzeczono na podstawie"))
-       "2007"))
+         " , poz. 1655 ). O kosztach postępowania orzeczono na podstawie"))))
   (is (=
-       (law-links/get-year-of-law-act
+       "2006"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
         (str
          "rozporządzenia Prezesa Rady Ministrów z dnia 17 maja 2006"
          " w sprawie wysokości oraz szczegółowych zasad pobierania"
          " wpisu od odwołania oraz szczegółowych zasad rozliczania"
-         " kosztów w postępowaniu odwoławczym ( Dz. U. Nr 87 , poz. 608 )"))
-       "2006"))
+         " kosztów w postępowaniu odwoławczym ( Dz. U. Nr 87 , poz. 608 )"))))
   (is (=
-    "1992"
-    (law-links/get-year-of-law-act
-      (str
-        "KONSTYTUCYJNE utrzymane w mocy na podstawie art. 77"
-        " Ustawy Konstytucyjnej"
-        " z dnia 17 października 1992 r. o wzajemnych stosunkach między"
-        " władzą ustawodawczą i wykonawczą Rzeczypospolitej Polskiej "
-        "oraz o samorządzie terytorialnym "
-        "(Dz. U. Nr 84, poz. 426, z 1995 r. Nr 38, poz. 184): "
-        "(uchylony) ogólnie – w. 6.01.09, SK 22/06 (poz. 1), w. 15.01.09"))))
+       "1992"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         "KONSTYTUCYJNE utrzymane w mocy na podstawie art. 77"
+         " Ustawy Konstytucyjnej"
+         " z dnia 17 października 1992 r. o wzajemnych stosunkach między"
+         " władzą ustawodawczą i wykonawczą Rzeczypospolitej Polskiej "
+         "oraz o samorządzie terytorialnym "
+         "(Dz. U. Nr 84, poz. 426, z 1995 r. Nr 38, poz. 184): "
+         "(uchylony) ogólnie – w. 6.01.09, SK 22/06 (poz. 1), w. 15.01.09"))))
   (is (=
-    "1994"
-    (law-links/get-year-of-law-act
-      (str
-        " Karta Samorządu Lokalnego sporządzona w Strasburgu"
-        " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
-        " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
-        "– p. 21.01.09, P 14/08 (poz. 7)"))))
+       "1994"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         " Karta Samorządu Lokalnego sporządzona w Strasburgu"
+         " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
+         " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
+         "– p. 21.01.09, P 14/08 (poz. 7)"))))
   (is (=
-    "1994"
-    (law-links/get-year-of-law-act
-      (str
-        " ustawy z dnia 28 grudnia 1989 r. – Prawo celne"
-        " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)"))))
+       "1994"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         " ustawy z dnia 28 grudnia 1989 r. – Prawo celne"
+         " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)"))))
   (is (=
-    "1991"
-    (law-links/get-year-of-law-act
-      (str
-        "ustawy z dnia 30 sierpnia 1991 r. o zakładach opieki zdrowotnej"
-       " (Dz.U. Nr 91, poz. 408 ze zm.) kjhkjh "
-       "(Dz.U. z 2001 r. Nr 65, poz. 659)")))))
+       "1991"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         "ustawy z dnia 30 sierpnia 1991 r. o zakładach opieki zdrowotnej"
+         " (Dz.U. Nr 91, poz. 408 ze zm.) kjhkjh "
+         "(Dz.U. z 2001 r. Nr 65, poz. 659)")))))

@@ -10,14 +10,15 @@
   (:import java.io.File)
   (:gen-class))
 
-(def coords-tokens
+(def ^:private coords-tokens
   ["." "," ";" "Art" "art" "ust" "par" "§" "pkt" "zd" "i"
    "oraz" "lub" "z" "-" "a" "także" "lit"])
 
-(def dictionary-for-acts
+(def ^:private dictionary-for-acts
   [[#"(?i)^\s*Konstytucji"
     {:journalNo "78" :journalEntry "483", :journalYear "1997"}]
-   [#"(?i)^\s*k\.?c" {:journalNo "16" :journalEntry "93", :journalYear "1964"}]
+   [#"(?i)^\s*k\.?c"
+    {:journalNo "16" :journalEntry "93", :journalYear "1964"}]
    [#"(?i)^\s*k\.?h"
     {:journalNo "57" :journalEntry "502", :journalYear "1934"}]
    [#"(?i)^\s*k\.?k\.?s"
@@ -57,11 +58,11 @@
    [#"(?i)^\s*ustawy o ochronie konkurencji"
     {:journalNo "50" :journalEntry "331", :journalYear "2007"}]])
 
-(def art-coords-names [:art :par :ust :pkt :zd :lit])
+(def ^:private art-coords-names [:art :par :ust :pkt :zd :lit])
 
-(def journal-regex #"[\S\s]*Dz\.\s*U\.[\S\s]*")
+(def ^:private journal-regex #"[\S\s]*Dz\.\s*U\.[\S\s]*")
 
-(def explicit-local-dictionary-definition-regex
+(def ^:private explicit-local-dictionary-definition-regex
   (re-pattern
    (str
     ";\\s*dalej\\s*:?|"
@@ -70,7 +71,7 @@
     "zwanej\\s*dalej\\s*:?|"
     "\\(dalej\\s*:?")))
 
-(def acts-txts-split-regex
+(def ^:private acts-txts-split-regex
   (re-pattern
             (str "(?i)[^:]\\s+ustaw(a|y)\\s|"
                  "\\srozporządzen[^\\s]*\\s|"
@@ -78,13 +79,13 @@
                  "(A|a)rt\\.|"
                  "§")))
 
-(def journal-year-extraction-regex
+(def ^:private journal-year-extraction-regex
   (re-pattern
    (str "Dz\\.\\s*U\\.\\s*z?\\s*\\d+\\s*r|"
         "Dz\\.\\s*U\\.\\s*\\d{4}|"
         "Dz\\.\\s*U\\.\\s*t\\.j\\.\\s*z\\s*\\d{4}")))
 
-(def cut-for-act-coords-regex
+(def ^:private cut-for-act-coords-regex
   (re-pattern
    (str "w\\s*zw\\.\\s*z|"
         "w\\s*związku\\s*z|"
@@ -92,32 +93,32 @@
         "\\s(R|r)ozporządz|"
         "\\)")))
 
-(def not-map? (complement map?))
+(def ^:private not-map? (complement map?))
 
-(defn split-to-tokens [s]
+(defn ^:private split-to-tokens [s]
   (lg-split-tokens-bi "pl" s))
 
-(defn parse-int [s]
+(defn ^:private parse-int [s]
    (Integer. (re-find  #"\d+" s )))
 
-(defn in? [seq elm]
+(defn ^:private in? [seq elm]
   (some #(= elm %) seq))
 
-(defn not-coords-nmb? [s]
+(defn ^:private not-coords-nmb? [s]
   (nil?
    (re-matches #"\d+(-\d+)?[a-z]*|[a-u]" s)))
 
-(defn not-coord-token? [token]
+(defn ^:private not-coord-token? [token]
   (nil?
    (in? coords-tokens token)))
 
-(defn get-coords-tokens [first-token-index tokens]
+(defn ^:private get-coords-tokens [first-token-index tokens]
   (first
    (common/indices
     #(and (not-coord-token? %) (not-coords-nmb? %))
     (drop first-token-index tokens))))
 
-(defn find-coords-ranges [first-token-index tokens]
+(defn ^:private find-coords-ranges [first-token-index tokens]
   (let [
         first-non-coord-token-index
           (get-coords-tokens first-token-index tokens)
@@ -127,13 +128,13 @@
        (inc (count tokens))
        (+ first-token-index first-non-coord-token-index))]))
 
-(defn get-range [coll from to]
+(defn ^:private get-range [coll from to]
   (take (- to from) (drop from coll)))
 
-(defn get-range* [coll fromto]
+(defn ^:private get-range* [coll fromto]
   (get-range coll (first fromto) (second fromto)))
 
-(defn w-zwiazku-z? [tokens]
+(defn ^:private w-zwiazku-z? [tokens]
   (or
    (and
     (= 3 (count tokens))
@@ -147,7 +148,7 @@
     (= "." (nth tokens 2))
     (= "z" (nth tokens 3)))))
 
-(defn handle-w-zwiazku-z [tokens-and-coords]
+(defn ^:private handle-w-zwiazku-z [tokens-and-coords]
   (for [
         i (range 0 (count tokens-and-coords))
         ]
@@ -160,7 +161,7 @@
         (nth tokens-and-coords (inc i))
         (nth tokens-and-coords i)))))
 
-(defn tokens-to-string [tokens]
+(defn ^:private tokens-to-string [tokens]
   (let [
         txt (str/join " " tokens)
         without-unnecessary-spaces
@@ -174,22 +175,22 @@
         ]
     without-unnecessary-spaces))
 
-(defn min-index [coll]
+(defn ^:private min-index [coll]
   (.indexOf coll
             (apply min coll)))
 
-(defn regex-first-position [re s]
+(defn ^:private regex-first-position [re s]
   (loop [m (re-matcher re s)]
     (if (.find m)
       (.start m))))
 
-(defn are-coords? [item]
+(defn ^:private are-coords? [item]
   (map? item))
 
-(defn insert-at-index [s ch index]
+(defn ^:private insert-at-index [s ch index]
   (str (apply str (take index s)) ch (apply str (drop index s))))
 
-(defn handle-superscript-no-range [s]
+(defn ^:private handle-superscript-no-range [s]
   (let [
         length (count s)
         ]
@@ -197,7 +198,7 @@
       (str (insert-at-index s "(" 3) ")")
       s)))
 
-(defn handle-superscript-range [s]
+(defn ^:private handle-superscript-range [s]
   (let [
         numbers
           (map handle-superscript-no-range
@@ -205,12 +206,12 @@
         ]
     (str/join "-" numbers)))
 
-(defn handle-superscript [s]
+(defn ^:private handle-superscript [s]
   (if (common/substring? "-" s)
     (handle-superscript-range s)
     (handle-superscript-no-range s)))
 
-(defn get-coords-names [is-art is-par is-ust is-pkt is-zd is-lit]
+(defn ^:private get-coords-names [is-art is-par is-ust is-pkt is-zd is-lit]
   (filter #(not= "" %)
     [(if is-art "art" "")
      (if is-par "par" "")
@@ -219,33 +220,33 @@
      (if is-zd "zd." "")
      (if is-lit "lit." "")]))
 
-(defn zero-if-empty [item]
+(defn ^:private zero-if-empty [item]
   (if (empty? item) "0" item))
 
-(defn convert-ranges-to-single-records [record]
+(defn ^:private convert-ranges-to-single-records [record]
   (map
    #(zero-if-empty (record %))
    ["art" "par" "ust" "pkt" "zd." "lit."]))
 
-(defn cartesian-product [colls]
+(defn ^:private cartesian-product [colls]
   (if (empty? colls)
     '(())
     (for [x (first colls)
       more (cartesian-product (rest colls))]
       (cons x more))))
 
-(defn remove-trailing-conjunction [s]
+(defn ^:private remove-trailing-conjunction [s]
   (str/replace s #"\si$|\sz$|\soraz$" ""))
 
-(defn insert-art [s]
+(defn ^:private insert-art [s]
   (if (common/matches? s #"^(A|a)rt[\S\s]*")
     s
     (str "art. " s)))
 
-(defn split-to-art-coords-parts [s]
+(defn ^:private split-to-art-coords-parts [s]
   (str/split s #"Art\.?|art\.?|§|ust\.?|pkt\.?|zd\.?|lit\.?"))
 
-(defn extract-coords [s]
+(defn ^:private extract-coords [s]
   (let [
         numbers
           (map #(handle-superscript (str/trim %))
@@ -264,13 +265,14 @@
         ]
     full-coords))
 
-(defn create-coords-list-with-value-at-index [index coords-list-length s]
+(defn ^:private create-coords-list-with-value-at-index
+  [index coords-list-length s]
   (concat
    (take index (repeat "0"))
    [(str/trim s)]
    (take (dec (- coords-list-length index)) (repeat "0"))))
 
-(defn cast-coords-lists [more-important-list less-important-list]
+(defn ^:private cast-coords-lists [more-important-list less-important-list]
   (let [
         first-non-zero-index
           (count (take-while #(= % "0") less-important-list))
@@ -279,7 +281,8 @@
      (take first-non-zero-index more-important-list)
      (drop first-non-zero-index less-important-list))))
 
-(defn extract-coords-lists-for-other-parts [the-part first-part-coords]
+(defn ^:private extract-coords-lists-for-other-parts
+  [the-part first-part-coords]
   (if
     (or
      (common/substring? "§"   the-part)
@@ -303,7 +306,7 @@
        (count first-part-coords)
        the-part))))
 
-(defn convert-to-coords-lists [parts-sep-by-conj]
+(defn ^:private convert-to-coords-lists [parts-sep-by-conj]
   (let [
         first-part-coords (extract-coords (first parts-sep-by-conj))
         other-parts-coords
@@ -316,14 +319,15 @@
         ]
     (concat [first-part-coords] other-parts-coords-cast)))
 
-(defn extract-coords-lists [s]
+(defn ^:private extract-coords-lists [s]
   (let [
         seperated-by-conjunctions (str/split s #",| i | oraz | lub ")
         coords (convert-to-coords-lists seperated-by-conjunctions)
         ]
     coords))
 
-(defn extract-art-coords-with-multiple-art-numbers [art-part other-part]
+(defn ^:private extract-art-coords-with-multiple-art-numbers
+  [art-part other-part]
   (let [
         art-parts (str/split art-part #",|\si\s|\soraz\s|\slub\s")
         last-part (str/join "" [(last art-parts) other-part])
@@ -332,7 +336,7 @@
         ]
     (mapcat extract-coords-lists to-extract-with-art-coll)))
 
-(defn extract-coords-for-single-art [s]
+(defn ^:private extract-coords-for-single-art [s]
   (let [
         parts
           (langlab-parsers/split*
@@ -351,7 +355,7 @@
         ]
     result))
 
-(defn cleanse-commas [s]
+(defn ^:private cleanse-commas [s]
   (common/remove-double-spaces
    (common/replace-several s
                     #"art\.?\s*," "art "
@@ -361,7 +365,7 @@
                     #"zd\.?\s*," "zd "
                     #"lit\.?\s*," "lit ")))
 
-(defn extract-art-coords [s]
+(defn ^:private extract-art-coords [s]
   (let [
         cleansed-commas (cleanse-commas s)
         trimmed (str/trim cleansed-commas)
@@ -379,7 +383,7 @@
         ]
     (mapcat extract-coords-for-single-art without-conjunctions)))
 
-(defn get-year-from-act-name [s]
+(defn ^:private get-year-from-act-name [s]
   (let [
         pattern (last (re-seq #"\s\d{4}\s" s))
         ]
@@ -388,10 +392,10 @@
           (apply str
             (re-seq #"\d+" pattern)))))
 
-(defn cut-to-first-parenthesis-pair [s]
+(defn ^:private cut-to-first-parenthesis-pair [s]
   (re-find #"[^\(]*\([^\)]*\)" s))
 
-(defn get-year-of-law-act [s]
+(defn ^:private get-year-of-law-act [s]
   (let [
         to-first-parenthesis-pair (cut-to-first-parenthesis-pair s)
         before-law-change-indication
@@ -414,7 +418,7 @@
         ]
     year))
 
-(defn extract-with-global-dictionary [tokens-or-coords dictionary]
+(defn ^:private extract-with-global-dictionary [tokens-or-coords dictionary]
   (if (are-coords? tokens-or-coords)
     tokens-or-coords
     (let [
@@ -445,7 +449,7 @@
         tokens-or-coords
         dictionary-record))))
 
-(defn act-without-entry? [tokens index-of-last-nmb]
+(defn ^:private act-without-entry? [tokens index-of-last-nmb]
   (cond
    (nil? index-of-last-nmb)
    true
@@ -459,7 +463,7 @@
        (nth tokens
             (+ index-of-last-nmb 2))))))
 
-(defn extract-when-entry-present [parts]
+(defn ^:private extract-when-entry-present [parts]
   (let [
         journal-nmb-part (nth parts 0)
         entry-part (nth parts 2)
@@ -479,7 +483,7 @@
         ]
     (zipmap [:journalNo :journalEntry] [journal-nmb entry])))
 
-(defn extract-journal-nmb-and-entry [tokens]
+(defn ^:private extract-journal-nmb-and-entry [tokens]
   (let [
         parts (partition-by #(= "poz" %) tokens)
         ]
@@ -487,7 +491,7 @@
       (zipmap [:journalNo :journalEntry] ["0" "0"])
       (extract-when-entry-present parts))))
 
-(defn extract-year-journal-nmb-and-entry [tokens]
+(defn ^:private extract-year-journal-nmb-and-entry [tokens]
   (let [
         year (get-year-of-law-act (tokens-to-string tokens))
         journal-nmb-and-entry (extract-journal-nmb-and-entry tokens)
@@ -498,7 +502,7 @@
       (:journalNo journal-nmb-and-entry)
       (:journalEntry journal-nmb-and-entry)])))
 
-(defn convert-year-to-full [year]
+(defn ^:private convert-year-to-full [year]
   (if (= (count year) 4)
     year
     (if
@@ -509,7 +513,7 @@
       (str "19" year)
       (str "20" year))))
 
-(defn extract-journal-nmb-and-entry-dots [token]
+(defn ^:private extract-journal-nmb-and-entry-dots [token]
   (let [
         numbers (drop 1 (str/split token #"\."))
         year (convert-year-to-full (first numbers))
@@ -528,7 +532,7 @@
       [:journalYear :journalNo :journalEntry]
       [year 0 0]))))
 
-(defn extract-act-coords-journal-with-dot [tokens]
+(defn ^:private extract-act-coords-journal-with-dot [tokens]
   (let [
         index-of-journal-nmb-token (.indexOf tokens "Dz.U")
         token-after-journal-nmb (nth tokens (inc index-of-journal-nmb-token))
@@ -537,7 +541,7 @@
       (extract-journal-nmb-and-entry-dots token-after-journal-nmb)
       (extract-year-journal-nmb-and-entry tokens))))
 
-(defn stem [s]
+(defn ^:private stem [s]
   (let [
         morfologik-stems
           (when-not (nil? s)
@@ -547,10 +551,10 @@
       [s]
       morfologik-stems)))
 
-(defn stems-match? [stems1 stems2]
+(defn ^:private stems-match? [stems1 stems2]
   ((complement empty?) (set/intersection (set stems1) (set stems2))))
 
-(defn tokens-match? [tokens1 tokens2]
+(defn ^:private tokens-match? [tokens1 tokens2]
   (let [
         stems1 (map stem tokens1)
         stems2 (map stem tokens2)
@@ -559,14 +563,14 @@
         ]
     ((complement contains?) (set consecutive-positions-matches) false)))
 
-(defn local-explicit-dictionary-item-matches? [item tokens]
+(defn ^:private local-explicit-dictionary-item-matches? [item tokens]
   (let [
         dictionary-tokens-colls (:act-abbreviation item)
         matches (filter #(tokens-match? % tokens) dictionary-tokens-colls)
         ]
     ((complement empty?) matches)))
 
-(defn check-second-and-third-token
+(defn ^:private check-second-and-third-token
   [first-match-index dictionary-stems dictionary-stems-count tokens]
   (cond
    (or
@@ -586,7 +590,7 @@
        (stem (nth tokens 2))))
      false)))
 
-(defn local-implicit-dictionary-item-matches? [item tokens]
+(defn ^:private local-implicit-dictionary-item-matches? [item tokens]
   (let [
         dictionary-stems (:act-name item)
         first-match-index
@@ -601,7 +605,8 @@
       (check-second-and-third-token
        first-match-index dictionary-stems dictionary-stems-count tokens))))
 
-(defn extract-with-local-explicit-dictionary [tokens-or-coords dictionary]
+(defn ^:private extract-with-local-explicit-dictionary
+  [tokens-or-coords dictionary]
   (if (are-coords? tokens-or-coords)
     tokens-or-coords
     (let [
@@ -615,7 +620,8 @@
         tokens-or-coords
         (:act-coords (first matches))))))
 
-(defn extract-with-local-implicit-dictionary [tokens-or-coords dictionary]
+(defn ^:private extract-with-local-implicit-dictionary
+  [tokens-or-coords dictionary]
   (if (are-coords? tokens-or-coords)
     tokens-or-coords
     (let [
@@ -634,7 +640,7 @@
         tokens-or-coords
         (:act-coords (first matches))))))
 
-(defn cut-tokens-for-act-coords [tokens]
+(defn ^:private cut-tokens-for-act-coords [tokens]
   (let [
         string (tokens-to-string tokens)
         string-cut
@@ -648,7 +654,7 @@
       tokens
       tokens-cut)))
 
-(defn extract-with-dictionaries
+(defn ^:private extract-with-dictionaries
   [local-explicit-dictionary local-implicit-dictionary global-dictionary
    tokens-cut]
   (let [
@@ -673,7 +679,7 @@
         extract-with-local-explicit
         extract-with-local-implicit)))
 
-(defn extract-act-coords-greedy
+(defn ^:private extract-act-coords
   [tokens local-explicit-dictionary local-implicit-dictionary
    global-dictionary]
   (if
@@ -694,12 +700,12 @@
         local-explicit-dictionary local-implicit-dictionary global-dictionary
         tokens-cut)))))
 
-(defn coord-to-text [token]
+(defn ^:private coord-to-text [token]
   (if (or (= "." token) (= "-" token))
     token
     (str " " token)))
 
-(defn build-coords-text [tokens-range tokens]
+(defn ^:private build-coords-text [tokens-range tokens]
   (str/replace
    (str/join ""
              (map
@@ -707,23 +713,23 @@
               (get-range* tokens tokens-range)))
    "- " "-"))
 
-(defn get-interfering-art-coords-ranges [tokens]
+(defn ^:private get-interfering-art-coords-ranges [tokens]
   (map
    #(find-coords-ranges % tokens)
    (common/indices
     #(or (= % "art") (= % "Art") (= % "§") (= % "artykuł") (= % "Artykuł"))
     tokens)))
 
-(defn split-sum-of-colls-to-pairs [coll1 coll2]
+(defn ^:private split-sum-of-colls-to-pairs [coll1 coll2]
     (partition 2 (concat coll1 coll2)))
 
-(defn get-inter-coords-ranges-candidates
+(defn ^:private get-inter-coords-ranges-candidates
   [interfering-art-coords-ranges tokens]
   (split-sum-of-colls-to-pairs
    (drop 1 (flatten interfering-art-coords-ranges))
    [(count tokens)]))
 
-(defn get-inter-coords-ranges [tokens]
+(defn ^:private get-inter-coords-ranges [tokens]
   (let [
         interfering-art-coords-ranges
           (get-interfering-art-coords-ranges tokens)
@@ -733,7 +739,7 @@
      (get-inter-coords-ranges-candidates
       interfering-art-coords-ranges tokens))))
 
-(defn get-correct-art-coords-ranges [tokens]
+(defn ^:private get-correct-art-coords-ranges [tokens]
   (let [
         interfering-art-coords-ranges
           (get-interfering-art-coords-ranges tokens)
@@ -743,7 +749,7 @@
      [(first (first interfering-art-coords-ranges))]
      (flatten inter-coords-ranges))))
 
-(defn zip-link-to-map [link]
+(defn ^:private zip-link-to-map [link]
   (let [
         art (:art link)
         act (:act link)
@@ -754,7 +760,7 @@
        [(zipmap art-coords-names %1) act])
      art)))
 
-(defn get-data-for-orphaned-link [orphaned-link]
+(defn ^:private get-data-for-orphaned-link [orphaned-link]
   (let [
         txt (tokens-to-string (:act orphaned-link))
         ]
@@ -764,13 +770,13 @@
        [txt %])
      (:art orphaned-link))))
 
-(defn cleanse [s]
+(defn ^:private cleanse [s]
   (when (common/not-nil? s)
     (common/replace-several s
                      #"\." ""
                      #"\s" "")))
 
-(defn cleanse-link [link]
+(defn ^:private cleanse-link [link]
   (let [
         art (:art link)
         act (:act link)
@@ -789,7 +795,7 @@
                (cleanse (:zd art))
                (cleanse (:lit art))])])))
 
-(defn print-art-act-texts
+(defn ^:private print-art-act-texts
   [tokens correct-art-coords-ranges inter-coords-ranges]
   (let [
         art-coords-texts
@@ -807,14 +813,14 @@
       art-coords-texts
       act-coords-texts))))
 
-(defn cleanse-act-abbrevation [s]
+(defn ^:private cleanse-act-abbrevation [s]
   (str/trim
    (common/replace-several s
                     #"^\s*również" ""
                     #"^[^A-Za-ząćęłńóśżźĄĆĘŁŃÓŚŻŹ\.]+" ""
                     #"[^A-Za-ząćęłńóśżźĄĆĘŁŃÓŚŻŹ\\.]+$" "")))
 
-(defn extract-local-explicit-dictionary-item [parts]
+(defn ^:private extract-local-explicit-dictionary-item [parts]
   (let [
         act-abbreviation-txt (second parts)
         act-abbreviation-without-dash
@@ -843,17 +849,17 @@
     {:act-coords act-coords
      :act-abbreviation act-abbreviation-coll-tokens}))
 
-(defn doesnt-contain-journal? [s]
+(defn ^:private doesnt-contain-journal? [s]
   (when (common/not-nil? s)
     ((complement common/matches?) s journal-regex)))
 
-(defn cannot-extract-act-coords? [s]
+(defn ^:private cannot-extract-act-coords? [s]
   (or
    (empty? s)
    (doesnt-contain-journal?
     (first (str/split s #"w\s*zw\.\s*z|w\s*związku\s*z")))))
 
-(defn get-local-explicit-dictionary-item [s]
+(defn ^:private get-local-explicit-dictionary-item [s]
   (when-not (cannot-extract-act-coords? s)
     (let [
           parts
@@ -864,11 +870,11 @@
       (when-not (= (count parts) 1)
         (extract-local-explicit-dictionary-item parts)))))
 
-(defn split-to-journal-indication [s]
+(defn ^:private split-to-journal-indication [s]
   (first
    (str/split s #"\(|\[|Dz.\s*U.")))
 
-(defn extract-item [s]
+(defn ^:private extract-item [s]
   (let [
         lowercase (str/lower-case s)
         act-name
@@ -881,7 +887,7 @@
     {:act-coords act-coords
      :act-name   act-name}))
 
-(defn extract-local-implicit-dictionary-item [s]
+(defn ^:private extract-local-implicit-dictionary-item [s]
   (let [
         to-first-parenthesis-pair (cut-to-first-parenthesis-pair s)
         ]
@@ -889,11 +895,11 @@
       (extract-item s)
       (extract-item to-first-parenthesis-pair))))
 
-(defn get-local-implicit-dictionary-item [s]
+(defn ^:private get-local-implicit-dictionary-item [s]
   (when-not (cannot-extract-act-coords? s)
     (extract-local-implicit-dictionary-item s)))
 
-(defn get-local-dictionary [acts-txts get-dictionary-item-fn]
+(defn ^:private get-local-dictionary [acts-txts get-dictionary-item-fn]
   (let [
         local-dictionary-with-nils
           (map get-dictionary-item-fn acts-txts)
@@ -902,9 +908,9 @@
         ]
     local-dictionary))
 
-(defn return-empty-coll [arg1 arg2] [])
+(defn ^:private return-empty-coll [arg1 arg2] [])
 
-(defn get-range-from-first-law-act-to-first-article-token
+(defn ^:private get-range-from-first-law-act-to-first-article-token
   [tokens first-art-index]
   (when-not (nil? first-art-index)
     (let [
@@ -918,7 +924,7 @@
         [first-law-act-token-index first-art-index]))))
 
 (defn extract-law-links
-  [s extract-act-coords-fn
+  [s
    use-local-explicit-dictionary use-local-implicit-dictionary
    use-global-dictionary]
   (let [
@@ -963,7 +969,7 @@
         act-coords
           (handle-w-zwiazku-z
            (map
-            #(extract-act-coords-fn
+            #(extract-act-coords
               %
               (extract-local-explicit-dicitionary-fn acts-txts)
               (extract-local-implicit-dicitionary-fn acts-txts)
@@ -990,16 +996,6 @@
        (into []
              (mapcat get-data-for-orphaned-link orphaned-links))])))
 
-(defn extract-law-links-greedy
-  [s
-   use-local-explicit-dictionary use-local-implicit-dictionary
-   use-global-dictionary]
-  (extract-law-links
-   s extract-act-coords-greedy
-   use-local-explicit-dictionary
-   use-local-implicit-dictionary
-   use-global-dictionary))
-
 ; Utilities for the art part of the extracted link.
 ; Includes converting to string and sorting.
 
@@ -1009,7 +1005,7 @@
     (str s " " prefix " " suffix)
     s))
 
-(defn convert-art-to-str [ art ]
+(defn ^:private convert-art-to-str [ art ]
   (-> ""
     (append-prefix-and-suffix-if-suffix-not-zero "art." (:art art))
     (append-prefix-and-suffix-if-suffix-not-zero "§" (:par art))
@@ -1029,7 +1025,7 @@
     (str s "0")
     s))
 
-(defn add-spaces ^:private [n s]
+(defn ^:private add-spaces ^:private [n s]
   (str (apply str (repeat n " ")) s))
 
 (defn ^:private conv-number-letter-for-comparison [ s1 s2 ]
@@ -1055,12 +1051,12 @@
     (chain-compare (:lit art1) (:lit art2))
     (chain-compare (:zd art1) (:zd art2))))
 
-(defn sort-arts [ arts ]
+(defn ^:private sort-arts [ arts ]
   (sort-by identity compare-arts arts))
 
 ; Utilities for the act part of the extracted link.
 
-(defn conv-act-to-str [ act ]
+(defn ^:private conv-act-to-str [ act ]
   (str
     "Dz. U. z "
     (:journalYear act) " r."

@@ -6,12 +6,27 @@
    [saos-tm.extractor.csv-helpers :as csv-helpers])
   (:gen-class))
 
-(defn spit-contents [path ids contents]
+(defn ^:private get-nth-args [csv-string]
+  (let [
+        lines (str/split-lines csv-string)
+        nth-args
+          (map
+           #(first
+             (str/split % (re-pattern common/csv-delimiter)))
+           lines)
+        without-quots
+          (map
+           #(apply str (drop 1 (drop-last 1 %)))
+           nth-args)
+        ]
+    without-quots))
+
+(defn ^:private spit-contents [path ids contents]
   (doall
    (map
     #(spit (str path %1) %2) ids contents)))
 
-(defn spit-judgments-from-json [json]
+(defn ^:private spit-judgments-from-json [json]
   (let [
         sentences (filter #(= (% "judgmentType") "SENTENCE") json)
         sentences (take 3 (shuffle sentences))
@@ -21,7 +36,7 @@
         ]
     ))
 
-(defn get-jsons [path]
+(defn ^:private get-jsons [path]
   (let [
         jsons-paths
           (common/get-file-paths path #"[\s\S]*\.json")
@@ -31,14 +46,7 @@
         ]
     jsons))
 
-(defn generate-appeal-test-set []
-  (let [
-        jsons (get-jsons "test-data/cc-appealed/reg-json/")
-        _ (doall (map #(spit-judgments-from-json %) jsons))
-        ]
-    ))
-
-(defn spit-judgments-by-ids [json ids]
+(defn ^:private spit-judgments-by-ids [json ids]
   (let [
         sentences (filter #(some #{((% "source") "judgmentId")} ids) json)
         _ (prn (count sentences))
@@ -46,6 +54,13 @@
         _ (prn (count ids))
         contents (map #(% "textContent") sentences)
         _ (spit-contents "test-data/osp-parties/answers-3/" ids contents)
+        ]
+    ))
+
+(defn generate-appeal-test-set []
+  (let [
+        jsons (get-jsons "test-data/cc-appealed/reg-json/")
+        _ (doall (map #(spit-judgments-from-json %) jsons))
         ]
     ))
 

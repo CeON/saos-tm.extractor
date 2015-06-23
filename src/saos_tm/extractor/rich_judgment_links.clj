@@ -6,7 +6,7 @@
   (:import java.io.File)
   (:gen-class))
 
-(def date-regex
+(def ^:private date-regex
   (re-pattern
    (str "\\d+\\s("
         "styczeń|stycznia|"
@@ -23,9 +23,9 @@
         "grudzień|grudnia)"
         "\\s\\d+(\\s?r\\.?)?")))
 
-(def to-word-end "[^\\s]*")
+(def ^:private to-word-end "[^\\s]*")
 
-(def judgment-type-regex-str
+(def ^:private judgment-type-regex-str
   (str "(W|w)yrok" to-word-end "|"
        "(P|p)ostanowien" to-word-end "|"
        "(O|o)rzecze" to-word-end "|"
@@ -42,21 +42,21 @@
        "(S|s)kardz" to-word-end "|"
        "(P|p)i(s|ś)m" to-word-end ""))
 
-(def judgment-type-regex
+(def ^:private judgment-type-regex
   (re-pattern judgment-type-regex-str))
 
-(def nac-regex-str
+(def ^:private nac-regex-str
   (str "KIO|ZA|Zespół\\sArbitrów|Zespołu\\sArbitrów|Izba|Izby|"
        "Krajow" to-word-end "\\sIzb" to-word-end "\\sOdwoławcz" to-word-end))
 
-(def latin-big-without-roman-digits "A-HJ-UWYZ")
+(def ^:private latin-big-without-roman-digits "A-HJ-UWYZ")
 
-(def cities-names
+(def ^:private cities-names
   (str
    "(\\s[" latin-big-without-roman-digits common/pl-big-diacritics "]"
    to-word-end ")+"))
 
-(def non-nac-regex-str
+(def ^:private non-nac-regex-str
   (str
    "OTK|"
    "NSA|"
@@ -77,13 +77,13 @@
    "WSA\\swe?" cities-names "|"
    "(P|p)rokurator" to-word-end "\\s(G|g)eneraln" to-word-end ""))
 
-(def court-regex-str
+(def ^:private court-regex-str
   (str nac-regex-str "|" non-nac-regex-str))
 
-(def court-regex
+(def ^:private court-regex
   (re-pattern court-regex-str))
 
-(def starting-or-ending-with-non-letter
+(def ^:private starting-or-ending-with-non-letter
   (re-pattern
    (str
     "[^a-zA-Z" common/pl-diacritics "]$|^[^a-zA-Z" common/pl-diacritics "]")))
@@ -93,20 +93,20 @@
    #(compare (end-indicator %1) (end-indicator %2))
    coll))
 
-(defn national-appeals-chamber? [case-nmb]
+(defn ^:private national-appeals-chamber? [case-nmb]
   (or
    (common/substring? "UZP/" case-nmb)
    (common/substring? "/UZP" case-nmb)
    (common/substring? "KIO" case-nmb)))
 
-(defn split-and-take-first [s regex-str]
+(defn ^:private split-and-take-first [s regex-str]
   (when (common/not-nil? s)
     (first
      (str/split
       s
       (re-pattern regex-str)))))
 
-(defn extract-no-empties-only-before [before regex]
+(defn ^:private extract-no-empties-only-before [before regex]
   (let [
         from-before
           (sort-regexes
@@ -116,14 +116,14 @@
         ]
     extracted-element))
 
-(defn extract-only-from-before [before regex]
+(defn ^:private extract-only-from-before [before regex]
   (cond
    (empty? before)
    nil
    :else
    (extract-no-empties-only-before before regex)))
 
-(defn extract-regexes-not-empty [from-before from-after count-before]
+(defn ^:private extract-regexes-not-empty [from-before from-after count-before]
   (let [
         before-end-position (:end (last from-before))
         after-start-position (:start (first from-after))
@@ -134,7 +134,7 @@
       (:regex (last from-before))
       (:regex (first from-after)))))
 
-(defn extract-no-empties [before after regex]
+(defn ^:private extract-no-empties [before after regex]
   (let [
         from-before
           (sort-regexes
@@ -156,7 +156,7 @@
         ]
     extracted-element))
 
-(defn extract-from-before-and-after [before after regex]
+(defn ^:private extract-from-before-and-after [before after regex]
   (cond
    (and (empty? before) (empty? after))
    nil
@@ -175,11 +175,7 @@
    :else
    (extract-no-empties before after regex)))
 
-(defn conv-str-to-regex [s]
-  (re-pattern
-   (str "\\Q" s "\\E")))
-
-(defn extract-court [parts regex-str]
+(defn ^:private extract-court [parts regex-str]
   (let [
         split-second-part
           (split-and-take-first
@@ -192,10 +188,10 @@
      split-second-part
      (re-pattern regex-str))))
 
-(defn trim-non-letters [s]
+(defn ^:private trim-non-letters [s]
   (str/replace s starting-or-ending-with-non-letter ""))
 
-(defn postprocess [s]
+(defn ^:private postprocess [s]
   (when
     (common/not-nil? s)
     (let [
@@ -206,11 +202,11 @@
           ]
       trimmed-non-letters)))
 
-(defn extract-other-data [case-nmb s]
+(defn ^:private extract-other-data [case-nmb s]
   (let [
         parts
           (str/split s
-                     (re-pattern (conv-str-to-regex case-nmb)))
+                     (re-pattern (common/conv-str-to-regex case-nmb)))
         date
           (extract-from-before-and-after
            (first parts)

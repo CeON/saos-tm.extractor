@@ -8,71 +8,90 @@
 (deftest article-coords-test
   (is(=
       [["4" "0" "0" "2" "0" "0"]]
-      (law-links/extract-art-coords "art. 4 pkt 2")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 4 pkt 2")))
   (is(=
       [["14a" "0" "0" "0" "0" "0"]]
-      (law-links/extract-art-coords "art. 14a ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 14a ")))
   (is(=
       [["50" "0" "1" "1" "0" "0"]]
-      (law-links/extract-art-coords "art. 50 ust. 1 pkt 1 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 50 ust. 1 pkt 1 ")))
   (is(=
       [["3" "0" "2-3" "0" "0" "0"]]
-      (law-links/extract-art-coords "art. 3 ust. 2-3 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 3 ust. 2-3 ")))
   (is(=
       [["103-105" "0" "0" "0" "0" "0"]]
-      (law-links/extract-art-coords "art. 103-105 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 103-105 ")))
   (is(=
       [["47" "0" "1" "2" "0" "0"] ["47" "0" "1" "3" "0" "0"]]
-      (law-links/extract-art-coords "art. 47 ust. 1 pkt 2 i 3 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 47 ust. 1 pkt 2 i 3 ")))
   (is(=
       [["0" "44" "1" "1" "0" "0"]]
-      (law-links/extract-art-coords "§ 44 ust. 1 pkt 1 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "§ 44 ust. 1 pkt 1 ")))
   (is(=
       [["0" "25" "3" "0" "0" "0"]]
-      (law-links/extract-art-coords "§ 25 ust. 3 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "§ 25 ust. 3 ")))
   (is(=
       [["0" "68a" "1" "0" "0" "0"]]
-      (law-links/extract-art-coords "§ 68a ust. 1 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "§ 68a ust. 1 ")))
   (is(=
       [["0" "79" "0" "0" "0" "0"]]
-      (law-links/extract-art-coords "§ 79 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "§ 79 ")))
   (is(=
       [["0" "34" "3" "2" "0" "0"]]
-      (law-links/extract-art-coords "§ 34 ust. 3 pkt 2 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "§ 34 ust. 3 pkt 2 ")))
   (is(=
       [["37" "4a" "0" "0" "0" "0"] ["37" "4b" "0" "0" "0" "0"]]
-      (law-links/extract-art-coords "art. 37 § 4a, 4b ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 37 § 4a, 4b ")))
   (is(=
       [["56" "1-3" "0" "0" "0" "0"]]
-      (law-links/extract-art-coords "art. 56 § 1-3 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 56 § 1-3 ")))
   (is(=
       [["77" "1" "0" "0" "0" "0"] ["77" "2" "0" "0" "0" "0"]
        ["77" "2a" "0" "0" "0" "0"] ["77" "3" "0" "0" "0" "0"]
        ["77" "3a" "0" "0" "0" "0"] ["77" "6" "0" "0" "0" "0"]
        ["77" "7a" "0" "0" "0" "0"] ["77" "7b" "0" "0" "0" "0"]]
-      (law-links/extract-art-coords "art. 77 § 1, 2, 2a, 3, 3a, 6, 7a i 7b ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 77 § 1, 2, 2a, 3, 3a, 6, 7a i 7b ")))
   (is(=
       [["46" "1" "0" "0" "1" "0"]]
-      (law-links/extract-art-coords "art. 46 § 1 zd. 1 ")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 46 § 1 zd. 1 ")))
   (is(=
       [["178" "0" "1" "0" "0" "0"] ["91" "0" "1" "0" "0" "0"]]
-      (law-links/extract-art-coords "art. 178 ust. 1 i art. 91 ust. 1")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 178 ust. 1 i art. 91 ust. 1")))
   (is(=
       [["84" "0" "0" "0" "0" "0"] ["92" "0" "1" "0" "0" "0"]
        ["31" "0" "3" "0" "0" "0"]]
-      (law-links/extract-art-coords "art. 84, art. 92 ust. 1 i art. 31 ust. 3")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 84, art. 92 ust. 1 i art. 31 ust. 3")))
   (is(=
       [["2" "0" "0" "0" "0" "0"] ["84" "0" "0" "0" "0" "0"]
        ["91" "0" "1" "0" "0" "0"] ["178" "0" "1" "0" "0" "0"]]
-      (law-links/extract-art-coords
+      (#'saos-tm.extractor.law-links/extract-art-coords
        "art. 2, art. 84, z art. 91 ust. 1, art. 178 ust. 1")))
   (is(=
       '(("64" "0" "2" "0" "0" "0") ("64" "0" "3" "0" "0" "0")
         ("84" "0" "0" "0" "0" "0"))
-      (law-links/extract-art-coords "art. 64 ust. 2 i 3 oraz art. 84")))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 64 ust. 2 i 3 oraz art. 84")))
   (is(=
       '(("64" "0" "2" "0" "0" "a"))
-      (law-links/extract-art-coords "art. 64 ust. 2 lit. a"))))
+      (#'saos-tm.extractor.law-links/extract-art-coords
+       "art. 64 ust. 2 lit. a"))))
 
 (deftest article-ranges-test []
   (let [
@@ -86,9 +105,10 @@
           ]
           (is (=
               [[3 49][51 58]]
-              (law-links/get-correct-art-coords-ranges tokens)))))
+              (#'saos-tm.extractor.law-links/get-correct-art-coords-ranges
+               tokens)))))
 
-(defn get-line-with-signature [s]
+(defn ^:private get-line-with-signature [s]
   (let [
         lines (str/split s (re-pattern common/system-newline))
         lines-with-sygn-text (filter #(.startsWith % "Sygn.") lines)
@@ -135,7 +155,7 @@
     :art {:lit "0", :zd "0", :pkt "6", :ust "0", :par "0", :art "4"}}
     {:act {:journalEntry "1656", :journalNo "237", :journalYear "2008"},
     :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "57"}})
-  (:extracted-links (law-links/extract-law-links-greedy
+  (:extracted-links (law-links/extract-law-links
     (str "art. 3 ust. 1-6, art. 4 pkt 5 i 6, art. 57 ustawy z dnia 19 grudnia"
          " 2008 r. o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
                      true true true))))
@@ -148,7 +168,7 @@
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "2"}}
       {:act {:journalEntry "483", :journalNo "78", :journalYear "1997"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "1", :par "0", :art "32"}}))
-  (:extracted-links (law-links/extract-law-links-greedy
+  (:extracted-links (law-links/extract-law-links
     (str "art. 3 ust. 4-6 i art. 4 pkt 6 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656) "
          "z art. 2 i art. 32 ust. 1 Konstytucji")
@@ -158,14 +178,14 @@
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}
       {:act {:journalEntry "1656", :journalNo "237", :journalYear "2008"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "5"}}))
-  (:extracted-links (law-links/extract-law-links-greedy
+  (:extracted-links (law-links/extract-law-links
     (str "art. 3 w związku z art. 5 ustawy z dnia 19 grudnia 2008 r. "
          "o emeryturach pomostowych (Dz. U. Nr 237, poz. 1656)")
                      true true true)))
   (is(=
     '({:act {:journalNo "16" :journalEntry "93", :journalYear "1964"},
        :art {:lit "0", :zd "0", :pkt "0", :ust "0", :par "0", :art "3"}}))
-  (:extracted-links (law-links/extract-law-links-greedy
+  (:extracted-links (law-links/extract-law-links
     (str "art. 3 kc według ustawy o trybunale oprócz kodeksu wykroczeń ")
                      true true true))))
 
@@ -177,12 +197,17 @@
           " z art. 2, art. 10, art. 45 ust. 1, art. 173, art. 176 ust. 2"
           " i art. 178 ust. 1 Konstytucji Rzeczypospolitej Polskiej;")
     ]
-  (= (law-links/tokens-to-string (law-links/split-to-tokens s)) s)))
+  (is
+   (=
+    (#'saos-tm.extractor.law-links/tokens-to-string
+     (#'saos-tm.extractor.law-links/split-to-tokens s))
+    s))))
 
-(defn extract-law-journal-case-one [s answer]
+(defn ^:private extract-law-journal-case-one [s answer]
   (is (=
-    (law-links/extract-act-coords-greedy
-     (law-links/split-to-tokens s) [] [] law-links/dictionary-for-acts)
+    (#'saos-tm.extractor.law-links/extract-act-coords
+     (#'saos-tm.extractor.law-links/split-to-tokens s)
+     [] [] #'saos-tm.extractor.law-links/dictionary-for-acts)
     answer)))
 
 (deftest extract-law-journal-case-test []
@@ -214,35 +239,48 @@
 
 (deftest handle-superscript-test []
   (is (=
-       (law-links/handle-superscript "5051")
+       (#'saos-tm.extractor.law-links/handle-superscript "5051")
        "505(1)"))
   (is (=
-       (law-links/handle-superscript "5051-5052")
+       (#'saos-tm.extractor.law-links/handle-superscript "5051-5052")
        "505(1)-505(2)")))
 
 (deftest extract-coords-test []
-  (is (= (law-links/extract-coords " Art. 52 ust. 3") '("52" "0" "3" "0" "0" "0"))))
+  (is (=
+       (#'saos-tm.extractor.law-links/extract-coords " Art. 52 ust. 3")
+       '("52" "0" "3" "0" "0" "0"))))
 
 (deftest stems-match?-test
-  (is (= (law-links/stems-match? ["a" "b" "c"] ["b" "d"]) true))
-  (is (= (law-links/stems-match? ["a" "c"] ["b" "d"]) false)))
+  (is (=
+       (#'saos-tm.extractor.law-links/stems-match? ["a" "b" "c"] ["b" "d"])
+       true))
+  (is (=
+       (#'saos-tm.extractor.law-links/stems-match? ["a" "c"] ["b" "d"])
+       false)))
 
 (deftest tokens-match?-test
-  (is (= (law-links/tokens-match? ["prawo" "cywilne"] ["prawa" "cywilnego"]) true))
-  (is (= (law-links/tokens-match? ["prawo" "karne"] ["prawa" "cywilnego"]) false)))
+  (is (=
+       (#'saos-tm.extractor.law-links/tokens-match?
+        ["prawo" "cywilne"] ["prawa" "cywilnego"])
+       true))
+  (is (=
+       (#'saos-tm.extractor.law-links/tokens-match?
+        ["prawo" "karne"] ["prawa" "cywilnego"])
+       false)))
 
 (deftest extract-year-journal-nmb-and-entry-test
-  (is (= (law-links/extract-year-journal-nmb-and-entry
-          (law-links/split-to-tokens
-           (str "ustawy z dnia 21 sierpnia 1997 r. o ograniczeniu"
-            " prowadzenia działalności gospodarczej przez osoby"
-            " pełniące funkcje publiczne (jednolity tekst: "
-            "Dz.U. z 2006 r. Nr 216, poz. 1584 ze zm.)")))
-         {:journalEntry "1584", :journalNo "216", :journalYear "2006"})))
+  (is (=
+       (#'saos-tm.extractor.law-links/extract-year-journal-nmb-and-entry
+        (#'saos-tm.extractor.law-links/split-to-tokens
+         (str "ustawy z dnia 21 sierpnia 1997 r. o ograniczeniu"
+              " prowadzenia działalności gospodarczej przez osoby"
+              " pełniące funkcje publiczne (jednolity tekst: "
+              "Dz.U. z 2006 r. Nr 216, poz. 1584 ze zm.)")))
+       {:journalEntry "1584", :journalNo "216", :journalYear "2006"})))
 
 (deftest cut-to-first-parenthesis-pair-test
   (is (=
-       (law-links/cut-to-first-parenthesis-pair
+       (#'saos-tm.extractor.law-links/cut-to-first-parenthesis-pair
         (str "z dnia 29 stycznia 2004 r. – Prawo zamówień publicznych"
              " (t.j. Dz. U. z 2010 r. 113, poz. 759 ze zm.) na niniejszy wyrok"
              " – w terminie 7 dni od dnia jego doręczenia – "
@@ -252,7 +290,7 @@
        (str "z dnia 29 stycznia 2004 r. – Prawo zamówień publicznych"
             " (t.j. Dz. U. z 2010 r. 113, poz. 759 ze zm.)")))
   (is (=
-       (law-links/cut-to-first-parenthesis-pair
+       (#'saos-tm.extractor.law-links/cut-to-first-parenthesis-pair
         (str "z dnia 29 stycznia 2004 r. Prawo zamówień publicznych "
              "(t.j. Dz. U. z 2010 r. Nr 113, poz. 759 z późn. zm.), "
              "w trybie przetargu nieograniczonego. Ogłoszenie"))
@@ -264,15 +302,15 @@
 
 (deftest convert-art-to-str-test
   (is (=
-        (law-links/convert-art-to-str
+        (#'saos-tm.extractor.law-links/convert-art-to-str
           {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"})
         "art. 1 § 2 ust. 3 pkt 4 zd. 5 lit. a"))
   (is (=
-        (law-links/convert-art-to-str
+        (#'saos-tm.extractor.law-links/convert-art-to-str
           {:art "1" :par "0" :ust "0" :pkt "3" :zd "4" :lit "a"})
         "art. 1 pkt 3 zd. 4 lit. a"))
   (is (=
-        (law-links/convert-art-to-str
+        (#'saos-tm.extractor.law-links/convert-art-to-str
           {:art "0" :par "0" :ust "0" :pkt "0" :zd "0" :lit "0"})
         "")))
 
@@ -294,51 +332,52 @@
 
 (deftest compare-art-sort-test
   (is (=
-        (law-links/sort-arts
-          [ {:art "3" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "2" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}])
-        [ {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+       (#'saos-tm.extractor.law-links/sort-arts
+        [ {:art "3" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "2" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+       [ {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "2" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "3" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}]))
   (is (=
-        (law-links/sort-arts
-          [ {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}])
-        [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
+       (#'saos-tm.extractor.law-links/sort-arts
+        [ {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+       [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}]))
   (is (=
-        (law-links/sort-arts
-          [ {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "1" :par "12" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}])
-        [ {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
+       (#'saos-tm.extractor.law-links/sort-arts
+        [ {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "1" :par "12" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+       [ {:art "1" :par "2" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "12" :ust "3" :pkt "4" :zd "5" :lit "a"}]))
   (is (=
-        (law-links/sort-arts
-          [ {:art "1" :par "4a" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}])
-        [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
+       (#'saos-tm.extractor.law-links/sort-arts
+        [ {:art "1" :par "4a" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+       [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "4a" :ust "3" :pkt "4" :zd "5" :lit "a"}]))
   (is (=
-        (law-links/sort-arts
-          [ {:art "1" :par "3a" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
-           {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}])
-        [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
+       (#'saos-tm.extractor.law-links/sort-arts
+        [ {:art "1" :par "3a" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
+          {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}])
+       [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "3a" :ust "3" :pkt "4" :zd "5" :lit "a"}])))
 
 (deftest conv-act-to-str-test
   (is (=
-       (law-links/conv-act-to-str
+       (#'saos-tm.extractor.law-links/conv-act-to-str
         {:journalNo 23 :journalEntry 17 :journalYear 1996})
        "Dz. U. z 1996 r. Nr 23 poz. 17"))
   (is (=
-       (law-links/conv-act-to-str {:journalEntry 1732 :journalYear 2015})
+       (#'saos-tm.extractor.law-links/conv-act-to-str
+        {:journalEntry 1732 :journalYear 2015})
        "Dz. U. z 2015 r. poz. 1732")))

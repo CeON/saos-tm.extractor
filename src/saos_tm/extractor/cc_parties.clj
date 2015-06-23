@@ -6,7 +6,7 @@
   (:import java.io.File)
   (:gen-class))
 
-(def defendant-indicators
+(def ^:private defendant-indicators
   ["(?i)(?<=sprawy\\sz\\spowództwa)"
    "(?i)(?<=sprawy\\sz\\swniosku?\\</p\\>)"
    "(?i)(?<=sprawy\\sz\\swniosku?)"
@@ -30,7 +30,7 @@
    "(?i)(?<=od\\sdecyzji)"
    "(?i)(?<=od\\sorzeczenia)"])
 
-(def defendant-end-indicators
+(def ^:private defendant-end-indicators
   ["(?i)((?!oskarżon)[\\s\\S])*(?=oskarżon)"
    "(?i)((?!obwinion)[\\s\\S])*(?=obwinion)"
 
@@ -54,9 +54,9 @@
 
    "(?i)((?!zasądza)[\\s\\S])*(?=zasądza)"])
 
-(def point-indicator-regex #"(?<=>)\s*\d+[\.\)]")
+(def ^:private point-indicator-regex #"(?<=>)\s*\d+[\.\)]")
 
-(def ^:private parties-cc-civil-regexs
+(def ^:private ^:private parties-cc-civil-regexs
    [ "(?<=sprawy\\sz\\sodwołania)"
 
      "(?<=sprawy\\sz\\swniosk)"
@@ -88,7 +88,7 @@
       "(?<=w\\ssprawie)"
       "(?<=sprawy)"])
 
-(defn cleanse-party [s]
+(defn ^:private cleanse-party [s]
   (when
     (common/not-nil? s)
     (let [
@@ -136,7 +136,7 @@
           ]
       (when-not (empty? s-cleaned) s-cleaned))))
 
-(defn extract-multiple [match splitter s]
+(defn ^:private extract-multiple [match splitter s]
   (let [
         to-first-point
           (first
@@ -154,7 +154,7 @@
         ]
     all))
 
-(defn extract-plaintiff [s]
+(defn ^:private extract-plaintiff [s]
   (let [
         plaintiff-match
           (first
@@ -186,7 +186,7 @@
       plaintiff-match
       (extract-multiple plaintiff-match #"</strong>|</p>" s))))
 
-(defn identify-defendant [s]
+(defn ^:private identify-defendant [s]
   (first
     (str/split
       s
@@ -206,7 +206,7 @@
        "z\\s+udziałem|"
        "przy?\\s+udzial")))))
 
-(defn get-first-defendant-end-indicator-match
+(defn ^:private get-first-defendant-end-indicator-match
   [defendant-indicators defendant-end-indicators s]
   (let [
         matches
@@ -226,7 +226,7 @@
         ]
     match))
 
-(defn extract-defendant [s]
+(defn ^:private extract-defendant [s]
   (let [
         ; extracting defendant to certain phrases
         match (get-first-defendant-end-indicator-match
@@ -248,7 +248,7 @@
             (extract-multiple match #"oskarżon" s)))
         (identify-defendant (first match))))))
 
-(defn extract-sentence [s]
+(defn ^:private extract-sentence [s]
   (let [
         without-hard-spaces (common/remove-hard-spaces s)
         without-double-spaces (str/replace without-hard-spaces #"\s+" " ")
@@ -259,7 +259,7 @@
         ]
     (if (nil? match) s match)))
 
-(defn preprocess-cc-parties [s]
+(defn ^:private preprocess-cc-parties [s]
   (common/replace-several s
                    #"<p>|</p>" " "
                    (re-pattern common/system-newline) " "
@@ -314,7 +314,7 @@
         prosecutor) }
     {})))
 
-(defn is-appeal-case? [defendant match]
+(defn ^:private is-appeal-case? [defendant match]
   (if (nil? defendant)
     false
     (let [

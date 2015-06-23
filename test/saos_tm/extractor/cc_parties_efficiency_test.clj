@@ -10,9 +10,9 @@
   (:import java.io.File)
   (:gen-class))
 
-(def cc-parties-dir-name "cc-parties/")
+(def ^:private cc-parties-dir-name "cc-parties/")
 
-(def files-and-funcs
+(def ^:private files-and-funcs
   {:test-input-txts-dirs-paths
    ["input-1-civil/" "input-1-criminal/"
     "input-2-civil/" "input-2-criminal/"
@@ -29,17 +29,17 @@
     cc-parties/extract-parties-cc-civil
     cc-parties/extract-parties-cc-criminal]})
 
-(def is-civil [true false true false true false])
+(def ^:private is-civil [true false true false true false])
 
 ; Files utilities
 
-(defn get-file-contents [dir re]
+(defn ^:private get-file-contents [dir re]
   (let [
         sorted-paths (sort (common/get-file-paths dir re))
         ]
     (map slurp sorted-paths)))
 
-(defn get-file-names [dir re]
+(defn ^:private get-file-names [dir re]
   (let [
         sorted-paths (sort (common/get-file-paths dir re))
         ]
@@ -49,12 +49,12 @@
 
 ; CSV utilities
 
-(defn split-csv [s]
+(defn ^:private split-csv [s]
   (str/split
    s
    (re-pattern (str "\"" common/csv-delimiter "\""))))
 
-(defn create-cc-parties-map [answers is-civil]
+(defn ^:private create-cc-parties-map [answers is-civil]
   (into #{}
         (map
          #(if is-civil
@@ -68,32 +68,32 @@
 
 ; End of CSV utilities
 
-(defn extract-parties-from-judgments [judgments extract-parties-func]
+(defn ^:private extract-parties-from-judgments [judgments extract-parties-func]
   (remove nil?
           (map
            #(extract-parties-func %)
            judgments)))
 
-(defn answers-to-string [coll]
+(defn ^:private answers-to-string [coll]
   (map #(apply str
          "\"" (:id %) "\"" common/csv-delimiter
          "\"" (:plaintiff %) "\"" common/csv-delimiter
          "\"" (:defendant %) "\"" common/system-newline)
        coll))
 
-(defn remove-opening-closing-quots [coll]
+(defn ^:private remove-opening-closing-quots [coll]
   (map
    #(subs % 1 (dec (count %)))
    coll))
 
-(defn spit-many [paths coll]
+(defn ^:private spit-many [paths coll]
   (doall
    (map
     #(spit %1 (apply str (sort %2)))
     paths
     coll)))
 
-(defn log-results-to-files [results paths]
+(defn ^:private log-results-to-files [results paths]
   (common-test/mkdir-path
    (str common-test/log-data-path cc-parties-dir-name))
   (let [
@@ -101,12 +101,12 @@
         _ (spit-many paths results-strs)
         ]))
 
-(defn create-cc-parties-paths [file-names]
+(defn ^:private create-cc-parties-paths [file-names]
   (map
    #(str common-test/test-data-path cc-parties-dir-name %)
    file-names))
 
-(defn join-with-ids [extracted-parties ids]
+(defn ^:private join-with-ids [extracted-parties ids]
   (map
    #(if
       (or (contains? %1 :prosecutor) (contains? %1 :plaintiff))

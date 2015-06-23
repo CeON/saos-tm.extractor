@@ -8,42 +8,31 @@
    [saos-tm.extractor.common :as common]
    [saos-tm.extractor.common-test :as common-test]))
 
-(defn get-benchmark-rich-judgment-links [ext-files]
+(defn ^:private get-benchmark-rich-judgment-links [ext-files]
   (let [
         rich-judgments-links      (map csv/parse-csv ext-files)
         rich-judgments-links-sets (map set rich-judgments-links)
         ]
     rich-judgments-links-sets))
 
-(defn conv-coll-to-csv-line [coll not-used]
+(defn ^:private conv-coll-to-csv-line [coll not-used]
   (apply str "\""
          (str/join (str "\"" common/csv-delimiter "\"") coll)
          "\"" common/system-newline))
 
-(defn rich-judgment-links-extract [txt-files]
+(defn ^:private rich-judgment-links-extract [txt-files]
   (map
     #(set (map vals (rich-judgment-links/extract-ref-judgments %)))
     txt-files))
 
-(defn extract-own-signature-line [s]
+(defn ^:private extract-own-signature-line [s]
   (first
    (re-find
     (re-pattern
      (str "(?i)(sygn\\.|sygnatur)[^" common/system-newline "]*"))
     s)))
 
-(defn extract-own-signature [s]
-  (let [
-        own-signature-line (extract-own-signature-line s)
-        own-signature
-          (when (common/not-nil? own-signature-line)
-            (judgment-links/cleanse-signature
-             (second
-              (str/split own-signature-line #"(?i)sygn[^\s]*\s*(akt:?)?"))))
-        ]
-    own-signature))
-
-(defn remove-signature-headlines
+(defn ^:private remove-signature-headlines
   "Some law acts have a signature in headline of every page. This makes it
   difficult to extract some signatures when they appear on two pages."
   [s]
@@ -56,14 +45,13 @@
         ]
     without-own-signature-lines))
 
-(defn remove-own-signature [s]
+(defn ^:private remove-own-signature [s]
   (let [
         case-nmbs (judgment-links/extract-all-signatures s)
         regex
           (re-pattern
            (str/join "|"
-                     (map #(rich-judgment-links/conv-str-to-regex %)
-                          case-nmbs)))
+                     (map common/conv-str-to-regex case-nmbs)))
         matches-with-starts-ends
           (rich-judgment-links/sort-regexes
            (common/get-regex-matches-with-starts-ends-maps
@@ -78,7 +66,7 @@
         ]
     (str/replace s first-case-nmb-regex " ")))
 
-(defn rich-links-preprocess [coll]
+(defn ^:private rich-links-preprocess [coll]
   (let [
         without-own-signatures (map remove-own-signature coll)
         without-page-nmbs

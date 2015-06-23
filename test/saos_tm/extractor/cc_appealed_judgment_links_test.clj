@@ -9,9 +9,9 @@
    [saos-tm.extractor.cc-appealed-judgment-links
     :as cc-appealed-judgment-links]))
 
-(def cc-appealed-dir-name "cc-appealed/")
+(def ^:private cc-appealed-dir-name "cc-appealed/")
 
-(defn log-results-to-file [elems court-type]
+(defn ^:private log-results-to-file [elems court-type]
   (common-test/mkdir-path
    (str common-test/log-data-path cc-appealed-dir-name))
   (let [
@@ -21,7 +21,7 @@
            (str/join common/system-newline (sort elems)))
         ]))
 
-(defn results-to-strs [file-names extracted-appeals]
+(defn ^:private results-to-strs [file-names extracted-appeals]
   (into #{}
         (map
          #(str "\"" %1 "\"" common/csv-delimiter "\""
@@ -33,7 +33,7 @@
                (:signature %2) "\"")
          file-names extracted-appeals)))
 
-(defn handle-appeal-test [court-type extract-fn]
+(defn ^:private handle-appeal-test [court-type extract-fn]
   (let [
         file-paths
           (common-test/list-file-paths

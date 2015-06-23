@@ -15,7 +15,7 @@
 
 (def not-nil? (complement nil?))
 
-(def not-empty? (complement empty?))
+(def ^:private not-empty? (complement empty?))
 
 (def pl-big-diacritics "ĄĆĘŁŃÓŚŻŹ")
 
@@ -28,6 +28,10 @@
   (not-nil? (re-matches re s)))
 
 (def not-matches? (complement matches?))
+
+(defn conv-str-to-regex [s]
+  (re-pattern
+   (str "\\Q" s "\\E")))
 
 (defn get-file-paths [dir re]
   (let [
@@ -56,7 +60,9 @@
   (not= (str/.indexOf st sub) -1))
 
 (defn indices [pred coll]
-   (keep-indexed #(when (pred %2) %1) coll))
+   (keep-indexed
+    #(when (pred %2) %1)
+    coll))
 
 (defn remove-hard-spaces [s]
   (str/replace s #"\u00A0" " "))
@@ -64,7 +70,7 @@
 (defn remove-double-spaces [s]
   (str/replace s #"\s+" " "))
 
-(defn remove-newlines [s]
+(defn ^:private remove-newlines [s]
   (let [
         without-double-slash-newlines (str/replace s #"\\n" " ")
         without-newlines
@@ -73,7 +79,7 @@
         ]
     without-newlines))
 
-(defn unsplit-words-across-lines [s]
+(defn ^:private unsplit-words-across-lines [s]
   (let [
         without-split-numbers
           (str/replace s
@@ -82,7 +88,7 @@
         ]
   (str/replace without-split-numbers (str "-" system-newline) "")))
 
-(defn conv-html-to-text [ ^String s]
+(defn ^:private conv-html-to-text [ ^String s]
   (let [
           istream (IOUtils/toInputStream s "UTF-8");
           parser (HtmlParser.)
@@ -104,7 +110,7 @@
         ]
     without-double-spaces))
 
-(defn remove-html-tags-other-than [tag-name s]
+(defn ^:private remove-html-tags-other-than [tag-name s]
   (str/replace s
                (re-pattern (str "<(?!/?" tag-name ")((?!>)[\\s\\S])*>")) " "))
 
@@ -112,14 +118,14 @@
   (remove-html-tags-other-than "span" s))
 
 ;; for debugging
-(defn print-if-contains [s element]
+(defn ^:private print-if-contains [s element]
   (if (substring? element s) (prn s)))
-(defn print-that [s]
+(defn ^:private print-that [s]
   (doall (prn) (prn)) (prn s) (doall (prn) (prn)))
 
 ; Utilities for regexes matching
 
-(defn get-regex-matches [re s func]
+(defn ^:private get-regex-matches [re s func]
   (loop [match (re-matcher re s)
          result {}]
     (if (.find match)
@@ -127,19 +133,19 @@
              (func match result))
       result)))
 
-(defn start-func [match result]
+(defn ^:private start-func [match result]
   (assoc result (.start match) (.group match)))
 
-(defn get-regex-matches-with-starts [re s]
+(defn ^:private get-regex-matches-with-starts [re s]
   (get-regex-matches re s start-func))
 
-(defn start-end-func [match result]
+(defn ^:private start-end-func [match result]
   (assoc result [(.start match) (.end match)] (.group match)))
 
-(defn get-regex-matches-with-starts-ends [re s]
+(defn ^:private get-regex-matches-with-starts-ends [re s]
   (get-regex-matches re s start-end-func))
 
-(defn start-end-map-func [match result]
+(defn ^:private start-end-map-func [match result]
   (concat
    result
    [{:start (.start match) :end (.end match) :regex (.group match)}]))
@@ -147,7 +153,7 @@
 (defn get-regex-matches-with-starts-ends-maps [re s]
   (get-regex-matches re s start-end-map-func))
 
-(defn get-sorted [func re s]
+(defn ^:private get-sorted [func re s]
   (let [
         regexes (func re s)
         sorted (sort regexes)
@@ -157,21 +163,21 @@
 (defn get-regex-matches-with-starts-ends-sorted [re s]
   (get-sorted get-regex-matches-with-starts-ends re s))
 
-(defn get-regex-match [func regex following-text-regex s]
+(defn ^:private get-regex-match [func regex following-text-regex s]
   (get-sorted func
    (re-pattern
     (str regex following-text-regex))
    s))
 
-(defn get-matches [func regexes following-text-regex s]
+(defn ^:private get-matches [func regexes following-text-regex s]
   (map
    #(get-regex-match func % following-text-regex s)
    regexes))
 
-(defn find-first-not-empty [coll]
+(defn ^:private find-first-not-empty [coll]
   (find-first #(not-empty? %) coll))
 
-(defn get-first-if-groups [match]
+(defn ^:private get-first-if-groups [match]
   (if (string? match) match (first match)))
 
 (defn get-closest-regex-match [regexes following-text-regex s]
@@ -186,11 +192,11 @@
         ]
     first-match-str))
 
-(defn get-regex-match-case-ins [func regexes following-text-regex s]
+(defn ^:private get-regex-match-case-ins [func regexes following-text-regex s]
   (func
     (map #(str "(?i)" %) regexes) following-text-regex s))
 
-(defn get-regex-match-case-sen [func regexes following-text-regex s]
+(defn ^:private get-regex-match-case-sen [func regexes following-text-regex s]
   (func regexes following-text-regex s))
 
 (defn get-closest-regex-match-case-ins [regexes following-text-regex s]
