@@ -12,4 +12,4 @@
    0.971 0.806
    0.947 0.791
    common-test/get-csv-for-extracted-link
-   common-test/log-results-with-signatures))
+   common-test/log-results-with-case-nmbs))

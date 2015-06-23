@@ -226,7 +226,7 @@
 (defn extract-ref-judgments [s]
   (let [
         preprocessed (common/preprocess s)
-        case-nmbs (judgment-links/extract-all-signatures s)
+        case-nmbs (judgment-links/extract-all-case-nmbs s)
         other-judgment-links-data
           (map #(extract-other-data % preprocessed) case-nmbs)
         ]

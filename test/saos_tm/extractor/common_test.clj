@@ -38,13 +38,13 @@
            "\"" zd-nr "\"" common/csv-delimiter
            "\"" lit-nr "\"" common/csv-delimiter)))
 
-(defn get-csv-for-extracted-link [link signature]
+(defn get-csv-for-extracted-link [link case-nmb]
   (let [
         art (:art link)
         act (:act link)
         ]
     (apply str (get-art-coords-csv art)
-           "\"" signature "\"" common/csv-delimiter
+           "\"" case-nmb "\"" common/csv-delimiter
            "\"" (:journalYear act) "\"" common/csv-delimiter
            "\"" (:journalNo act) "\"" common/csv-delimiter
            "\"" (:journalEntry act) "\"" common/system-newline)))
@@ -93,11 +93,11 @@
 
 (defn judgment-links-extract [txt-files]
   (map
-    #(judgment-links/extract-all-signatures %)
+    #(judgment-links/extract-all-case-nmbs %)
     txt-files))
 
-(defn signature-to-csv [signature not-used]
-  (apply str "\"" signature "\"" common/system-newline))
+(defn case-nmb-to-csv [case-nmb not-used]
+  (apply str "\"" case-nmb "\"" common/system-newline))
 
 (defn law-links-extract-all-dictionaries [txt-files]
   (law-links-extract
@@ -111,19 +111,19 @@
    #(key-name %)
    coll))
 
-(defn ^:private get-signature [file-data]
+(defn ^:private get-case-nmb [file-data]
   (map first
        (csv/parse-csv file-data)))
 
-(defn get-benchmark-signatures [ext-files]
+(defn get-benchmark-case-nmbs [ext-files]
   (let [
-        jdg-signatures (map get-signature ext-files)
-        benchmark-signatures
+        jdg-case-nmbs (map get-case-nmb ext-files)
+        benchmark-case-nmbs
           (map
            #(set (remove empty? (map str/trim %)))
-           jdg-signatures)
+           jdg-case-nmbs)
         ]
-    benchmark-signatures))
+    benchmark-case-nmbs))
 
 (defn list-file-paths [dir]
   (sort (.listFiles (io/file dir))))
@@ -143,7 +143,7 @@
   (spit path
         (apply str
                (sort
-                (map-fn result-to-csv-fn data "signature")))))
+                (map-fn result-to-csv-fn data "case-nmb")))))
 
 (defn ^:private nils-to-zeros [coll]
   (map #(if (nil? %) 0 %) coll))
@@ -159,32 +159,32 @@
   (set
    (mapcat zip-with-file-name file-names items)))
 
-(defn ^:private spit-all-csv-with-signatures
-  [result-to-csv-fn path data signature]
+(defn ^:private spit-all-csv-with-case-nmbs
+  [result-to-csv-fn path data case-nmb]
   (spit path
         (apply str
                (sort
-                (map-fn result-to-csv-fn data signature)))))
+                (map-fn result-to-csv-fn data case-nmb)))))
 
 (defn ^:private split-csv-line [s]
   (str/split s
              (re-pattern (str #"\"" common/csv-delimiter "\""))))
 
-(defn ^:private extract-signatures-from-csv [txts]
+(defn ^:private extract-case-nmbs-from-csv [txts]
   (map
    #(nth (split-csv-line %) 6)
    txts))
 
-(defn log-results-with-signatures
+(defn log-results-with-case-nmbs
   [result-to-csv-fn log-files-paths extracted-items ext-files]
   (doall
    (map
-    #(spit-all-csv-with-signatures result-to-csv-fn %1 %2 %3)
+    #(spit-all-csv-with-case-nmbs result-to-csv-fn %1 %2 %3)
     log-files-paths
     extracted-items
-    (extract-signatures-from-csv ext-files))))
+    (extract-case-nmbs-from-csv ext-files))))
 
-(defn log-results-without-signatures
+(defn log-results-without-case-nmbs
   [result-to-csv-fn log-files-paths extracted-items ext-files]
   (doall
    (map

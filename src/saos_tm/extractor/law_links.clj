@@ -1,4 +1,6 @@
 (ns saos-tm.extractor.law-links
+  "Module contains algorithm
+  for extraction of references to Polish legislation."
   (:require
    [saos-tm.extractor.common :as common]
    [clojure.string :as str]
@@ -924,6 +926,33 @@
         [first-law-act-token-index first-art-index]))))
 
 (defn extract-law-links
+  "Extracts all references to Polish legislation.
+
+  The result is a map containing two keys:
+
+  * `:orphaned-links`: Algorithm did not manage to map legislative act to them.
+  Contains list of maps with fields: `:art` article part of link
+  and `:txt` text which algorithm did not manage to resolve to legislative act
+  * `::extracted-links`: List containing successfully extracted links in form
+  of maps with fields: `:art` which contains coordinates of article parts
+  of legislative act and `:act` which contains coordinates of act
+
+  Example:
+
+  `(extract-law-links \"art. 36 ustawy z dnia 1 sierpnia 1997 r.
+  o Trybunale Konstytucyjnym (Dz. U. Nr 102, poz. 643 ze zm.,
+  dalej: ustawa o TK). Zgodnie z § 116 pkt 3 wskazanego rozporządzenia,
+  w dziale\" true true true)`
+
+  `{:orphaned-links
+  [{:art (\"0\" \"116\" \"0\" \"3\" \"0\" \"0\"), :txt \"wskazanego\"}],
+  :extracted-links
+  [{:art
+  {:lit \"0\", :zd \"0\", :pkt \"0\", :ust \"0\", :par \"0\", :art \"36\"},
+  :act {:journalEntry \"643\", :journalNo \"102\", :journalYear \"1997\"}}]}`
+
+  It works ...
+  "
   [s
    use-local-explicit-dictionary use-local-implicit-dictionary
    use-global-dictionary]

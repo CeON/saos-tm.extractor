@@ -1,4 +1,6 @@
 (ns saos-tm.extractor.judgment-links
+  "Module contains algorithm for extraction of references to Polish case law.
+  These references appear in form of case numbers."
   (:require
    [saos-tm.extractor.common :as common]
    [clojure.string :as str]
@@ -30,7 +32,8 @@
                    "[a-zA-Z]+/[a-zA-Z]+\\s+\\d+/\\d+|"
                    "OPS+\\s+\\d+/\\d+")))
 
-(def ^:private signature-regex #"(?i)(sygn\.*|sygnatur[^\s]*)\s*(akt)?:?")
+(def ^:private case-nmb-indicators-regex
+  #"(?i)(sygn\.*|sygnatur[^\s]*)\s*(akt)?:?")
 
 (def ^:private not-substring? (complement common/substring?))
 
@@ -40,19 +43,19 @@
     #(str/replace (fnc %) common/system-newline " ")
     (re-seq re s))))
 
-(defn ^:private extract-signatures-osp [s]
+(defn ^:private extract-case-nmbs-osp [s]
   (extract osp-regex s identity))
 
-(defn ^:private extract-signatures-kio [s]
+(defn ^:private extract-case-nmbs-kio [s]
   (extract kio-regex s identity))
 
-(defn ^:private extract-signatures-kio-uzp [s]
+(defn ^:private extract-case-nmbs-kio-uzp [s]
   (extract kio-uzp-regex s #(if (string? %) % (first %))))
 
-(defn ^:private extract-signatures-kio-uzp-zo-no-space [s]
+(defn ^:private extract-case-nmbs-kio-uzp-zo-no-space [s]
   (extract kio-uzp-no-space-regex s identity))
 
-(defn ^:private extract-signatures-kio-uzp-zo [s]
+(defn ^:private extract-case-nmbs-kio-uzp-zo [s]
   (extract kio-uzp-zo-regex s identity))
 
 (defn ^:private choose-string [element]
@@ -63,26 +66,23 @@
 (defn ^:private extract-tk [s]
   (let [
         string-or-groups (re-seq tk-extraction-regex s)
-        matches
-          (map
-           #(choose-string %)
-           string-or-groups)
+        matches (map choose-string string-or-groups)
         ]
     matches))
 
-(defn ^:private extract-signatures-tk [s]
+(defn ^:private extract-case-nmbs-tk [s]
   (set
    (map
     #(str/replace % common/system-newline " ")
     (extract-tk s))))
 
-(defn ^:private extract-signatures-sn [s]
+(defn ^:private extract-case-nmbs-sn [s]
   (extract sn-regex s identity))
 
-(defn ^:private extract-signatures-nsa [s]
+(defn ^:private extract-case-nmbs-nsa [s]
   (extract nsa-regex s identity))
 
-(defn ^:private cleanse-signature [s]
+(defn ^:private cleanse-case-nmb [s]
   (str/trim
    (first
     (str/split
@@ -113,7 +113,7 @@
 (defn ^:private are-subsequent [first-elem second-elem]
   (= (- second-elem first-elem) 1))
 
-(defn ^:private extract-signature-universal [tokens]
+(defn ^:private extract-case-nmb-universal [tokens]
   (let [
         tokens-with-slash-indices
           (common/indices
@@ -121,7 +121,7 @@
            tokens)
         first-index-with-slash (first tokens-with-slash-indices)
         second-index-with-slash (second tokens-with-slash-indices)
-        signature-last-token-index
+        case-nmb-last-token-index
           (if
             (and
              (> (count tokens-with-slash-indices) 1)
@@ -132,69 +132,70 @@
               (nth tokens second-index-with-slash) #"/[\s\S]*"))
             (second tokens-with-slash-indices)
             (first tokens-with-slash-indices))
-        signature-tokens
+        case-nmb-tokens
           (take
-           (inc signature-last-token-index)
+           (inc case-nmb-last-token-index)
            tokens)
         ]
-    (str/join " " signature-tokens)))
+    (str/join " " case-nmb-tokens)))
 
 (defn ^:private has-slash? [s]
   (common/substring? "/" s))
 
-(defn ^:private extract-signatures-universal
-  "Function splits text by signature indicators. It takes 5 first tokens
-  in each candidate string. Looks for token with slash char. If candidate
-  doesn't have such token it is not a signature.
+(defn ^:private extract-case-nmbs-universal
+  "Function splits text by case-nmb indicators in `case-nmb-indicators-regex`.
+  It takes 5 first tokens in each candidate string.
+  Looks for token with slash char.
+  If candidate doesn't have such token it is not a case number.
   It takes all tokens up to first with slash or second if they are subsequent."
   [s]
   (let [
-        signature-candidates (str/split s signature-regex)
+        case-nmb-candidates (str/split s case-nmb-indicators-regex)
         ]
-    (if (> (count signature-candidates) 1)
+    (if (> (count case-nmb-candidates) 1)
       (let [
-            signature-candidates
-              (map #(str/replace % #"\s+" " ") signature-candidates)
-            signature-candidates-in-tokens
+            case-nmb-candidates
+              (map #(str/replace % #"\s+" " ") case-nmb-candidates)
+            case-nmb-candidates-in-tokens
               (map
                #(take 5
                       (str/split
                        (str/trim %)
                        #"(?<=[^/])\s+(?=[^/])"))
-               signature-candidates)
+               case-nmb-candidates)
             having-slash-token-candidates
               (filter
                #(some has-slash? %)
-               signature-candidates-in-tokens)
+               case-nmb-candidates-in-tokens)
             ]
         (set
          (map
-          #(extract-signature-universal %)
+          #(extract-case-nmb-universal %)
           having-slash-token-candidates)))
       nil)))
 
-(defn ^:private extract-cleansed-signatures [extract-fn s]
+(defn ^:private extract-cleansed-case-nmbs [extract-fn s]
   (map
-    #(cleanse-signature %)
+    #(cleanse-case-nmb %)
     (extract-fn s)))
 
-(defn ^:private extract-signatures [extract-fncs s]
+(defn ^:private extract-case-nmbs [extract-fncs s]
   (set/union
    (flatten
     (map
-     #(extract-cleansed-signatures % s)
+     #(extract-cleansed-case-nmbs % s)
      extract-fncs))))
 
-(defn ^:private remove-signatures [signatures-vec s]
+(defn ^:private remove-case-nmbs [case-nmbs-vec s]
   (loop
-    [left-signatures signatures-vec
+    [left-case-nmbs case-nmbs-vec
      curr-str s]
     (if
-      (empty? left-signatures)
+      (empty? left-case-nmbs)
       curr-str
       (recur
-       (rest left-signatures)
-       (str/replace curr-str (first left-signatures) " ")))))
+       (rest left-case-nmbs)
+       (str/replace curr-str (first left-case-nmbs) " ")))))
 
 (defn ^:private one-word-but-not-uzp-kio? [s]
   (and
@@ -202,41 +203,59 @@
    (not-substring? "UZP" s)
    (not-substring? "KIO" s)))
 
-(defn extract-all-signatures [s]
+(defn extract-all-case-nmbs
+  "Extracts all case numbers present in a given string `s`.
+
+  The result is a set of strings which are case numbers.
+
+  Example:
+
+  `(extract-all-case-nmbs \"wyroki Tw 72/02 i Tw 25/02\")`
+
+  `#{\"Tw 72/02\" \"Tw 25/02\"}`
+
+  It uses two types of functions: universal and specific.
+
+  The first is called `extract-case-nmbs-universal` and looks for
+  text like \"sygnatura akt\" that indicates appearance of case number in text.
+
+  Example of function that represent the second type is `extract-case-nmbs-sn`.
+  The functions of second type find case numbers in specific formats.
+  "
+  [s]
   (let [
         preprocessed (common/preprocess s)
 
-        signatures-universal
-          (extract-signatures
-           [extract-signatures-universal]
+        case-nmbs-universal
+          (extract-case-nmbs
+           [extract-case-nmbs-universal]
            preprocessed)
-        signatures-universal-set (set signatures-universal)
-        without-universal-signatures
-          (remove-signatures
-           signatures-universal-set preprocessed)
+        case-nmbs-universal-set (set case-nmbs-universal)
+        without-universal-case-nmbs
+          (remove-case-nmbs case-nmbs-universal-set preprocessed)
 
-        signatures-osp-kio-space
-          (extract-signatures
-           [extract-signatures-osp
-            extract-signatures-kio
-            extract-signatures-kio-uzp]
-           without-universal-signatures)
-        signatures-osp-kio-space-set (set signatures-osp-kio-space)
-        without-universal-osp-kio-space-signatures
-          (remove-signatures
-           signatures-osp-kio-space-set without-universal-signatures)
+        case-nmbs-osp-kio-space
+          (extract-case-nmbs
+           [extract-case-nmbs-osp
+            extract-case-nmbs-kio
+            extract-case-nmbs-kio-uzp]
+           without-universal-case-nmbs)
+        case-nmbs-osp-kio-space-set (set case-nmbs-osp-kio-space)
+        without-universal-osp-kio-space-case-nmbs
+          (remove-case-nmbs
+           case-nmbs-osp-kio-space-set without-universal-case-nmbs)
 
-        all-signatures
+        all-case-nmbs
           (set/union
-           signatures-universal-set
-           signatures-osp-kio-space-set
-           (extract-signatures
-             [extract-signatures-nsa
-              extract-signatures-sn
-              extract-signatures-tk
-              extract-signatures-kio-uzp-zo
-              extract-signatures-kio-uzp-zo-no-space]
-             without-universal-osp-kio-space-signatures))
+           case-nmbs-universal-set
+           case-nmbs-osp-kio-space-set
+           (extract-case-nmbs
+            [extract-case-nmbs-nsa
+             extract-case-nmbs-sn
+             extract-case-nmbs-tk
+             extract-case-nmbs-kio-uzp-zo
+             extract-case-nmbs-kio-uzp-zo-no-space]
+            without-universal-osp-kio-space-case-nmbs))
 
         result
           (remove
@@ -244,7 +263,6 @@
              (= "" %)
              (one-word-but-not-uzp-kio? %)
              (= "KIO/UZP" %))
-           all-signatures)
-        result-set (set result)
+           all-case-nmbs)
         ]
-    result-set))
+    (set result)))

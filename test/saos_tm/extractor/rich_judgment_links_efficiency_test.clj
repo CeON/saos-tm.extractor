@@ -25,29 +25,30 @@
     #(set (map vals (rich-judgment-links/extract-ref-judgments %)))
     txt-files))
 
-(defn ^:private extract-own-signature-line [s]
+(defn ^:private extract-own-case-nmb-line [s]
   (first
    (re-find
     (re-pattern
      (str "(?i)(sygn\\.|sygnatur)[^" common/system-newline "]*"))
     s)))
 
-(defn ^:private remove-signature-headlines
-  "Some law acts have a signature in headline of every page. This makes it
-  difficult to extract some signatures when they appear on two pages."
+(defn ^:private remove-case-nmb-headlines
+  "Some law acts have a case number in headline of every page.
+  This makes it difficult to extract other case numbers
+  when they appear on two pages."
   [s]
   (let [
-        own-signature-line (extract-own-signature-line s)
-        without-own-signature-lines
-          (if (nil? own-signature-line)
+        own-case-nmb-line (extract-own-case-nmb-line s)
+        without-own-case-nmb-lines
+          (if (nil? own-case-nmb-line)
             s
-            (str/replace s (str/trim own-signature-line) " "))
+            (str/replace s (str/trim own-case-nmb-line) " "))
         ]
-    without-own-signature-lines))
+    without-own-case-nmb-lines))
 
-(defn ^:private remove-own-signature [s]
+(defn ^:private remove-own-case-nmb [s]
   (let [
-        case-nmbs (judgment-links/extract-all-signatures s)
+        case-nmbs (judgment-links/extract-all-case-nmbs s)
         regex
           (re-pattern
            (str/join "|"
@@ -68,9 +69,9 @@
 
 (defn ^:private rich-links-preprocess [coll]
   (let [
-        without-own-signatures (map remove-own-signature coll)
+        without-own-case-nmbs (map remove-own-case-nmb coll)
         without-page-nmbs
-          (map common-test/remove-page-nmbs without-own-signatures)
+          (map common-test/remove-page-nmbs without-own-case-nmbs)
         ]
   without-page-nmbs))
 
@@ -80,4 +81,4 @@
    get-benchmark-rich-judgment-links
    rich-judgment-links-extract rich-links-preprocess
    0.929 0.931
-   conv-coll-to-csv-line common-test/log-results-without-signatures))
+   conv-coll-to-csv-line common-test/log-results-without-case-nmbs))

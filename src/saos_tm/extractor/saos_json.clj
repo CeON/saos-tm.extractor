@@ -2,8 +2,7 @@
   (:require
    [clojure.string :as str]
    [cheshire.core :as cheshire]
-   [saos-tm.extractor.common :as common]
-   [saos-tm.extractor.csv-helpers :as csv-helpers])
+   [saos-tm.extractor.common :as common])
   (:gen-class))
 
 (defn ^:private get-nth-args [csv-string]
@@ -67,7 +66,7 @@
 (defn generate-osp-parties-test-set []
   (let [
         ids
-          (csv-helpers/get-nth-args
+          (get-nth-args
            (slurp "test-data/osp-parties/answers-3.txt"))
         jsons (get-jsons "/home/floydian/icm/osp/json/4/")
         json (flatten jsons)

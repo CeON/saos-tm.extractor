@@ -6,7 +6,7 @@
 (deftest judgment-links-efficiency-test-1
   (common-test/judgment-links-efficiency-test
    "judgment-links-answers/" "txt1" "jdg1"
-   common-test/get-benchmark-signatures common-test/judgment-links-extract
+   common-test/get-benchmark-case-nmbs common-test/judgment-links-extract
    common-test/links-preprocess
    0.991 0.993
-   common-test/signature-to-csv common-test/log-results-without-signatures))
+   common-test/case-nmb-to-csv common-test/log-results-without-case-nmbs))
