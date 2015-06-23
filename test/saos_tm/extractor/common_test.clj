@@ -5,6 +5,7 @@
    [clojure.string :as str]
    [clojure.set :as set]
    [clojure-csv.core :as csv]
+   [clojure.math.numeric-tower :as numeric-tower]
    [saos-tm.extractor.common :as common]
    [saos-tm.extractor.law-links :as law-links]
    [saos-tm.extractor.judgment-links :as judgment-links]))
@@ -14,10 +15,6 @@
 (def links-input-txts-dir-name "links-input-txts/")
 
 (def log-data-path "log/")
-
-(defn mkdir-if-not-exists [path]
-  (if (not (.isDirectory (io/file path)))
-    (.mkdir (io/file path))))
 
 (defn mkdir-path [path]
   (let [dir (java.io.File. path)]
@@ -87,9 +84,7 @@
                data))))
 
 (defn get-benchmark-records [files]
-  (map
-    read-law-links-to-maps
-    files))
+  (map read-law-links-to-maps files))
 
 (defn law-links-extract [txt-files extract-law-links-fn]
   (map
@@ -122,23 +117,6 @@
           ]
       {:precision precision :recall recall})))
 
-(deftest precision-recall-measure-test
-  (is
-   (=
-    {:precision 0.5 :recall 0.25}
-    (get-precision-recall #{1 2} #{2 3 4 5})))
-   (is
-    (=
-     {:precision 1.0 :recall 1.0}
-     (get-precision-recall #{} #{}))))
-
-(deftest unsplit-words-across-lines-test
-  (is (=
-       (common/unsplit-words-across-lines "postę-\npowania") "postępowania")))
-
-(deftest preprocess-test
-  (is (= (common/preprocess "postę-\npowania") "postępowania")))
-
 (defn get-average [coll]
   (/ (reduce + coll) (count coll)))
 
@@ -153,10 +131,7 @@
 
 (defn get-benchmark-signatures [ext-files]
   (let [
-        jdg-signatures
-          (map
-           #(get-signature %)
-           ext-files)
+        jdg-signatures (map get-signature ext-files)
         benchmark-signatures
           (map
            #(set (remove empty? (map str/trim %)))
@@ -171,9 +146,7 @@
   (sort (.list (io/file dir))))
 
 (defn get-files-from-dir [dir]
-  (map
-   #(slurp %)
-   (sort (list-file-paths dir))))
+  (map slurp (sort (list-file-paths dir))))
 
 (defn map-fn [func coll additional-item]
   (map
@@ -199,9 +172,6 @@
 (defn get-items-with-file-names [file-names items]
   (set
    (mapcat zip-with-file-name file-names items)))
-
-(defn split-lines [s]
-  (str/split s (re-pattern common/system-newline)))
 
 (defn spit-all-csv-with-signatures [result-to-csv-fn path data signature]
   (spit path
@@ -243,13 +213,35 @@
 (defn links-preprocess [coll]
   (map remove-page-nmbs coll))
 
-(defn get-and-print-efficiencies
+(defn expand-str-to-length [s length]
+  (str s
+       (apply str
+              (take
+               (- length (count s))
+               (repeat " ")))))
+
+(defn format-numbers [coll]
+  (map #(format "%.4f" %) coll))
+
+(defn get-harmonic-mean [nmb1 nmb2]
+  (/ (* 2 nmb1 nmb2) (+ nmb1 nmb2)))
+
+(defn count-items-from-measures [items measures]
+  (map
+   #(numeric-tower/round (* (count %1) (- 1.0 %2)))
+   items measures))
+
+(defn get-and-log-efficiencies
   [benchmark-items extracted-items
-   ext-files ext-files-names log-files-paths
+   ext-files ext-files-names
+   log-per-doc-stats-path log-files-paths
    log-results-fn result-to-csv-fn
-   description]
+   per-doc-stats-file-name]
   (let [
-        file-names (map #(first (str/split % #"\.")) ext-files-names)
+        file-names
+          (map
+           #(first (str/split % #"\."))
+           ext-files-names)
         benchmark-items-with-file-names
           (get-items-with-file-names file-names benchmark-items)
         extracted-items-with-file-names
@@ -268,10 +260,8 @@
         overall-precision-recall
           (get-precision-recall
            extracted-items-with-file-names benchmark-items-with-file-names)
-        counts-precs
-          (map #(* (count %1) (- 1.0 %2)) extracted-items precisions)
-        counts-recalls
-          (map #(* (count %1) (- 1.0 %2)) benchmark-items recalls)
+        counts-precs (count-items-from-measures extracted-items precisions)
+        counts-recalls (count-items-from-measures benchmark-items recalls)
 
         names-precs-recalls
           (sort
@@ -280,28 +270,48 @@
             vector
             ext-files-names precisions recalls counts-precs counts-recalls))
 
-        _ (prn)
-        _ (prn description)
-        _ (prn)
+        files-names-lengths (map #(count (first %)) names-precs-recalls)
+        max-file-name-length (apply max files-names-lengths)
+        file-names-formatted
+          (map
+            #(apply str (expand-str-to-length (first %) max-file-name-length))
+            names-precs-recalls)
 
-        _ (doseq [i names-precs-recalls] (println i))
-        _ (println (str \newline "av. precision: " average-precision
-                        " av. recall: " average-recall))
-        _ (println (str "min precision: " min-precision
-                        " min recall: " min-recall \newline))
+        per-doc-stats-file-description
+          (str "\"file name\"" common/csv-delimiter
+               "\"precision\"" common/csv-delimiter
+               "\"recall\"" common/csv-delimiter
+               "\"number of items incorrectly extracted\""
+               common/csv-delimiter
+               "\"number of items not extracted\"" common/system-newline)
+        per-doc-stats-file-content
+          (apply str
+                 (map
+                  #(str %1 common/csv-delimiter " "
+                        (str/join (str common/csv-delimiter " ")
+                                  (concat
+                                   (format-numbers (take 2 (drop 1 %2)))
+                                   (drop 3 %2)))
+                        common/system-newline)
+                   file-names-formatted names-precs-recalls))
 
-        separator (str/join "" (take 70 (repeat "-")))
-        _ (println (str separator \newline))
-        _ (println (str "OVERALL PRECISION: "
-                        (:precision overall-precision-recall)
-                        " RECALL: "
-                        (:recall overall-precision-recall)
-                        \newline))
-        _ (println (str separator \newline))
-
+        _ (spit
+           (str log-per-doc-stats-path "-" per-doc-stats-file-name ".txt")
+           (str per-doc-stats-file-description per-doc-stats-file-content))
         _
           (log-results-fn
            result-to-csv-fn log-files-paths extracted-items ext-files)
+
+        _ (print (str "precision: "
+                      (format "%.4f" (:precision overall-precision-recall))
+                      " recall: "
+                      (format "%.4f" (:recall overall-precision-recall))
+                      " f1: "
+                      (format "%.4f"
+                              (get-harmonic-mean
+                               (:precision overall-precision-recall)
+                               (:recall overall-precision-recall)))
+                      common/system-newline))
         ]
     overall-precision-recall))
 
@@ -343,13 +353,14 @@
           (extracted-records-fn (files-and-file-paths :txt-files))
 
         overall-precision-recall
-          (get-and-print-efficiencies
+          (get-and-log-efficiencies
            benchmark-items extracted-items
            (files-and-file-paths :ext-files)
            (files-and-file-paths :ext-files-names)
+           (str log-data-path links-type-dir-name ext-dir-name)
            (files-and-file-paths :log-files-paths)
            log-results-fn result-to-csv-fn
-           "OVERALL")
+           "per-doc-stats")
         ]
     (is (> (:precision overall-precision-recall) precision-threshold))
     (is (> (:recall overall-precision-recall) recall-threshold))))
@@ -380,39 +391,69 @@
         extracted-acts (map #(extract-elems :act %) extracted-items)
         extracted-arts (map #(extract-elems :art %) extracted-items)
 
+        _ (print (str (expand-str-to-length "ACTS " 15) "| "))
         acts-precision-recall
-          (get-and-print-efficiencies
+          (get-and-log-efficiencies
            benchmark-acts extracted-acts
            (files-and-file-paths :ext-files)
            (files-and-file-paths :ext-files-names)
+           (str log-data-path links-type-dir-name ext-dir-name)
            (files-and-file-paths :log-files-paths)
            log-results-fn result-to-csv-fn
-           "ACTS")
+           "ACTS-per-doc-stats")
 
+        _ (print (str (expand-str-to-length "ARTS " 15) "| "))
         arts-precision-recall
-          (get-and-print-efficiencies
+          (get-and-log-efficiencies
            benchmark-arts extracted-arts
            (files-and-file-paths :ext-files)
            (files-and-file-paths :ext-files-names)
+           (str log-data-path links-type-dir-name ext-dir-name)
            (files-and-file-paths :log-files-paths)
            log-results-fn result-to-csv-fn
-           "ARTS")
+           "ARTS-per-doc-stats")
 
+        _ (print (str (expand-str-to-length "ACTS-ARTS " 15) "| "))
         overall-precision-recall
-          (get-and-print-efficiencies
+          (get-and-log-efficiencies
            benchmark-items extracted-items
            (files-and-file-paths :ext-files)
            (files-and-file-paths :ext-files-names)
+           (str log-data-path links-type-dir-name ext-dir-name)
            (files-and-file-paths :log-files-paths)
            log-results-fn result-to-csv-fn
-           "ACTS+ARTS")
+           "ACTS-ARTS-per-doc-stats")
         ]
     (is (> (:precision overall-precision-recall) overall-precision-threshold))
-    (is (> (:recall overall-precision-recall) overall-recall-threshold))
-    (is (> (:precision acts-precision-recall) acts-precision-threshold))
-    (is (> (:recall acts-precision-recall) acts-recall-threshold))
-    (is (> (:precision arts-precision-recall) arts-precision-threshold))
-    (is (> (:recall arts-precision-recall) arts-recall-threshold))))
+    (is (> (:recall overall-precision-recall)    overall-recall-threshold))
+    (is (> (:precision acts-precision-recall)    acts-precision-threshold))
+    (is (> (:recall acts-precision-recall)       acts-recall-threshold))
+    (is (> (:precision arts-precision-recall)    arts-precision-threshold))
+    (is (> (:recall arts-precision-recall)       arts-recall-threshold))))
+
+; tests
+
+(deftest get-harmonic-mean-test
+  (is (<
+       (numeric-tower/abs (- (get-harmonic-mean 0.9 0.6) 0.72))
+       1E-10)))
+
+(deftest precision-recall-measure-test
+  (is
+   (=
+    {:precision 0.5 :recall 0.25}
+    (get-precision-recall #{1 2} #{2 3 4 5})))
+   (is
+    (=
+     {:precision 1.0 :recall 1.0}
+     (get-precision-recall #{} #{}))))
+
+(deftest unsplit-words-across-lines-test
+  (is (=
+       (common/unsplit-words-across-lines "postę-\npowania") "postępowania")))
+
+(deftest preprocess-test
+  (is (= (common/preprocess "postę-\npowania") "postępowania")))
 
 (deftest cleanse-commas-test
   (is (=

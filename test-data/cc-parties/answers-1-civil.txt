@@ -21,6 +21,7 @@
 "154500000000503_I_ACa_000316_2012_Uz_2012-10-18_001","<span class="anon-block">K. D.</span>","Skarbowi Państwa reprezentowanemu przez Wojewodę <span class="anon-block"> (...)</span>"
 "154500000000503_I_ACa_000378_2012_Uz_2012-10-18_001","<span class="anon-block"> (...) spółki z ograniczoną odpowiedzialnością</span> z siedzibą w <span class="anon-block">J.</span>","<span class="anon-block">(...)</span><span class="anon-block">W.</span>"
 "154500000000503_I_ACa_000385_2012_Uz_2012-10-18_001","<span class="anon-block">A. B.</span>","<span class="anon-block">P. N.</span>"
+"154500000001521_III_APo_000014_2012_Uz_2012-11-22_001","Szefa Służby Cywilnej","<span class="anon-block">J. J.</span>"
 "154500000001521_III_AUa_000775_2012_Uz_2012-10-18_001","<span class="anon-block">A. B.</span>","Zakładowi Ubezpieczeń Społecznych III Oddział w <span class="anon-block">W.</span>"
 "154500000001521_III_AUa_001176_2010_Uz_2012-10-18_001","<span class="anon-block">W. G.</span>","Zakładowi Ubezpieczeń Społecznych I Oddział w <span class="anon-block">W.</span>"
 "154500000003003_VI_ACa_000240_2012_Uz_2012-10-18_001","<span class="anon-block">A. T. (1)</span> i <span class="anon-block">W. T. (1)</span>","<span class="anon-block">(...)</span> S.A. w <span class="anon-block">W.</span>"
@@ -50,4 +51,3 @@
 "155515000004027_VIII_Ga_000304_2013_Uz_2013-11-22_001","<span class="anon-block"> Przedsiębiorstwa (...)</span> z siedzibą <span class="anon-block">S.</span>","<span class="anon-block"> (...) spółce z ograniczoną odpowiedzialnością</span> z siedzibą w <span class="anon-block">S.</span>"
 "155515000004027_VIII_Ga_000311_2013_Uz_2013-11-22_001","<span class="anon-block">A. I.</span>","<span class="anon-block"> Towarzystwu (...) spółce akcyjnej</span> z siedzibą w <span class="anon-block">W.</span>"
 "155515000004027_VIII_Ga_000316_2013_Uz_2013-11-22_001","<span class="anon-block">M. C.</span>","<span class="anon-block"> (...) spółce z ograniczoną odpowiedzialnością</span> z siedzibą w <span class="anon-block">S.</span>"
-"154500000001521_III_APo_000014_2012_Uz_2012-11-22_001","Szefa Służby Cywilnej","<span class="anon-block">J. J.</span>"

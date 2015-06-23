@@ -11,26 +11,14 @@
 
 (def cc-appealed-dir-name "cc-appealed/")
 
-(deftest remove-html-tags-other-than-span-test []
-  (is (=
-       (common/remove-html-tags-other-than-span
-        (str "<p></p>kdjh <span> </span>"
-             " <span class=\"anon-block\"> (...) S.A.</span>"))
-       (str "  kdjh <span> </span> "
-            "<span class=\"anon-block\"> (...) S.A.</span>"))))
-
-(defn appeals-to-write [coll]
-  (str/join common/system-newline (sort coll)))
-
-(defn results-to-file [elements1 elements2 results-type court-type]
+(defn log-results-to-file [elems court-type]
   (common-test/mkdir-path
    (str common-test/log-data-path cc-appealed-dir-name))
   (let [
-        results (set/difference elements1 elements2)
         _ (spit
            (str common-test/log-data-path cc-appealed-dir-name
-                court-type "-" results-type ".txt")
-           (appeals-to-write results))
+                court-type "-answers.txt")
+           (str/join common/system-newline (sort elems)))
         ]))
 
 (defn results-to-strs [file-names extracted-appeals]
@@ -52,28 +40,19 @@
            (str
             common-test/test-data-path cc-appealed-dir-name court-type "/"))
         file-names (map #(last (str/split (str %) #"/")) file-paths)
-        sentences (map #(slurp %) file-paths)
-        extracted-appeals
-          (map #(extract-fn %) sentences)
-        extracted-appeals-strs
-          (results-to-strs file-names extracted-appeals)
+        sentences (map slurp file-paths)
+        extracted-appeals (map extract-fn sentences)
+        extracted-appeals-strs (results-to-strs file-names extracted-appeals)
+        path-to-answers-file
+          (str
+           common-test/test-data-path cc-appealed-dir-name
+           court-type "-answers.txt")
         correct-appeals-strs
           (into #{}
-                (common-test/split-lines
-                 (slurp
-                  (str
-                   common-test/test-data-path
-                   cc-appealed-dir-name court-type "-answers.txt"))))
+                (str/split-lines
+                 (slurp path-to-answers-file)))
 
-        _
-          (results-to-file
-           correct-appeals-strs extracted-appeals-strs
-           "correct" court-type)
-        _
-          (results-to-file
-           extracted-appeals-strs correct-appeals-strs
-           "error" court-type)
-
+        _ (log-results-to-file extracted-appeals-strs court-type)
         precision-recall
           (common-test/get-precision-recall
            extracted-appeals-strs correct-appeals-strs)
@@ -94,11 +73,16 @@
            cc-appealed-judgment-links/extract-complaint
            cc-appealed-judgment-links/extract-complaint]
 
-        results
-          (map
-           #(handle-appeal-test %1 %2)
-           court-types extract-fns)
-        _ (prn results)
+        results (map handle-appeal-test court-types extract-fns)
+
+        _
+          (doall
+           (map
+            #(println
+              (str (common-test/expand-str-to-length %1 30)
+                   "| precision: " (format "%.4f" (%2 :precision))
+                   " recall: " (format "%.4f" (%2 :recall))))
+            court-types results))
         ]
     (is (= (:recall    (nth results 0)) 1.0))
     (is (= (:precision (nth results 0)) 1.0))
@@ -112,3 +96,11 @@
     (is (> (:precision (nth results 4)) 0.33))
     (is (> (:recall    (nth results 5)) -0.01))
     (is (> (:precision (nth results 5)) -0.01))))
+
+(deftest remove-html-tags-other-than-span-test []
+  (is (=
+       (common/remove-html-tags-other-than-span
+        (str "<p></p>kdjh <span> </span>"
+             " <span class=\"anon-block\"> (...) S.A.</span>"))
+       (str "  kdjh <span> </span> "
+            "<span class=\"anon-block\"> (...) S.A.</span>"))))
