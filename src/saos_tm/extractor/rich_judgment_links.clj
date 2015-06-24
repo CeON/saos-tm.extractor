@@ -223,7 +223,7 @@
      [:judgmentDate :court :judgmentType]
      [date (postprocess court) (postprocess judgment-type)])))
 
-(defn extract-ref-judgments [s]
+(defn extract-rich-judgment-links [s]
   (let [
         preprocessed (common/preprocess s)
         case-nmbs (judgment-links/extract-all-case-nmbs s)

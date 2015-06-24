@@ -22,7 +22,7 @@
 
 (defn ^:private rich-judgment-links-extract [txt-files]
   (map
-    #(set (map vals (rich-judgment-links/extract-ref-judgments %)))
+    #(set (map vals (rich-judgment-links/extract-rich-judgment-links %)))
     txt-files))
 
 (defn ^:private extract-own-case-nmb-line [s]
