@@ -1,4 +1,4 @@
-(ns saos-tm.extractor.ref-money
+(ns saos-tm.extractor.money
   "Module contains tools for extraction of money sums from raw text."
   (:require
     [clojure.string :as str ]
@@ -242,7 +242,7 @@
         (conv-tokens-range-to-str tokens i j))
   })
 
-(defn extract-money-refs
+(defn extract-money
   "Extracts all references to money sums in Polish zł, present in
    a given string `s`.
 
@@ -253,7 +253,7 @@
 
    Example:
 
-   `(extract-money-refs \"To kosztowało 123 zł 33 gr\")`
+   `(extract-ref-money \"To kosztowało 123 zł 33 gr\")`
 
    `[ {:amount 123.33M :text \"123 zł 33\" gr]`
 
@@ -275,7 +275,7 @@
         (partial normalize-raw-money-refs tokens)
         money-refs-raw))))
 
-(defn ^:private select-max-money-ref [ money-refs ]
+(defn ^:private select-max-money [ money-refs ]
   (let [
         amounts
           (filter number? (map :amount money-refs))
@@ -285,13 +285,13 @@
     (when max-amount
       (some #(when (= max-amount (:amount %)) %) money-refs))))
 
-(defn extract-max-money-ref
+(defn extract-max-money
   "Extract maximum sum of money in Polish zł from a given string `s`.
-   The result format is analogous to `extract-money-refs`, it contains
+   The result format is analogous to `extract-ref-money`, it contains
    a map with two keys:
 
    * `:amount` with bigdec number representing the amount of money
    * `:text` with the precise text referencing detected money sum
   "
   [s]
-  (select-max-money-ref (extract-money-refs s)))
+  (select-max-money (extract-money s)))
