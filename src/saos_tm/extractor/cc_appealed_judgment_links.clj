@@ -138,7 +138,7 @@
         ]
     appeal-parts-map))
 
-(defn extract-appeal-or-grievance [s]
+(defn extract-appeal-or-grievance-judgment-link [s]
   (let [
          appeal-match-groups
            (map
@@ -197,7 +197,7 @@
               #(when (common/not-nil? %) (str/trim %))
               [appeal-type appellant-ultimate reason court date signature]))))
 
-(defn extract-complaint [s]
+(defn extract-complaint-judgment-link [s]
   (let [
         appeal-match-groups-complaint
           (map #(first (find-from-to-first-case-ins s re-find % osp-regex))

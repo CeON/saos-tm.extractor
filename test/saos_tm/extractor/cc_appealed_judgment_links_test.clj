@@ -66,12 +66,12 @@
            "appeal-decision" "regional-decision"
            "appeal-decision-complaint" "regional-decision-complaint"]
         extract-fns
-          [cc-appealed-judgment-links/extract-appeal-or-grievance
-           cc-appealed-judgment-links/extract-appeal-or-grievance
-           cc-appealed-judgment-links/extract-appeal-or-grievance
-           cc-appealed-judgment-links/extract-appeal-or-grievance
-           cc-appealed-judgment-links/extract-complaint
-           cc-appealed-judgment-links/extract-complaint]
+          [cc-appealed-judgment-links/extract-appeal-or-grievance-judgment-link
+           cc-appealed-judgment-links/extract-appeal-or-grievance-judgment-link
+           cc-appealed-judgment-links/extract-appeal-or-grievance-judgment-link
+           cc-appealed-judgment-links/extract-appeal-or-grievance-judgment-link
+           cc-appealed-judgment-links/extract-complaint-judgment-link
+           cc-appealed-judgment-links/extract-complaint-judgment-link]
 
         results (map handle-appeal-test court-types extract-fns)
 
