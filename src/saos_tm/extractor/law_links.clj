@@ -1034,14 +1034,18 @@
     (str s " " prefix " " suffix)
     s))
 
-(defn ^:private convert-art-to-str [ art ]
+(defn convert-art-to-str
+  "Converts article part of law link `art` to string.
+
+   The output string format is `art. X § X ust. X pkt X lit. zd. X`."
+  [ art ]
   (-> ""
     (append-prefix-and-suffix-if-suffix-not-zero "art." (:art art))
     (append-prefix-and-suffix-if-suffix-not-zero "§" (:par art))
     (append-prefix-and-suffix-if-suffix-not-zero "ust." (:ust art))
     (append-prefix-and-suffix-if-suffix-not-zero "pkt" (:pkt art))
-    (append-prefix-and-suffix-if-suffix-not-zero "zd." (:zd art))
     (append-prefix-and-suffix-if-suffix-not-zero "lit." (:lit art))
+    (append-prefix-and-suffix-if-suffix-not-zero "zd." (:zd art))
     (str/trim)))
 
 (defn ^:private chain-compare [ res s1 s2 ]
@@ -1080,12 +1084,22 @@
     (chain-compare (:lit art1) (:lit art2))
     (chain-compare (:zd art1) (:zd art2))))
 
-(defn ^:private sort-arts [ arts ]
+(defn sort-arts
+  "Sorts the seq of `arts` according to succesive comparisons of
+   `:art`, `:par`, `:ust`, `:pkt`, `:lit`, `:zd` fields."
+  [ arts ]
   (sort-by identity compare-arts arts))
 
 ; Utilities for the act part of the extracted link.
 
-(defn ^:private conv-act-to-str [ act ]
+(defn conv-act-to-str
+  "Converts act part of law link `act` to string.
+
+   The output string format is `Dz. U. z XXXX r. Nr X poz. X`
+
+   When no `:journalNo` is available only `Dz. U. z XXXX r. poz. X`
+   is returned."
+  [ act ]
   (str
     "Dz. U. z "
     (:journalYear act) " r."
