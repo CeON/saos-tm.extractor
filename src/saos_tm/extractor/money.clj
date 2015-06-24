@@ -253,7 +253,7 @@
 
    Example:
 
-   `(extract-ref-money \"To kosztowało 123 zł 33 gr\")`
+   `(extract-money \"To kosztowało 123 zł 33 gr\")`
 
    `[ {:amount 123.33M :text \"123 zł 33\" gr]`
 
@@ -287,7 +287,7 @@
 
 (defn extract-max-money
   "Extract maximum sum of money in Polish zł from a given string `s`.
-   The result format is analogous to `extract-ref-money`, it contains
+   The result format is analogous to `extract-money`, it contains
    a map with two keys:
 
    * `:amount` with bigdec number representing the amount of money

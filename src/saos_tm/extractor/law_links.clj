@@ -930,10 +930,10 @@
 
   The result is a map containing two keys:
 
-  * `:orphaned-links`: Algorithm did not manage to map legislative act to them.
-  Contains list of maps with fields: `:art` article part of link
+  * `:orphaned-links` - algorithm did not manage to map legislative act to
+  them. Contains list of maps with fields: `:art` article part of link
   and `:txt` text which algorithm did not manage to resolve to legislative act
-  * `::extracted-links`: List containing successfully extracted links in form
+  * `:extracted-links` - list containing successfully extracted links in form
   of maps with fields: `:art` which contains coordinates of article parts
   of legislative act and `:act` which contains coordinates of act
 
