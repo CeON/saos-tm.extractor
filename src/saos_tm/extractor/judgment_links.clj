@@ -203,14 +203,15 @@
    (not-substring? "UZP" s)
    (not-substring? "KIO" s)))
 
-(defn extract-all-case-nmbs
-  "Extracts all case numbers present in a given string `s`.
+(defn extract-judgment-links
+  "Extracts links to referenced judgments in the form of all case numbers
+   present in a given string `s`.
 
   The result is a set of strings which are case numbers.
 
   Example:
 
-  `(extract-all-case-nmbs \"wyroki Tw 72/02 i Tw 25/02\")`
+  `(extract-judgment-links \"wyroki Tw 72/02 i Tw 25/02\")`
 
   `#{\"Tw 72/02\" \"Tw 25/02\"}`
 

@@ -48,7 +48,7 @@
 
 (defn ^:private remove-own-case-nmb [s]
   (let [
-        case-nmbs (judgment-links/extract-all-case-nmbs s)
+        case-nmbs (judgment-links/extract-judgment-links s)
         regex
           (re-pattern
            (str/join "|"

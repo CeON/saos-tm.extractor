@@ -50,33 +50,33 @@
       #{"I SA/Bd 680/14" "IV SA/Gl 543/14" "I SA/Rz 794/11"})))
 
 (deftest extract-all-case-nmbs-test
-  (is (= (judgment-links/extract-all-case-nmbs
+  (is (= (judgment-links/extract-judgment-links
         "października 2010 r. (sygn. akt I C-upr 14/10) oraz postanowieniem")
       #{"I C-upr 14/10"}))
-  (is (= (judgment-links/extract-all-case-nmbs
+  (is (= (judgment-links/extract-judgment-links
         "października 2010 r. (sygn. akt 234 14/10) oraz postanowieniem")
       #{"234 14/10"}))
-  (is (= (judgment-links/extract-all-case-nmbs
+  (is (= (judgment-links/extract-judgment-links
         (str "8 kwietnia 2009 r. (sygn.: Tw 9/08, Tw 11/08, Tw 12/08, Tw 16/08,"
         " Tw 19/08) Trybunał"))
       #{"Tw 9/08","Tw 11/08","Tw 12/08","Tw 16/08","Tw 19/08"}))
-  (is (= (judgment-links/extract-all-case-nmbs
+  (is (= (judgment-links/extract-judgment-links
         (str "podanej wyżej sygnaturze akt w celu rozpoznania, czy w tej"
           " sprawie nie zachodzą przesłanki Tw 19/08 do wyłączenia"))
       #{"Tw 19/08"}))
-  (is (= (judgment-links/extract-all-case-nmbs
+  (is (= (judgment-links/extract-judgment-links
         "15 października 2008 r. (sygn. Tw 19/08, OTK ZU nr 2/B/2009, poz. 67)")
       #{"Tw 19/08"}))
-  (is (= (judgment-links/extract-all-case-nmbs
+  (is (= (judgment-links/extract-judgment-links
         (str "się pod sygnaturą XI GCo 74/11, nie doprowadziło 15 października "
         "2008 r. (sygn. Tw 19/08, OTK ZU nr 2/B/2009, poz. 67)"))
       #{"XI GCo 74/11", "Tw 19/08"}))
-    (is (= (judgment-links/extract-all-case-nmbs
+    (is (= (judgment-links/extract-judgment-links
         (str "lkjldfkj Tw 19/08 sdkfjhsdfnr Tw 19/08"))
       #{"Tw 19/08"}))
-  (is (= (judgment-links/extract-all-case-nmbs
+  (is (= (judgment-links/extract-judgment-links
         (str "Sygn. akt 1990/1991"))
       #{}))
-  (is (= (judgment-links/extract-all-case-nmbs
+  (is (= (judgment-links/extract-judgment-links
         (str "1990/1991"))
       #{})))

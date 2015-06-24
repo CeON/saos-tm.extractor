@@ -226,7 +226,7 @@
 (defn extract-rich-judgment-links [s]
   (let [
         preprocessed (common/preprocess s)
-        case-nmbs (judgment-links/extract-all-case-nmbs s)
+        case-nmbs (judgment-links/extract-judgment-links s)
         other-judgment-links-data
           (map #(extract-other-data % preprocessed) case-nmbs)
         ]

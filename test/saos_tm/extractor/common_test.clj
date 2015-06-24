@@ -93,7 +93,7 @@
 
 (defn judgment-links-extract [txt-files]
   (map
-    #(judgment-links/extract-all-case-nmbs %)
+    #(judgment-links/extract-judgment-links %)
     txt-files))
 
 (defn case-nmb-to-csv [case-nmb not-used]
