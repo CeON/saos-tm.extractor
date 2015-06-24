@@ -22,12 +22,12 @@
     "answers-2-civil.txt" "answers-2-criminal.txt"
     "answers-3-civil.txt" "answers-3-criminal.txt"]
    :extract-parties-funcs
-   [cc-parties/extract-parties-cc-civil
-    cc-parties/extract-parties-cc-criminal
-    cc-parties/extract-parties-cc-civil
-    cc-parties/extract-parties-cc-criminal
-    cc-parties/extract-parties-cc-civil
-    cc-parties/extract-parties-cc-criminal]})
+   [cc-parties/extract-cc-parties-civil
+    cc-parties/extract-cc-parties-criminal
+    cc-parties/extract-cc-parties-civil
+    cc-parties/extract-cc-parties-criminal
+    cc-parties/extract-cc-parties-civil
+    cc-parties/extract-cc-parties-criminal]})
 
 (def ^:private is-civil [true false true false true false])
 

@@ -265,7 +265,7 @@
                    (re-pattern common/system-newline) " "
                    #"\s+" " "))
 
-(defn extract-parties-cc-criminal [s]
+(defn extract-cc-parties-criminal [s]
   (let [
         sentence (extract-sentence s)
         sentence-preprocessed (preprocess-cc-parties sentence)
@@ -325,7 +325,7 @@
           ]
       (common/matches? (first parts) #"[\s\S]*odwoł[^\s]*$"))))
 
-(defn extract-parties-cc-civil [s]
+(defn extract-cc-parties-civil [s]
   (let [
         sentence (extract-sentence s)
         whatever "[\\s\\S]*"
