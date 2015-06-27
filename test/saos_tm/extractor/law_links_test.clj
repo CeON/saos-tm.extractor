@@ -381,3 +381,129 @@
        (#'saos-tm.extractor.law-links/conv-act-to-str
         {:journalEntry 1732 :journalYear 2015})
        "Dz. U. z 2015 r. poz. 1732")))
+
+(deftest cleanse-commas-test
+  (is (=
+       (#'saos-tm.extractor.law-links/cleanse-commas
+        "art , 24 ust 2 pkt 4")
+       "art 24 ust 2 pkt 4"))
+  (is (=
+       (#'saos-tm.extractor.law-links/cleanse-commas
+        "art 24 ust , 2 pkt 3 i 4")
+       "art 24 ust 2 pkt 3 i 4")))
+
+(deftest cast-coords-lists-test
+  (is (=
+       (#'saos-tm.extractor.law-links/cast-coords-lists
+        '("1" "2" "0" "0" "0" "0") '("0" "3" "0" "0" "0" "0"))
+       '("1" "3" "0" "0" "0" "0")))
+  (is (=
+       (#'saos-tm.extractor.law-links/cast-coords-lists
+        '("1" "2" "0" "0" "2" "2") '("0" "3" "0" "0" "0" "0"))
+       '("1" "3" "0" "0" "0" "0")))
+  (is (=
+       (#'saos-tm.extractor.law-links/cast-coords-lists
+        '("1" "2" "0" "0" "2" "2") '("0" "3" "3" "0" "0" "0"))
+       '("1" "3" "3" "0" "0" "0")))
+  (is (=
+       (#'saos-tm.extractor.law-links/cast-coords-lists
+        '("1" "2" "0" "0" "2" "2") '("0" "0" "3" "0" "0" "0"))
+       '("1" "2" "3" "0" "0" "0"))))
+
+(deftest extract-art-coords-test
+  (is (=
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art 90")
+       '(("90" "0" "0" "0" "0" "0"))))
+  (is (=
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 183 ust 5 pkt 2 oraz 6")
+       '(("183" "0" "5" "2" "0" "0") ("183" "0" "5" "6" "0" "0"))))
+  (is (=
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 183 ust 5 pkt 2 oraz ust. 6")
+       '(("183" "0" "5" "2" "0" "0") ("183" "0" "6" "0" "0" "0"))))
+  (is (=
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 89 ust. 1 pkt 2 , pkt 3 , pkt 8")
+       '(("89" "0" "1" "2" "0" "0")
+         ("89" "0" "1" "3" "0" "0")
+         ("89" "0" "1" "8" "0" "0"))))
+  (is (=
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        " art. 89 ust. 1 pkt 2 oraz pkt 4")
+       '(("89" "0" "1" "2" "0" "0") ("89" "0" "1" "4" "0" "0"))))
+  (is (=
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 24 ust. 1 pkt 10 oraz ust. 2 pkt 2")
+       '(("24" "0" "1" "10" "0" "0") ("24" "0" "2" "2" "0" "0"))))
+  (is (=
+       (#'saos-tm.extractor.law-links/extract-art-coords
+        "art. 89 ust. 1 pkt. 2 i pkt. 6")
+       '(("89" "0" "1" "2" "0" "0") ("89" "0" "1" "6" "0" "0")))))
+
+(deftest get-year-of-law-act-test
+  (is (=
+       "2007"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         " ustawy Prawo zamówień publicznych ( Dz. U. t.j. z 2007 r. Nr 223"
+         " , poz. 1655 ). O kosztach postępowania orzeczono na podstawie"))))
+  (is (=
+       "2006"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         "rozporządzenia Prezesa Rady Ministrów z dnia 17 maja 2006"
+         " w sprawie wysokości oraz szczegółowych zasad pobierania"
+         " wpisu od odwołania oraz szczegółowych zasad rozliczania"
+         " kosztów w postępowaniu odwoławczym ( Dz. U. Nr 87 , poz. 608 )"))))
+  (is (=
+       "1992"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         "KONSTYTUCYJNE utrzymane w mocy na podstawie art. 77"
+         " Ustawy Konstytucyjnej"
+         " z dnia 17 października 1992 r. o wzajemnych stosunkach między"
+         " władzą ustawodawczą i wykonawczą Rzeczypospolitej Polskiej "
+         "oraz o samorządzie terytorialnym "
+         "(Dz. U. Nr 84, poz. 426, z 1995 r. Nr 38, poz. 184): "
+         "(uchylony) ogólnie – w. 6.01.09, SK 22/06 (poz. 1), w. 15.01.09"))))
+  (is (=
+       "1994"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         " Karta Samorządu Lokalnego sporządzona w Strasburgu"
+         " dnia 15 października 1985 r. (Dz. U. z 1994 r. Nr 124, poz. 607"
+         " oraz z 2006 r. Nr 154, poz. 1107): art. 4 ust. 2 i 6 "
+         "– p. 21.01.09, P 14/08 (poz. 7)"))))
+  (is (=
+       "1994"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         " ustawy z dnia 28 grudnia 1989 r. – Prawo celne"
+         " (tekst jednolity z 1994 r. Dz.U. Nr 71, poz. 312 ze zm.)"))))
+  (is (=
+       "1991"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         "ustawy z dnia 30 sierpnia 1991 r. o zakładach opieki zdrowotnej"
+         " (Dz.U. Nr 91, poz. 408 ze zm.) kjhkjh "
+         "(Dz.U. z 2001 r. Nr 65, poz. 659)"))))
+  (is (=
+       "2007"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         "Prezesa Rady Ministrów z dnia 19 grudnia 2007r. w sprawie kwot "
+         "wartości zamówień oraz konkursów, od których jest "
+         "uzależniony obowiązek przekazywania ogłoszeń "
+         "Urzędowi Oficjalnych Publikacji Wspólnot "
+         "Europejskich (Dz. U. Nr 241,  poz.  1762)"))))
+  (is (=
+       "2006"
+       (#'saos-tm.extractor.law-links/get-year-of-law-act
+        (str
+         "Prezesa Rady Ministrów z dnia 19.05.2006 r. w sprawie rodzajów "
+         "dokumentów, jakich może żądać zamawiający od wykonawcy, oraz "
+         "form w jakich te dokumenty mogą być składane "
+         "(Dz. U. nr 87  poz.  605)"))))
+  )

@@ -75,7 +75,7 @@
 
 (def ^:private acts-txts-split-regex
   (re-pattern
-            (str "(?i)[^:]\\s+ustaw(a|y)\\s|"
+            (str "(?<!zmianie|dalej:?)\\s(u|U)staw(a|ą|y)\\s|"
                  "\\srozporządzen[^\\s]*\\s|"
                  "\\skodeksu\\s|"
                  "(A|a)rt\\.|"
@@ -85,7 +85,8 @@
   (re-pattern
    (str "Dz\\.\\s*U\\.\\s*z?\\s*\\d+\\s*r|"
         "Dz\\.\\s*U\\.\\s*\\d{4}|"
-        "Dz\\.\\s*U\\.\\s*t\\.j\\.\\s*z\\s*\\d{4}")))
+        "Dz\\.\\s*U\\.\\s*t\\.\\s*j\\.\\s*z\\s*\\d{4}|"
+        "Dz\\.\\s*U\\.\\s*j\\.\\s*t\\.\\s*\\d{4}")))
 
 (def ^:private cut-for-act-coords-regex
   (re-pattern
@@ -387,7 +388,9 @@
 
 (defn ^:private get-year-from-act-name [s]
   (let [
-        pattern (last (re-seq #"\s\d{4}\s" s))
+        pattern
+          (last
+           (re-seq #"\d{4}\s|\d{4}r\.|\d{4}r\s|\d{4}\s*roku\s" s))
         ]
         (when
           (not-empty pattern)

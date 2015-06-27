@@ -8,8 +8,8 @@
    common-test/get-benchmark-records
    common-test/law-links-extract-all-dictionaries
    common-test/links-preprocess
-   0.829 0.775
+   0.859 0.803
    0.949 0.574
-   0.847 0.515
+   0.856 0.521
    common-test/get-csv-for-extracted-link
    common-test/log-results-with-case-nmbs))
