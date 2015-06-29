@@ -67,15 +67,18 @@
 (def ^:private explicit-local-dictionary-definition-regex
   (re-pattern
    (str
-    ";\\s*dalej\\s*:?|"
-    ",\\s*dalej\\s*:?|"
-    "zwana\\s*dalej\\s*:?|"
-    "zwanej\\s*dalej\\s*:?|"
-    "\\(dalej\\s*:?")))
+    ";\\s*dalej\\s*(:|,)?|"
+    ",\\s*dalej\\s*(:|,)?|"
+    "zwana\\s*dalej\\s*(:|,)?|"
+    "zwanej\\s*dalej\\s*(:|,)?|"
+    "dalej\\s*zwana\\s*(:|,)?|"
+    "dalej\\s*zwanej\\s*(:|,)?|"
+    "\\(dalej\\s*(:|,)?")))
 
 (def ^:private acts-txts-split-regex
   (re-pattern
-            (str "(?<!zmianie|dalej:?)\\s(u|U)staw(a|ą|y)\\s|"
+            (str "(?<!zmianie|dalej(:|,)?|zwanej(:|,)?|zwana(:|,)?)"
+                 "\\s(u|U)staw(a|ą|y)\\s|"
                  "\\srozporządzen[^\\s]*\\s|"
                  "\\skodeksu\\s|"
                  "(A|a)rt\\.|"
@@ -823,21 +826,14 @@
    (common/replace-several s
                     #"^\s*również" ""
                     #"^[^A-Za-ząćęłńóśżźĄĆĘŁŃÓŚŻŹ\.]+" ""
-                    #"[^A-Za-ząćęłńóśżźĄĆĘŁŃÓŚŻŹ\\.]+$" "")))
+                    #"[^A-Za-ząćęłńóśżźĄĆĘŁŃÓŚŻŹ\.]+$" "")))
 
-(defn ^:private extract-local-explicit-dictionary-item [parts]
+(defn ^:private extract-local-explicit-dictionary-item-not-empty
+  [act-abbreviation-cut parts]
   (let [
-        act-abbreviation-txt (second parts)
-        act-abbreviation-without-dash
-          (str/replace act-abbreviation-txt #"^\s*–" "")
-        act-abbreviation-cut
-          (str/trim
-           (first
-            (str/split
-             act-abbreviation-without-dash
-             #":|\)|\.\s[A-ZĄĆĘŁŃÓŚŻŹ]|,|–|”\s[A-ZĄĆĘŁŃÓŚŻŹ]")))
+        act-abbreviation-trimmed (str/trim act-abbreviation-cut)
         act-abbreviation-cleansed
-          (cleanse-act-abbrevation act-abbreviation-cut)
+          (cleanse-act-abbrevation act-abbreviation-trimmed)
         act-abbreviation-coll
           (if (common/substring? " lub " act-abbreviation-cleansed)
             (map cleanse-act-abbrevation
@@ -853,6 +849,22 @@
         ]
     {:act-coords act-coords
      :act-abbreviation act-abbreviation-coll-tokens}))
+
+(defn ^:private extract-local-explicit-dictionary-item [parts]
+  (let [
+        act-abbreviation-txt (second parts)
+        act-abbreviation-without-dash
+          (str/replace act-abbreviation-txt #"^\s*–" "")
+        act-abbreviation-cut
+          (first
+           (str/split
+            act-abbreviation-without-dash
+            #":|\)|\.\s[A-ZĄĆĘŁŃÓŚŻŹ]|,|–|”\s[A-ZĄĆĘŁŃÓŚŻŹ]"))
+        ]
+    (if (empty? act-abbreviation-cut)
+      nil
+      (extract-local-explicit-dictionary-item-not-empty
+       act-abbreviation-cut parts))))
 
 (defn ^:private doesnt-contain-journal? [s]
   (when (common/not-nil? s)
