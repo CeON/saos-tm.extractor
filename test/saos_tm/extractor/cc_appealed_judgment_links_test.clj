@@ -25,12 +25,12 @@
   (into #{}
         (map
          #(str "\"" %1 "\"" common/csv-delimiter "\""
-               (:appeal-type %2) "\"" common/csv-delimiter "\""
+               (:appealType %2) "\"" common/csv-delimiter "\""
                (:appellant %2) "\"" common/csv-delimiter "\""
-               (:judgment-type %2) "\"" common/csv-delimiter "\""
+               (:judgmentType %2) "\"" common/csv-delimiter "\""
                (:court %2) "\"" common/csv-delimiter "\""
                (:date %2) "\"" common/csv-delimiter "\""
-               (:signature %2) "\"")
+               (:caseNo %2) "\"")
          file-names extracted-appeals)))
 
 (defn ^:private handle-appeal-test [court-type extract-fn]

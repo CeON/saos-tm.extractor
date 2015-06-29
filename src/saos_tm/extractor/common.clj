@@ -44,7 +44,16 @@
         ]
     file-paths))
 
-(defn replace-several [content & replacements]
+(defn replace-several
+  "replace several elements in string
+
+  Example:
+
+  `(replace-several \"aaabbbccc\" #\"a\" \"\" #\"b\" \"d\")`
+
+  `\"dddccc\"`
+  "
+  [content & replacements]
   (let [
         replacement-list (partition 2 replacements)
         ]
@@ -103,7 +112,15 @@
       (.parse parser istream handler metadata context)
       (.toString  handler)))
 
-(defn preprocess [s]
+(defn preprocess
+  "Texts preprocessing function:
+
+  * unsplits words across lines
+  * removes html tags
+  * removes hard spaces
+  * converts newlines to spaces
+  * converts double spaces to single"
+  [s]
   (let [
         without-split-words (unsplit-words-across-lines s)
         without-tags (conv-html-to-text without-split-words)
@@ -153,7 +170,10 @@
    result
    [{:start (.start match) :end (.end match) :regex (.group match)}]))
 
-(defn get-regex-matches-with-starts-ends-maps [re s]
+(defn get-regex-matches-with-starts-ends-maps
+  "Returns matches for `re` regex in `s` string with their start and end
+  positions"
+  [re s]
   (get-regex-matches re s start-end-map-func))
 
 (defn ^:private get-sorted [func re s]
@@ -163,7 +183,9 @@
         ]
     sorted))
 
-(defn get-regex-matches-with-starts-ends-sorted [re s]
+(defn get-regex-matches-with-starts-ends-sorted
+  "The same as `get-regex-matches-with-starts-ends-maps`, but sorted"
+  [re s]
   (get-sorted get-regex-matches-with-starts-ends re s))
 
 (defn ^:private get-regex-match [func regex following-text-regex s]
@@ -183,7 +205,11 @@
 (defn ^:private get-first-if-groups [match]
   (if (string? match) match (first match)))
 
-(defn get-closest-regex-match [regexes following-text-regex s]
+(defn get-closest-regex-match
+  "Takes every regex in `regexes` and joins it with `following-text-regex`
+  to form a regex. Then it looks for regex match from these that appears
+  first in text."
+  [regexes following-text-regex s]
   (let [
         matches-with-positions
           (get-matches
@@ -202,10 +228,14 @@
 (defn ^:private get-regex-match-case-sen [func regexes following-text-regex s]
   (func regexes following-text-regex s))
 
-(defn get-closest-regex-match-case-ins [regexes following-text-regex s]
+(defn get-closest-regex-match-case-ins
+  "Case insensitive version of `get-closest-regex-match`"
+  [regexes following-text-regex s]
   (get-regex-match-case-ins
    get-closest-regex-match regexes following-text-regex s))
 
-(defn get-closest-regex-match-case-sen [regexes following-text-regex s]
+(defn get-closest-regex-match-case-sen
+  "Case sensitive version of `get-closest-regex-match`"
+  [regexes following-text-regex s]
   (get-regex-match-case-sen
    get-closest-regex-match regexes following-text-regex s))

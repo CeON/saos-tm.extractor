@@ -1,4 +1,6 @@
 (ns saos-tm.extractor.cc-parties
+  "Module contains algorithm for extraction of parties
+  in Polish case law - specifically Common Courts."
   (:require
    [saos-tm.extractor.common :as common]
    [clojure.string :as str]
@@ -56,37 +58,56 @@
 
 (def ^:private point-indicator-regex #"(?<=>)\s*\d+[\.\)]")
 
-(def ^:private ^:private parties-cc-civil-regexs
-   [ "(?<=sprawy\\sz\\sodwołania)"
+(def ^:private parties-cc-criminal-indicators
+  ["(?i)(?<=przy\\sudziale)"
+   "(?i)(?<=z\\sudziałem)"
+   "(?i)prokurator:"
+   "(?i)prokuratora?\\s+prok"
+   "[p|P]rokuratora?\\s+[A-Z]"
+   "[p|P]rokuratur[^\\s]*\\s+[A-Z]"
+   "[p|P]rokurator\\s–\\s"
 
-     "(?<=sprawy\\sz\\swniosk)"
-     "(?<=spraw\\sz\\spowództw)"
-     "(?<=sprawy\\sz\\spowództwa)"
-     "(?<=spraw\\sz\\sodwołań)"
+   "(?<=w\\sobecności)\\soskarżyciela\\spubl"
+   "(?<=w\\sobecności)"
+   "(?i)oskarżyciela?\\s+publ"
+   "(?i)oskarżyciela?\\s+prywatn"
 
-      "(?<=powodowi)"
-      "(?<=powodom)"
-      "(?<=powódce)"
-      "(?<=powód(ztw)?)"
+   "(?i)(?<=sprawy\\sz\\soskarżenia)"
+   "(?i)(?<=sprawy\\skarnej\\sz\\soskarżenia)"
+   "(?i)(?<=sprawy\\scywilnej\\sz\\soskarżenia)"
+   "(?i)(?<=z\\soskarżenia)"])
 
-      "(?<=z\\spowództwa)"
-      "(?<=z\\spowództw)"
-      "(?<=z\\sodwołania)"
-      "(?<=odwołania)"
-      "(?<=z\\sodwołań)"
-      "(?<=z\\swniosku)"
-      "(?<=z\\swniosków)"
-      "(?<=ze\\sskargi)"
-      "(?<=ze\\sskarg)"
+(def ^:private parties-cc-civil-indicators
+  ["(?<=sprawy\\sz\\sodwołania)"
 
-      "(?<=\\>sprawy\\sz\\swniosku)"
-      "(?<=w\\ssprawie\\sze\\sskargi)"
-      "(?<=sprawy\\sze\\sskargi)"
-      "(?<=po\\srozpoznaniu\\sw\\ssprawie)"
+   "(?<=sprawy\\sz\\swniosk)"
+   "(?<=spraw\\sz\\spowództw)"
+   "(?<=sprawy\\sz\\spowództwa)"
+   "(?<=spraw\\sz\\sodwołań)"
 
-      "(?<=\\>sprawy)"
-      "(?<=w\\ssprawie)"
-      "(?<=sprawy)"])
+   "(?<=powodowi)"
+   "(?<=powodom)"
+   "(?<=powódce)"
+   "(?<=powód(ztw)?)"
+
+   "(?<=z\\spowództwa)"
+   "(?<=z\\spowództw)"
+   "(?<=z\\sodwołania)"
+   "(?<=odwołania)"
+   "(?<=z\\sodwołań)"
+   "(?<=z\\swniosku)"
+   "(?<=z\\swniosków)"
+   "(?<=ze\\sskargi)"
+   "(?<=ze\\sskarg)"
+
+   "(?<=\\>sprawy\\sz\\swniosku)"
+   "(?<=w\\ssprawie\\sze\\sskargi)"
+   "(?<=sprawy\\sze\\sskargi)"
+   "(?<=po\\srozpoznaniu\\sw\\ssprawie)"
+
+   "(?<=\\>sprawy)"
+   "(?<=w\\ssprawie)"
+   "(?<=sprawy)"])
 
 (defn ^:private cleanse-party [s]
   (when
@@ -207,7 +228,7 @@
        "przy?\\s+udzial")))))
 
 (defn ^:private get-first-defendant-end-indicator-match
-  [defendant-indicators defendant-end-indicators s]
+  [defendant-end-indicators s]
   (let [
         matches
           (map
@@ -226,26 +247,29 @@
         ]
     match))
 
+(defn ^:private extract-defendant-str-match [match s]
+  (let [
+        defendant (identify-defendant match)
+        point-indicator (re-find point-indicator-regex defendant)
+        ]
+    (if (nil? point-indicator)
+      match
+      (extract-multiple match #"oskarżon" s))))
+
 (defn ^:private extract-defendant [s]
   (let [
         ; extracting defendant to certain phrases
-        match (get-first-defendant-end-indicator-match
-               defendant-indicators defendant-end-indicators s)
         match
+          (get-first-defendant-end-indicator-match defendant-end-indicators s)
+        match-cleansed
           (when (common/not-nil? match)
             (common/replace-several match #"^\s*przeciw[^\s]*" ""))
         ]
     (when
-      (common/not-nil? match)
+      (common/not-nil? match-cleansed)
       (if
-        (string? match)
-        (let [
-              match (identify-defendant match)
-              point-indicator (re-find point-indicator-regex match)
-              ]
-          (if (nil? point-indicator)
-            match
-            (extract-multiple match #"oskarżon" s)))
+        (string? match-cleansed)
+        (extract-defendant-str-match match-cleansed s)
         (identify-defendant (first match))))))
 
 (defn ^:private extract-sentence [s]
@@ -261,36 +285,44 @@
 
 (defn ^:private preprocess-cc-parties [s]
   (common/replace-several s
-                   #"<p>|</p>" " "
-                   (re-pattern common/system-newline) " "
-                   #"\s+" " "))
+                          #"<p>|</p>" " "
+                          (re-pattern common/system-newline) " "
+                          #"\s+" " "))
 
-(defn extract-cc-parties-criminal [s]
+(defn extract-cc-parties-criminal
+  "Extracts parties that occurr in a given string `s` which is assumed
+  to be a criminal case of Common Polish Courts.
+  It works and is tested on texts with html tags.
+
+  The result is a map containing keys:
+
+  * `:prosecutor` - name of prosecutor
+
+  Example:
+
+  `(extract-cc-parties-criminal \"<p>Protokolant Agnieszka Malewska</p>
+  <p>przy udziale Prokuratora Prokuratury Okręgowej w Białymstoku
+  Wiesławy Sawośko-Grębowskiej</p> <p>po rozpoznaniu
+  w dniu 28 marca 2013 roku</p>\")`
+
+  `{:prosecutor \"Prokuratora Prokuratury Okręgowej w Białymstoku
+  Wiesławy Sawośko-Grębowskiej\"}`
+
+  Functions works in an analogous way to extract-cc-parties-civil.
+  At first the function extracts sentence of judgment.
+  It uses `parties-cc-criminal-indicators` to localize the place of parties
+  appearance in text. Then it extracts prosecutor with `extract-plaintiff`
+  function, because the same function can be used for civil and criminal
+  cases in this context.
+  "
+  [s]
   (let [
         sentence (extract-sentence s)
         sentence-preprocessed (preprocess-cc-parties sentence)
         whatever "[\\s\\S]*"
         closest-match-with-position
           (common/get-closest-regex-match-case-sen
-            [
-             "(?i)(?<=przy\\sudziale)"
-             "(?i)(?<=z\\sudziałem)"
-             "(?i)prokurator:"
-             "(?i)prokuratora?\\s+prok"
-             "[p|P]rokuratora?\\s+[A-Z]"
-             "[p|P]rokuratur[^\\s]*\\s+[A-Z]"
-             "[p|P]rokurator\\s–\\s"
-
-             "(?<=w\\sobecności)\\soskarżyciela\\spubl"
-             "(?<=w\\sobecności)"
-             "(?i)oskarżyciela?\\s+publ"
-             "(?i)oskarżyciela?\\s+prywatn"
-
-             "(?i)(?<=sprawy\\sz\\soskarżenia)"
-             "(?i)(?<=sprawy\\skarnej\\sz\\soskarżenia)"
-             "(?i)(?<=sprawy\\scywilnej\\sz\\soskarżenia)"
-             "(?i)(?<=z\\soskarżenia)"
-             ]
+            parties-cc-criminal-indicators
             whatever sentence-preprocessed)
         match (second closest-match-with-position)
         prosecutor
@@ -325,16 +357,45 @@
           ]
       (common/matches? (first parts) #"[\s\S]*odwoł[^\s]*$"))))
 
-(defn extract-cc-parties-civil [s]
+(defn extract-cc-parties-civil
+  "Extracts parties that occurr in a given string `s` which is assumed
+  to be a civil case of Common Polish Courts.
+  It works and is tested on texts with html tags.
+
+  The result is a map containing keys:
+
+  * `:plaintiff` - name (often partly of fully anonymized) of plaintiff
+  (can be a person of organization)
+  * `:defendant` - name (often partly of fully anonymized) of defendant
+  (can be a person of organization)
+
+  Example:
+
+  `(extract-cc-parties-civil \"<strong><!-- -->sprawy z wniosku
+  <span class=\"anon-block\">Ł. G.</span> </strong></p>
+  <p>przeciwko Zakładowi Ubezpieczeń Społecznych Oddział w
+  <span class=\"anon-block\">O.</span></p> <p>
+  o prawo do renty z tytułu niezdolności do pracy</p>\")`
+
+  `{:plaintiff \"<span class=\"anon-block\">Ł. G.</span>\",
+  :defendant \"Zakładowi Ubezpieczeń Społecznych
+  Oddział w <span class=\"anon-block\">O.</span>\"}`
+
+  At first the function extracts sentence of judgment.
+  It uses `parties-cc-civil-indicators` to localize the place of parties
+  appearance in text. Then it extracts plaintiff and defendant with
+  `extract-plaintiff` and `extract-defendant' functions respectively.
+  "
+  [s]
   (let [
         sentence (extract-sentence s)
         whatever "[\\s\\S]*"
         match
           (second
-            (common/get-closest-regex-match-case-ins
-              parties-cc-civil-regexs
-              whatever sentence))
-        match-cleaned
+           (common/get-closest-regex-match-case-ins
+            parties-cc-civil-indicators
+            whatever sentence))
+        match-cleansed
           (when match
             (common/replace-several
              match
@@ -347,12 +408,12 @@
              #"^ztwa:?<" "<"))
         [plaintiff defendant]
           (if match
-            [ (extract-plaintiff match-cleaned)
-              (extract-defendant match-cleaned) ]
+            [ (extract-plaintiff match-cleansed)
+              (extract-defendant match-cleansed) ]
             [ nil nil ])
-       ]
-       (if (is-appeal-case? defendant match-cleaned)
-          { :plaintiff (cleanse-party defendant)
-            :defendant (cleanse-party plaintiff)}
-          { :plaintiff (cleanse-party plaintiff)
-            :defendant (cleanse-party defendant)})))
+        ]
+    (if (is-appeal-case? defendant match-cleansed)
+      { :plaintiff (cleanse-party defendant)
+        :defendant (cleanse-party plaintiff)}
+      { :plaintiff (cleanse-party plaintiff)
+        :defendant (cleanse-party defendant)})))

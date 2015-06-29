@@ -1,4 +1,7 @@
 (ns saos-tm.extractor.cc-appealed-judgment-links
+  "Module contains algorithm
+  for extraction of a reference (if it appears in text)
+  to appeal in Polish case law - specifically Common Courts."
   (:require
    [saos-tm.extractor.common :as common]
    [clojure.string :as str]
@@ -10,7 +13,7 @@
   (str "[IVXLCDM]+[\\s\\.]*[0-9]*[\\s\\.]*"
     "[a-zA-Z]*-?[a-zA-Z]*[\\s\\.]+\\d+\\s*/\\s*\\d+(/[A-Z]+)?(\\s*upr\\.?)?"))
 
-(def ^:private appeal-indiction-phrases
+(def ^:private appeal-indicators
   ["(?<=skutek)\\s+apelacji" "(?<=z powodu)\\s+apelacji"
    "(?<=skutek)\\s+zażalenia"
    "(?<=z powodu)\\s+zażalenia" "zażalenia\\s+wniesionego"
@@ -127,10 +130,10 @@
         appeal-parts-trimmed
           (map #(cleanse-appeal %) appeal-parts)
         ]
-  (zipmap [:appeal-type :appellant :judgment-type :court :date :signature]
+  (zipmap [:appealType :appellant :judgmentType :court :date :caseNo]
           appeal-parts-trimmed)))
 
-(defn ^:private extract-non-complaint [s]
+(defn ^:private extract-appeal-or-grievance [s]
   (let [
         appeal-str-cleansed (cleanse-appeal-str s)
         appeal-parts (split-appeal-str appeal-str-cleansed)
@@ -138,26 +141,57 @@
         ]
     appeal-parts-map))
 
-(defn extract-appeal-or-grievance-judgment-link [s]
+(defn extract-appeal-or-grievance-judgment-link
+  "Extracts reference to appeal if it occurrs in a given string `s` and if
+  the appeal is in form of appeal or grievance. It works better and is tested
+  on texts with html tags, but it also works (but possibly worse) on plain
+  text.
+
+  The result is a map containing keys:
+
+  * `:caseNo` - case number of the referenced appeal
+  * `:date` - date of the referenced judgment
+  * `:court` - name of court that lead the referenced appeal
+  * `:judgmentType` - type of the referenced judgment
+  * `:appellant` - description of a person who lodged the appeal
+  * `:appealType` - type of appeal (it can be appeal, grievance or complaint)
+
+  Example:
+
+  `(extract-appeal-or-grievance-judgment-link \"sprawy z powództwa J. J.
+  przeciwko Skarbowi Państwa – Prezesowi Sądu Okręgowego w Warszawie,
+  Prezesowi Sądu Apelacyjnego w Warszawie oraz A. T. o zapłatę
+  na skutek apelacji powoda od wyroku Sądu Okręgowego w Krakowie
+  z dnia 22 maja 2013 r. sygn. akt I C 1772/11\")`
+
+  `{:caseNo \"I C 1772/11\", :date \"22 maja 2013 r.\",
+  :court \"Sądu Okręgowego w Krakowie\", :judgmentType \"wyroku\",
+  :appellant \"powoda\", :appealType \"apelacji\"}`
+
+  It uses `appeal-indicators` to localize the place of appeal
+  appearance in text. Then it extracts appeal with
+  `extract-appeal-or-grievance` function by means of rules and regexes.
+  "
+  [s]
   (let [
          appeal-match-groups
            (map
             #(first
               (find-from-to-first-case-ins
                s common/get-regex-matches-with-starts-ends-sorted % osp-regex))
-            appeal-indiction-phrases)
-        appeal-match-groups (sort (remove #(nil? %) appeal-match-groups))
+            appeal-indicators)
+        appeal-match-groups (sort (remove nil? appeal-match-groups))
         appeal-match-str (second (first appeal-match-groups))
         result
           (cond
            (nil? appeal-match-str)
            nil
            :else
-           (extract-non-complaint appeal-match-str))
+           (extract-appeal-or-grievance appeal-match-str))
         ]
     result))
 
-(defn ^:private identify-complaint [s]
+(defn ^:private extract-complaint [s]
   (let [
         s (cleanse-appeal-str s)
         part
@@ -192,12 +226,16 @@
             (second (str/split appellant-cleansed #"r\."))
             appellant-cleansed)
         ]
-     (zipmap [:appeal-type :appellant :judgment-type :court :date :signature]
+     (zipmap [:appealType :appellant :judgmentType :court :date :caseNo]
              (map
               #(when (common/not-nil? %) (str/trim %))
               [appeal-type appellant-ultimate reason court date signature]))))
 
-(defn extract-complaint-judgment-link [s]
+(defn extract-complaint-judgment-link
+  "Analogous function to `extract-appeal-or-grievance-judgment-link`, but
+  for extraction of appeals in form of complaints.
+  "
+  [s]
   (let [
         appeal-match-groups-complaint
           (map #(first (find-from-to-first-case-ins s re-find % osp-regex))
@@ -212,6 +250,6 @@
            (nil? appeal-match-str-complaint)
            nil
            :else
-           (identify-complaint s))
+           (extract-complaint s))
         ]
     result))
