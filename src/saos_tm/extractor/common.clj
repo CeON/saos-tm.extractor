@@ -88,7 +88,10 @@
         ]
   (str/replace without-split-numbers (str "-" system-newline) "")))
 
-(defn ^:private conv-html-to-text [ ^String s]
+(defn conv-html-to-text
+  "Removes all html tags from text in string `s`. Uses Tika html parser
+   under the hood."
+  [ ^String s]
   (let [
           istream (IOUtils/toInputStream s "UTF-8");
           parser (HtmlParser.)
