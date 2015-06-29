@@ -941,16 +941,24 @@
         [first-law-act-token-index first-art-index]))))
 
 (defn extract-law-links
-  "Extracts all references to Polish legislation.
+  "Extracts references to Polish legislation from a given string `s`.
+  Flags `use-local-explicit-dictionary` `use-local-implicit-dictionary`
+  `use-global-dictionary` (`true` or `false`) switch on or off different
+  dictionary methods described below.
 
   The result is a map containing two keys:
 
   * `:orphaned-links` - algorithm did not manage to map legislative act to
-  them. Contains list of maps with fields: `:art` article part of link
-  and `:txt` text which algorithm did not manage to resolve to legislative act
+  them; contains list of maps with fields:
+      * `:art` article part of link
+      * `:txt` text which algorithm did not manage to resolve
+      to legislative act
+
   * `:extracted-links` - list containing successfully extracted links in form
-  of maps with fields: `:art` which contains coordinates of article parts
-  of legislative act and `:act` which contains coordinates of act
+  of maps with fields:
+      * `:art` coordinates of article parts of legislative act
+      (described below)
+      * `:act` coordinates of act (described below)
 
   Example:
 
@@ -966,7 +974,36 @@
   {:lit \"0\", :zd \"0\", :pkt \"0\", :ust \"0\", :par \"0\", :art \"36\"},
   :act {:journalEntry \"643\", :journalNo \"102\", :journalYear \"1997\"}}]}`
 
-  It works ...
+  It extracts two types of coordinates:
+
+  * article coordinates (`:art`) - e.g. from text \"art. 36 ust. 3\" it will
+  extract a list `(\"36\" \"0\" \"3\" \"0\" \"0\" \"0\")`, subsequent elements
+  in this list mean Polish artykuł, paragraf, ustęp, punkt, zdanie, litera
+  * act coordinates (`:act`) - act coordinates can be given in text of
+  Polish case law in different forms:\n
+      * full description - e.g. from text \"ustawy z dnia 1 sierpnia 1997 r.
+      o Trybunale Konstytucyjnym (Dz. U. Nr 102, poz. 643)\"
+      it will extract a map
+      `{:journalEntry \"643\", :journalNo \"102\", :journalYear \"1997\"}`
+      , in this case it is extracted with `extract-act-coords-journal-with-dot`
+      or `extract-year-journal-nmb-and-entry` function by means of
+      rules and regexes
+      * non-full description - e.g. \"ustawy o TK\" or \"u.w.l.\", in this case
+      dictionary methods (described below) are used
+
+  Dictionary methods:
+
+  * global dictionary - a list of regexes called `dictionary-for-acts` is
+  used to match texts that describe law acts
+  * local implicit dictionary - input text is split by `acts-txts-split-regex`
+  to extract acts descriptions; from full descriptions (see above) act coords
+  and full name of act are extracted (example of full name is \"ustawy
+  z dnia 1 sierpnia 1997 r. o Trybunale Konstytucyjnym\") - the name
+  is used to match texts that describe law acts
+  * local explicit dictionary - input text is split by `acts-txts-split-regex`
+  to extract acts descriptions; from full descriptions (see above) that contain
+  explicit definition of law act abbreviation (e.g. \"dalej: ustawa o TK\")
+  the abbreviation is extracted to match texts that describe law acts
   "
   [s
    use-local-explicit-dictionary use-local-implicit-dictionary
