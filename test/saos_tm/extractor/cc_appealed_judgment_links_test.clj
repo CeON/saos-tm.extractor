@@ -75,13 +75,17 @@
 
         results (map handle-appeal-test court-types extract-fns)
 
+        _ (println)
         _
           (doall
            (map
             #(println
               (str (common-test/expand-str-to-length %1 30)
                    "| precision: " (format "%.4f" (%2 :precision))
-                   " recall: " (format "%.4f" (%2 :recall))))
+                   " recall: " (format "%.4f" (%2 :recall))
+                   " f1: " (format "%.4f"
+                              (common-test/get-harmonic-mean
+                               (%2 :precision) (%2 :recall)))))
             court-types results))
         ]
     (is (= (:recall    (nth results 0)) 1.0))

@@ -211,8 +211,10 @@
 (defn ^:private format-numbers [coll]
   (map #(format "%.4f" %) coll))
 
-(defn ^:private get-harmonic-mean [nmb1 nmb2]
-  (/ (* 2 nmb1 nmb2) (+ nmb1 nmb2)))
+(defn get-harmonic-mean [nmb1 nmb2]
+  (if (= 0.0 (+ nmb1 nmb2))
+    0.0
+    (/ (* 2 nmb1 nmb2) (+ nmb1 nmb2))))
 
 (defn ^:private count-items-from-measures [items measures]
   (map
@@ -340,6 +342,7 @@
         extracted-items
           (extracted-records-fn (files-and-file-paths :txt-files))
 
+        _ (println)
         overall-precision-recall
           (get-and-log-efficiencies
            benchmark-items extracted-items
@@ -379,6 +382,7 @@
         extracted-acts (map #(extract-elems :act %) extracted-items)
         extracted-arts (map #(extract-elems :art %) extracted-items)
 
+        _ (println)
         _ (print (str (expand-str-to-length "ACTS " 15) "| "))
         acts-precision-recall
           (get-and-log-efficiencies
@@ -422,6 +426,7 @@
 ; tests
 
 (deftest get-harmonic-mean-test
+  (is (= 0.0 (get-harmonic-mean 0.0 0.0)))
   (is (<
        (numeric-tower/abs (- (get-harmonic-mean 0.9 0.6) 0.72))
        1E-10)))
