@@ -204,7 +204,7 @@
    (not-substring? "KIO" s)))
 
 (defn extract-judgment-links
-  "Extracts links to referenced judgments in the form of all case numbers
+  "Extracts links to referenced judgments in the form of case numbers
    present in a given string `s`.
 
   The result is a set of strings which are case numbers.

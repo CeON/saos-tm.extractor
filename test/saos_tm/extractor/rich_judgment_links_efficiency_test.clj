@@ -54,11 +54,11 @@
            (str/join "|"
                      (map common/conv-str-to-regex case-nmbs)))
         matches-with-starts-ends
-          (rich-judgment-links/sort-regexes
+          (common/sort-regexes
            (common/get-regex-matches-with-starts-ends-maps
             regex s)
            :start)
-        first-case-nmb (:regex (first matches-with-starts-ends))
+        first-case-nmb (:match (first matches-with-starts-ends))
         first-case-nmb-regex
           (re-pattern
            (common/replace-several first-case-nmb

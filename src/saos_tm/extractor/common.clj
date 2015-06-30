@@ -168,11 +168,16 @@
 (defn ^:private start-end-map-func [match result]
   (concat
    result
-   [{:start (.start match) :end (.end match) :regex (.group match)}]))
+   [{:start (.start match) :end (.end match) :match (.group match)}]))
 
 (defn get-regex-matches-with-starts-ends-maps
   "Returns matches for `re` regex in `s` string with their start and end
-  positions"
+  positions.
+  Return a list of maps with keys:
+
+  * `:start` - starting position of match
+  * `:end` - end position of match
+  * `:match` - the match itself"
   [re s]
   (get-regex-matches re s start-end-map-func))
 
@@ -239,3 +244,13 @@
   [regexes following-text-regex s]
   (get-regex-match-case-sen
    get-closest-regex-match regexes following-text-regex s))
+
+(defn sort-regexes
+  "Function for sorting collection of regexes in `regexes`
+  extracted by function `get-regex-matches-with-starts-ends-maps`.
+  `end-indicator` can have `:start` or `:end` value, depending on which
+  end we want to use in sorting."
+  [regexes end-indicator]
+  (sort
+   #(compare (end-indicator %1) (end-indicator %2))
+   regexes))

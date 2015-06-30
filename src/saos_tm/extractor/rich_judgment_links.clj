@@ -1,4 +1,7 @@
 (ns saos-tm.extractor.rich-judgment-links
+  "Module contains algorithm for extraction of references to Polish case law.
+  Extracts more data than judgment-links, because besides case number it
+  returns date, court, and judgment type."
   (:require
    [saos-tm.extractor.common :as common]
    [saos-tm.extractor.judgment-links :as judgment-links]
@@ -88,11 +91,6 @@
    (str
     "[^a-zA-Z" common/pl-diacritics "]$|^[^a-zA-Z" common/pl-diacritics "]")))
 
-(defn sort-regexes [coll end-indicator]
-  (sort
-   #(compare (end-indicator %1) (end-indicator %2))
-   coll))
-
 (defn ^:private national-appeals-chamber? [case-nmb]
   (or
    (common/substring? "UZP/" case-nmb)
@@ -109,10 +107,10 @@
 (defn ^:private extract-no-empties-only-before [before regex]
   (let [
         from-before
-          (sort-regexes
+          (common/sort-regexes
            (common/get-regex-matches-with-starts-ends-maps regex before)
            :end)
-        extracted-element (:regex (last from-before))
+        extracted-element (:match (last from-before))
         ]
     extracted-element))
 
@@ -131,25 +129,25 @@
         ]
     (if
       (< before-offset after-start-position)
-      (:regex (last from-before))
-      (:regex (first from-after)))))
+      (:match (last from-before))
+      (:match (first from-after)))))
 
 (defn ^:private extract-no-empties [before after regex]
   (let [
         from-before
-          (sort-regexes
+          (common/sort-regexes
            (common/get-regex-matches-with-starts-ends-maps regex before)
            :end)
         from-after
-          (sort-regexes
+          (common/sort-regexes
            (common/get-regex-matches-with-starts-ends-maps regex after)
            :start)
         extracted-element
           (cond
            (empty? from-before)
-           (:regex (first from-after))
+           (:match (first from-after))
            (empty? from-after)
-           (:regex (last from-before))
+           (:match (last from-before))
            :else
            (extract-regexes-not-empty
             from-before from-after (count before)))
@@ -161,15 +159,15 @@
    (and (empty? before) (empty? after))
    nil
    (empty? before)
-   (:regex
+   (:match
     (first
-     (sort-regexes
+     (common/sort-regexes
       (common/get-regex-matches-with-starts-ends-maps regex after)
       :start)))
    (empty? after)
-   (:regex
+   (:match
     (last
-     (sort-regexes
+     (common/sort-regexes
       (common/get-regex-matches-with-starts-ends-maps regex before)
       :end)))
    :else
@@ -223,7 +221,32 @@
      [:judgmentDate :court :judgmentType]
      [date (postprocess court) (postprocess judgment-type)])))
 
-(defn extract-rich-judgment-links [s]
+(defn extract-rich-judgment-links
+  "Extracts links to referenced judgments with additional data
+  present in a given string `s`.
+
+  The result is a list of maps containing keys:
+
+  * `:caseNumber` - number of referenced case
+  * `:judgmentType` - type of referenced judgment
+  * `:court` - type of court that lead referenced judgment
+  * `:judgmentDate` - date of the judgment
+
+  Example:
+
+  `(extract-rich-judgment-links \"W nieopublikowanym wyroku
+  z dnia 2 czerwca 1993 r., SA/Wr 302/93, NSA stwierdził,
+  że w trybie art. 101 ust. 1 ustawy o samorządzie terytorialnym\")`
+
+  `({:caseNumber \"SA/Wr 302/93\", :judgmentType \"wyroku\",
+  :court \"NSA\", :judgmentDate \"2 czerwca 1993 r.\"})`
+
+  At first it uses `extract-judgment-links` function from `judgment-links`
+  module to find numbers of referenced cases. Then it uses `extract-other-data`
+  function to return other data regarding case references by means of rules
+  and regexes.
+  "
+  [s]
   (let [
         preprocessed (common/preprocess s)
         case-nmbs (judgment-links/extract-judgment-links s)
