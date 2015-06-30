@@ -109,7 +109,7 @@
 (defn ^:private join-with-ids [extracted-parties ids]
   (map
    #(if
-      (or (contains? %1 :prosecutor) (contains? %1 :plaintiff))
+      (or (:prosecutor %1) (:plaintiff %1))
       (assoc %1 :id %2)
       (zipmap [:prosecutor :id] ["" %2]))
    extracted-parties ids))

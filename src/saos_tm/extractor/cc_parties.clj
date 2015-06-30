@@ -340,11 +340,11 @@
       (and
        (not= prosecutor "")
        (common/not-nil? prosecutor))
-    { :prosecutor
-      (if (common/matches? prosecutor #"^publiczn[\s\S]*|^subsydiarn[\s\S]*")
-        (str "z oskarżenia " prosecutor)
-        prosecutor) }
-    {})))
+      { :prosecutor
+        (if (common/matches? prosecutor #"^publiczn[\s\S]*|^subsydiarn[\s\S]*")
+          (str "z oskarżenia " prosecutor)
+          prosecutor) }
+      { :prosecutor nil })))
 
 (defn ^:private is-appeal-case? [defendant match]
   (if (nil? defendant)
