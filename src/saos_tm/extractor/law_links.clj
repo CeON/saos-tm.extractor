@@ -1087,9 +1087,9 @@
     s))
 
 (defn convert-art-to-str
-  "Converts article part of law link `art` to string.
+  "Converts article part of the law link `art` to string.
 
-   The output string format is `art. X § X ust. X pkt X lit. zd. X`."
+   The output string format is `art. X § X ust. X pkt X zd. X lit. X`."
   [ art ]
   (-> ""
     (append-prefix-and-suffix-if-suffix-not-zero "art." (:art art))
@@ -1133,8 +1133,8 @@
     (chain-compare-number-letter (:par art1) (:par art2))
     (chain-compare-number-letter (:ust art1) (:ust art2))
     (chain-compare-number-letter (:pkt art1) (:pkt art2))
-    (chain-compare (:lit art1) (:lit art2))
-    (chain-compare (:zd art1) (:zd art2))))
+    (chain-compare (:zd art1) (:zd art2))
+    (chain-compare (:lit art1) (:lit art2))))
 
 (defn sort-arts
   "Sorts the seq of `arts` according to succesive comparisons of
@@ -1145,7 +1145,7 @@
 ; Utilities for the act part of the extracted link.
 
 (defn conv-act-to-str
-  "Converts act part of law link `act` to string.
+  "Converts act part of the law link `act` to string.
 
    The output string format is `Dz. U. z XXXX r. Nr X poz. X`
 

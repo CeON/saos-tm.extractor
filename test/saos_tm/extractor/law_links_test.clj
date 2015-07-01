@@ -370,7 +370,15 @@
           {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}])
        [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "a"}
          {:art "1" :par "3" :ust "3" :pkt "4" :zd "5" :lit "a"}
-         {:art "1" :par "3a" :ust "3" :pkt "4" :zd "5" :lit "a"}])))
+         {:art "1" :par "3a" :ust "3" :pkt "4" :zd "5" :lit "a"}]))
+  (is (=
+       (#'saos-tm.extractor.law-links/sort-arts
+        [ {:art "1" :par "1" :ust "3" :pkt "4"  :zd "5" :lit "c"}
+          {:art "1" :par "1" :ust "3" :pkt "4"  :zd "7" :lit "a"}
+          {:art "1" :par "1" :ust "3" :pkt "4"  :zd "6" :lit "b"}])
+       [ {:art "1" :par "1" :ust "3" :pkt "4" :zd "5" :lit "c"}
+         {:art "1" :par "1" :ust "3" :pkt "4" :zd "6" :lit "b"}
+         {:art "1" :par "1" :ust "3" :pkt "4" :zd "7" :lit "a"}])))
 
 (deftest conv-act-to-str-test
   (is (=
